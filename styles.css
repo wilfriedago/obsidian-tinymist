@@ -1,0 +1,196 @@
+/* Tinymist plugin styles.
+   Colours come from Obsidian's CSS variables so themes and snippets can
+   restyle everything here without patching the plugin. */
+
+/* ---- Typst editor ------------------------------------------------------- */
+
+.tinymist-editor-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	overflow: hidden;
+}
+
+.tinymist-editor {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: auto;
+}
+
+.tinymist-editor .cm-editor {
+	height: 100%;
+	background-color: var(--background-primary);
+	color: var(--text-normal);
+	font-family: var(--font-monospace);
+	font-size: var(--font-text-size);
+}
+
+.tinymist-editor .cm-editor.cm-focused {
+	outline: none;
+}
+
+.tinymist-editor .cm-gutters {
+	background-color: var(--background-primary);
+	color: var(--text-faint);
+	border-right: 1px solid var(--background-modifier-border);
+}
+
+.tinymist-editor .cm-activeLine {
+	background-color: var(--background-modifier-hover);
+}
+
+.tinymist-editor .cm-activeLineGutter {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-muted);
+}
+
+.tinymist-editor .cm-selectionBackground,
+.tinymist-editor .cm-content ::selection {
+	background-color: var(--text-selection);
+}
+
+.tinymist-editor .cm-cursor {
+	border-left-color: var(--text-normal);
+}
+
+.tinymist-editor .cm-tooltip {
+	background-color: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	color: var(--text-normal);
+	box-shadow: var(--shadow-s);
+}
+
+.tinymist-hover {
+	max-width: 40em;
+	padding: var(--size-4-2);
+	font-size: var(--font-ui-small);
+	white-space: pre-wrap;
+}
+
+.tinymist-hover-line {
+	line-height: var(--line-height-tight);
+}
+
+.tinymist-completion-info {
+	max-width: 32em;
+	padding: var(--size-4-1);
+	color: var(--text-muted);
+	white-space: pre-wrap;
+}
+
+/* ---- Preview ------------------------------------------------------------ */
+
+.tinymist-preview-container {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	padding: 0;
+	overflow: hidden;
+}
+
+.tinymist-preview-toolbar {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: var(--size-4-1) var(--size-4-2);
+	border-bottom: 1px solid var(--background-modifier-border);
+	background-color: var(--background-secondary);
+	flex: 0 0 auto;
+}
+
+.tinymist-preview-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--size-4-1);
+	border: none;
+	border-radius: var(--radius-s);
+	background-color: transparent;
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.tinymist-preview-button:hover {
+	background-color: var(--background-modifier-hover);
+	color: var(--text-normal);
+}
+
+.tinymist-preview-status {
+	margin-left: auto;
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+}
+
+.tinymist-preview-body {
+	flex: 1 1 auto;
+	min-height: 0;
+	position: relative;
+}
+
+.tinymist-preview-frame {
+	width: 100%;
+	height: 100%;
+	border: none;
+	display: block;
+	background-color: var(--background-primary);
+}
+
+.tinymist-preview-message {
+	padding: var(--size-4-4);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	white-space: pre-wrap;
+}
+
+.tinymist-preview-message-line {
+	line-height: var(--line-height-normal);
+}
+
+/* ---- Status bar --------------------------------------------------------- */
+
+.tinymist-status {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-2-2);
+	cursor: pointer;
+}
+
+.tinymist-status-icon {
+	display: inline-flex;
+	align-items: center;
+}
+
+.tinymist-status-icon .svg-icon {
+	width: var(--icon-s);
+	height: var(--icon-s);
+}
+
+.tinymist-status-ok .tinymist-status-icon {
+	color: var(--text-muted);
+}
+
+.tinymist-status-busy .tinymist-status-icon {
+	color: var(--text-accent);
+}
+
+.tinymist-status-warn .tinymist-status-icon {
+	color: var(--text-warning);
+}
+
+.tinymist-status-error .tinymist-status-icon {
+	color: var(--text-error);
+}
+
+.tinymist-status-off .tinymist-status-icon {
+	color: var(--text-faint);
+}
+
+/* ---- Settings ----------------------------------------------------------- */
+
+.tinymist-settings-status {
+	margin-bottom: var(--size-4-4);
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	word-break: break-all;
+}

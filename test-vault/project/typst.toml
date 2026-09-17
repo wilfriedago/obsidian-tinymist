@@ -1,0 +1,5 @@
+[package]
+name = "fixture-paper"
+version = "0.1.0"
+entrypoint = "main.typ"
+authors = ["Tinymist plugin fixtures"]

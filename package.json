@@ -1,0 +1,52 @@
+{
+	"name": "obsidian-tinymist",
+	"version": "0.1.0",
+	"description": "Edit, preview, and export Typst documents in Obsidian using the Tinymist language server.",
+	"main": "main.js",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"dev": "node esbuild.config.mjs",
+		"build": "pnpm run typecheck && node esbuild.config.mjs production",
+		"typecheck": "tsc -noEmit -skipLibCheck",
+		"lint": "oxlint",
+		"lint:fix": "oxlint --fix",
+		"lint:obsidian": "eslint .",
+		"test": "vitest run",
+		"test:unit": "vitest run tests/unit",
+		"test:integration": "vitest run tests/integration",
+		"test:watch": "vitest",
+		"validate:manifest": "node scripts/validate-manifest.mjs",
+		"version": "node version-bump.mjs && git add manifest.json versions.json"
+	},
+	"keywords": [
+		"obsidian",
+		"typst",
+		"tinymist"
+	],
+	"license": "MIT",
+	"dependencies": {
+		"codemirror-lang-typst": "0.6.0"
+	},
+	"devDependencies": {
+		"@codemirror/autocomplete": "6.20.3",
+		"@codemirror/commands": "6.8.1",
+		"@codemirror/language": "6.11.2",
+		"@codemirror/lint": "6.9.5",
+		"@codemirror/search": "6.7.1",
+		"@codemirror/state": "6.5.0",
+		"@codemirror/view": "6.38.6",
+		"@types/node": "^22.15.17",
+		"esbuild": "0.28.2",
+		"eslint": "^9.39.4",
+		"eslint-plugin-obsidianmd": "^0.4.2",
+		"globals": "^17.6.0",
+		"jiti": "^2.6.1",
+		"obsidian": "1.13.1",
+		"oxlint": "^1.83.0",
+		"typescript": "^5.8.3",
+		"typescript-eslint": "^8.70.0",
+		"vitest": "^4.1.11"
+	},
+	"packageManager": "pnpm@10.30.0"
+}

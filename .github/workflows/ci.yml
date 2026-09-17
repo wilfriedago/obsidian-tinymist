@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+    branches: ['**']
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20.x, 22.x, 24.x]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Validate manifest
+        run: pnpm run validate:manifest
+
+      - name: Lint
+        run: pnpm run lint
+
+      - name: Lint against the Obsidian review rules
+        run: pnpm run lint:obsidian
+
+      - name: Typecheck
+        run: pnpm run typecheck
+
+      - name: Unit tests
+        # The Tinymist integration tests skip themselves when no executable is
+        # present; they run in the `integration` job below instead.
+        run: pnpm run test:unit
+
+      - name: Build
+        run: node esbuild.config.mjs production
+
+      - name: Check the release artifacts exist
+        run: |
+          test -f main.js
+          test -f manifest.json
+          test -f styles.css
+
+  integration:
+    # Exercises the adapter against a real Tinymist, which is the only way to
+    # catch a change in its CLI flags, command names, or export argument shape.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Tinymist
+        run: |
+          VERSION=0.15.8
+          BASE="https://github.com/Myriad-Dreamin/tinymist/releases/download/v${VERSION}"
+          ASSET="tinymist-x86_64-unknown-linux-gnu.tar.gz"
+          curl -fsSL -o "$ASSET" "$BASE/$ASSET"
+          curl -fsSL -o "$ASSET.sha256" "$BASE/$ASSET.sha256"
+          # Verify before extracting: CI downloads a binary from the network,
+          # and the published checksum is what makes that download accountable.
+          sha256sum -c "$ASSET.sha256"
+          tar -xzf "$ASSET"
+          install -m 0755 "$(find . -name tinymist -type f -perm -u+x | head -n1)" /usr/local/bin/tinymist
+          tinymist -V
+
+      - name: Integration tests
+        # Fails rather than skips if the executable is missing, so a broken
+        # install cannot masquerade as a passing run.
+        env:
+          TINYMIST_REQUIRED: '1'
+        run: pnpm run test:integration

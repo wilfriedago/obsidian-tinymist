@@ -1,0 +1,6 @@
+# pnpm 10 blocks dependency install scripts unless they are listed here.
+# esbuild needs its postinstall to place the platform-specific binary, so the
+# build cannot run without it. Declaring it keeps CI reproducible instead of
+# depending on an interactive `pnpm approve-builds`.
+onlyBuiltDependencies:
+  - esbuild

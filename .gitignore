@@ -1,0 +1,28 @@
+# editors
+.vscode
+.idea
+*.iml
+
+# pnpm
+node_modules
+.pnpm-store
+
+# Build output. Released via GitHub releases, never committed.
+main.js
+*.map
+
+# Obsidian plugin runtime data
+data.json
+
+# Development vault runtime state
+test-vault/.obsidian/workspace.json
+test-vault/.obsidian/workspace-mobile.json
+test-vault/.obsidian/plugins/tinymist/main.js
+test-vault/.obsidian/plugins/tinymist/data.json
+
+# Typst / Tinymist build artifacts
+*.pdf
+!test-vault/pdf/existing.pdf
+
+# macOS
+.DS_Store
