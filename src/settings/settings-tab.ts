@@ -6,7 +6,7 @@ import {
 } from 'obsidian';
 
 import { LOG_LEVELS } from '../shared/logging';
-import type { TypstSettings } from './settings';
+import { isSettingKey, type TypstSettings } from './settings';
 
 /**
  * The settings screen, defined declaratively.
@@ -48,14 +48,26 @@ export class TypstSettingTab extends PluginSettingTab {
 		super(app, plugin);
 	}
 
-	/** Reads from the runtime instead of `this.plugin.settings`. */
+	/**
+	 * Reads from the runtime instead of `this.plugin.settings`.
+	 *
+	 * The framework passes a plain `string`, so the key is narrowed rather than
+	 * asserted: an unknown one reads as `undefined` and the control falls back
+	 * to its `defaultValue`.
+	 */
 	override getControlValue(key: string): unknown {
-		return this.host.getSettings()[key as keyof TypstSettings];
+		return isSettingKey(key) ? this.host.getSettings()[key] : undefined;
 	}
 
 	/** Writes through the runtime, so a change still triggers its side effects. */
 	override async setControlValue(key: string, value: unknown): Promise<void> {
-		await this.host.updateSettings({ [key]: value } as Partial<TypstSettings>);
+		if (!isSettingKey(key)) {
+			// Nothing this plugin owns; refuse rather than write an unknown key
+			// into `data.json`.
+			return;
+		}
+
+		await this.host.updateSettings({ [key]: value });
 		// Several settings change what other rows should show or say.
 		this.update();
 	}

@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [0.1.3] - 2026-09-17
+
+### Changed
+
+- Settings keys arriving from Obsidian's settings framework are now narrowed
+  with a type guard instead of an assertion. An unrecognized key is refused
+  rather than written into `data.json`, and because the guard checks *own*
+  properties it is not fooled by `toString`, `constructor`, or `__proto__`.
+- Settings writes are normalized through the same validation that guards
+  `loadData`, so a bad value cannot reach storage at all rather than being
+  corrected on the next load.
+
 ## [0.1.2] - 2026-09-17
 
 ### Changed

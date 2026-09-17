@@ -1,7 +1,7 @@
 {
 	"id": "tinymist",
 	"name": "Tinymist",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"minAppVersion": "1.13.0",
 	"description": "Edit, preview, and export Typst documents using the Tinymist language server.",
 	"author": "Wilfried AGO",

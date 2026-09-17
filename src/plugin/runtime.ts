@@ -579,7 +579,11 @@ export class TypstRuntime {
 			(key) => key in patch && patch[key] !== this.settings[key],
 		);
 
-		this.settings = { ...this.settings, ...patch };
+		// Normalized rather than merged raw. The settings framework hands values
+		// back as `unknown`, so running the result through the same validation
+		// that guards `loadData` keeps `data.json` valid no matter who wrote to
+		// it, instead of leaving a bad value to be corrected on next load.
+		this.settings = migrateSettings({ ...this.settings, ...patch });
 		await this.plugin.saveData(this.settings);
 		this.logSink.setLevel(this.settings.logLevel);
 

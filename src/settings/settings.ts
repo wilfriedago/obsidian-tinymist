@@ -98,6 +98,19 @@ export function migrateSettings(raw: unknown): TypstSettings {
 	};
 }
 
+/**
+ * Narrows a key handed back by Obsidian's settings framework to one this
+ * plugin actually has.
+ *
+ * The declarative settings API calls `getControlValue`/`setControlValue` with
+ * a plain `string`, so without this an unrecognized key would be written
+ * straight into `data.json`. Derived from `DEFAULT_SETTINGS`, so it cannot
+ * drift out of step with the interface.
+ */
+export function isSettingKey(key: string): key is keyof TypstSettings {
+	return Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key);
+}
+
 function asString(value: unknown, fallback: string): string {
 	return typeof value === 'string' ? value : fallback;
 }

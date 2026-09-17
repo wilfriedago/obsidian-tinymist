@@ -134,7 +134,7 @@ leaves **zero** `tinymist` processes behind.
 {
   "id": "tinymist",
   "name": "Tinymist",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "minAppVersion": "1.13.0",
   "description": "Edit, preview, and export Typst documents using the Tinymist language server.",
   "author": "Wilfried Ago",
@@ -174,6 +174,7 @@ capability.
 | **Source warning** — settings tab does not implement `getSettingDefinitions()` | **Fixed** in 0.1.2: the tab is fully declarative, so its rows appear in Obsidian's settings search. `minAppVersion` is now `1.13.0`. |
 | **Source warning** — use `window.setTimeout()` etc. for popout compatibility | **Fixed** in 0.1.2: every timer in the adapter goes through `window.*`, and the lint exemption that hid this was removed rather than widened. |
 | **Source recommendation** — `display` is deprecated | **Fixed** in 0.1.2: `display()` is gone. |
+| **Source warning** — unnecessary type assertion in the settings tab | **Fixed** in 0.1.3: replaced with a real type guard, so an unknown key is refused rather than written to `data.json`. Settings writes are also normalized through the load-time validation. |
 | `main.js` artifact attestation | ✅ Pass |
 | `styles.css` artifact attestation | ✅ Pass |
 | Vault read via the Obsidian API | ✅ Pass |
