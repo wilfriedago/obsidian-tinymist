@@ -1,18 +1,28 @@
-import { PluginSettingTab, Setting, type App, type Plugin } from 'obsidian';
+import {
+	PluginSettingTab,
+	type App,
+	type Plugin,
+	type SettingDefinitionItem,
+} from 'obsidian';
 
 import { LOG_LEVELS } from '../shared/logging';
 import type { TypstSettings } from './settings';
 
 /**
- * The settings screen.
+ * The settings screen, defined declaratively.
  *
- * Kept to the choices a user actually has to make. Tinymist exposes dozens of
- * knobs; surfacing them all here would turn a document editor into a compiler
- * console, so the plugin picks sensible defaults and exposes the rest only
- * where a real workflow needs it.
+ * Obsidian 1.13 renders, persists, validates, and — importantly — *indexes for
+ * search* a tab described through `getSettingDefinitions()`. The older
+ * imperative `display()` is deprecated, and a tab that still uses it is absent
+ * from the settings search users rely on to find anything.
  *
- * Copy follows Obsidian's style guide: sentence case, no "settings" in headings,
- * and no top-level heading naming the plugin.
+ * Settings live in the plugin's runtime rather than on `plugin.settings`, so
+ * `getControlValue`/`setControlValue` are overridden to point at it. That is
+ * what those hooks exist for, and it keeps the runtime the single owner of
+ * settings state and of the side effects a change triggers.
+ *
+ * Copy follows Obsidian's style guide: sentence case, no "settings" in
+ * headings, and no top-level heading naming the plugin.
  */
 
 export interface SettingsTabHost {
@@ -30,8 +40,6 @@ export interface SettingsTabHost {
 }
 
 export class TypstSettingTab extends PluginSettingTab {
-	private statusEl: HTMLElement | null = null;
-
 	constructor(
 		app: App,
 		plugin: Plugin,
@@ -40,242 +48,227 @@ export class TypstSettingTab extends PluginSettingTab {
 		super(app, plugin);
 	}
 
-	override display(): void {
-		const { containerEl } = this;
-		containerEl.empty();
-
-		this.renderStatus(containerEl);
-		this.renderTinymist(containerEl);
-		this.renderProject(containerEl);
-		this.renderPreview(containerEl);
-		this.renderEditor(containerEl);
-		this.renderExport(containerEl);
-		this.renderAdvanced(containerEl);
+	/** Reads from the runtime instead of `this.plugin.settings`. */
+	override getControlValue(key: string): unknown {
+		return this.host.getSettings()[key as keyof TypstSettings];
 	}
 
-	private renderStatus(containerEl: HTMLElement): void {
-		new Setting(containerEl)
-			.setName('Language server')
-			.setDesc(this.statusText())
-			.addButton((button) =>
-				button
-					.setButtonText('Restart')
-					.setCta()
-					.onClick(async () => {
-						button.setDisabled(true);
-						button.setButtonText('Restarting…');
-						try {
-							await this.host.restartServer();
-						} finally {
-							this.display();
-						}
-					}),
-			);
-
-		this.statusEl = containerEl.createDiv({ cls: 'tinymist-settings-status' });
-		this.statusEl.textContent = `Executable: ${this.host.describeExecutable()}`;
+	/** Writes through the runtime, so a change still triggers its side effects. */
+	override async setControlValue(key: string, value: unknown): Promise<void> {
+		await this.host.updateSettings({ [key]: value } as Partial<TypstSettings>);
+		// Several settings change what other rows should show or say.
+		this.update();
 	}
 
+	override getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			...this.serverDefinitions(),
+			this.projectGroup(),
+			this.previewGroup(),
+			this.editorGroup(),
+			this.exportGroup(),
+			this.advancedGroup(),
+		];
+	}
+
+	/* ---------------------------------------------------------------------- */
+	/* Groups                                                                 */
+	/* ---------------------------------------------------------------------- */
+
+	/** General settings sit at the top with no heading, per the style guide. */
+	private serverDefinitions(): SettingDefinitionItem[] {
+		return [
+			{
+				name: 'Tinymist executable',
+				desc: 'Absolute path to the Tinymist binary. Leave empty to use the first "tinymist" found on PATH. This plugin never downloads or updates it for you.',
+				aliases: ['path', 'binary', 'executable', 'language server'],
+				control: {
+					type: 'text',
+					key: 'tinymistPath',
+					placeholder: '/opt/homebrew/bin/tinymist',
+				},
+			},
+			{
+				name: 'Language server',
+				desc: this.statusText(),
+				aliases: ['restart', 'reload', 'version'],
+				action: (_el, _index) => {
+					void this.host.restartServer().finally(() => {
+						this.update();
+					});
+				},
+			},
+		];
+	}
+
+	private projectGroup(): SettingDefinitionItem {
+		const isCustom = this.host.getSettings().projectRootStrategy === 'custom';
+
+		return {
+			type: 'group',
+			heading: 'Project',
+			items: [
+				{
+					name: 'Project root',
+					desc: 'How the compilation root is chosen for a document. "Automatic" uses the nearest folder containing a typst.toml, and otherwise the document\'s own folder.',
+					aliases: ['typst.toml', 'workspace', 'root'],
+					control: {
+						type: 'dropdown',
+						key: 'projectRootStrategy',
+						options: {
+							auto: 'Automatic',
+							vault: 'Always the vault root',
+							custom: 'A folder I choose',
+						},
+					},
+				},
+				{
+					name: 'Project folder',
+					desc: 'Vault-relative folder used as the compilation root for every document.',
+					// Only meaningful under the custom strategy, and hidden from
+					// search when it cannot apply.
+					visible: () => this.host.getSettings().projectRootStrategy === 'custom',
+					searchable: isCustom,
+					control: {
+						type: 'folder',
+						key: 'customProjectRoot',
+						placeholder: 'papers/thesis',
+					},
+				},
+			],
+		};
+	}
+
+	private previewGroup(): SettingDefinitionItem {
+		return {
+			type: 'group',
+			heading: 'Preview',
+			items: [
+				{
+					name: 'Refresh',
+					desc: 'When the preview recompiles.',
+					control: {
+						type: 'dropdown',
+						key: 'previewRefresh',
+						options: { onType: 'As you type', onSave: 'On save' },
+					},
+				},
+				{
+					name: 'Theme',
+					desc: 'Default colours for the rendered page. Each preview can override this from its own toolbar.',
+					aliases: ['dark', 'light', 'invert'],
+					control: {
+						type: 'dropdown',
+						key: 'previewTheme',
+						options: {
+							'follow-obsidian': 'Follow the app',
+							light: 'Light',
+							dark: 'Dark',
+						},
+					},
+				},
+				{
+					name: 'Sync with the editor',
+					desc: 'Scroll the preview to the cursor, and move the cursor when you select rendered content.',
+					aliases: ['scroll', 'jump', 'navigate'],
+					control: { type: 'toggle', key: 'previewSyncEnabled' },
+				},
+			],
+		};
+	}
+
+	private editorGroup(): SettingDefinitionItem {
+		return {
+			type: 'group',
+			heading: 'Editor',
+			items: [
+				{
+					name: 'Show diagnostics',
+					desc: 'Underline compiler errors and warnings while you edit.',
+					aliases: ['errors', 'warnings', 'lint'],
+					control: { type: 'toggle', key: 'showDiagnostics' },
+				},
+				{
+					name: 'Enable the formatter',
+					desc: 'Allow the "Format document" command to reformat Typst source.',
+					aliases: ['format', 'typstyle'],
+					control: { type: 'toggle', key: 'formatterEnabled' },
+				},
+			],
+		};
+	}
+
+	private exportGroup(): SettingDefinitionItem {
+		return {
+			type: 'group',
+			heading: 'Export',
+			items: [
+				{
+					name: 'PDF folder',
+					desc: 'Vault-relative folder for exported PDFs. Leave empty to write the PDF beside its source document.',
+					aliases: ['pdf', 'output', 'destination'],
+					control: {
+						type: 'folder',
+						key: 'exportFolder',
+						placeholder: 'Beside the document',
+					},
+				},
+				{
+					name: 'Replace existing PDFs',
+					desc: 'When off, exporting writes a numbered copy instead of overwriting a PDF that is already there.',
+					aliases: ['overwrite', 'clobber'],
+					control: { type: 'toggle', key: 'exportOverwrite' },
+				},
+			],
+		};
+	}
+
+	private advancedGroup(): SettingDefinitionItem {
+		return {
+			type: 'group',
+			heading: 'Advanced',
+			items: [
+				{
+					name: 'Use system fonts',
+					desc: 'Let Typst use the fonts installed on this computer.',
+					aliases: ['fonts', 'typeface'],
+					control: { type: 'toggle', key: 'systemFonts' },
+				},
+				{
+					name: 'Logging',
+					desc: 'How much the plugin writes to the developer console.',
+					aliases: ['debug', 'verbose', 'console'],
+					control: {
+						type: 'dropdown',
+						key: 'logLevel',
+						options: Object.fromEntries(
+							LOG_LEVELS.map((level) => [
+								level,
+								level === 'silent' ? 'Off' : capitalize(level),
+							]),
+						),
+					},
+				},
+			],
+		};
+	}
+
+	/** The server's state and detected versions, shown under the restart row. */
 	private statusText(): string {
-		const version = this.host.getDetectedVersion();
-		const typst = this.host.getDetectedTypstVersion();
 		const parts = [this.host.describeServerState()];
+
+		const version = this.host.getDetectedVersion();
 		if (version) {
 			parts.push(`Tinymist ${version}`);
 		}
+
+		const typst = this.host.getDetectedTypstVersion();
 		if (typst) {
 			parts.push(`Typst ${typst}`);
 		}
+
+		parts.push(this.host.describeExecutable());
 		return parts.join(' · ');
-	}
-
-	private renderTinymist(containerEl: HTMLElement): void {
-		const settings = this.host.getSettings();
-
-		new Setting(containerEl)
-			.setName('Tinymist executable')
-			.setDesc(
-				'Absolute path to the Tinymist binary. Leave empty to use the first "tinymist" found on PATH. This plugin never downloads or updates it for you.',
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder('/opt/homebrew/bin/tinymist')
-					.setValue(settings.tinymistPath)
-					.onChange(async (value) => {
-						await this.host.updateSettings({ tinymistPath: value.trim() });
-					}),
-			);
-	}
-
-	private renderProject(containerEl: HTMLElement): void {
-		const settings = this.host.getSettings();
-
-		new Setting(containerEl).setName('Project').setHeading();
-
-		new Setting(containerEl)
-			.setName('Project root')
-			.setDesc(
-				'How the compilation root is chosen for a document. "Automatic" uses the nearest folder containing a typst.toml, and otherwise the document\'s own folder.',
-			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption('auto', 'Automatic')
-					.addOption('vault', 'Always the vault root')
-					.addOption('custom', 'A folder I choose')
-					.setValue(settings.projectRootStrategy)
-					.onChange(async (value) => {
-						await this.host.updateSettings({
-							projectRootStrategy: value as TypstSettings['projectRootStrategy'],
-						});
-						this.display();
-					}),
-			);
-
-		if (settings.projectRootStrategy === 'custom') {
-			new Setting(containerEl)
-				.setName('Project folder')
-				.setDesc('Vault-relative folder used as the compilation root for every document.')
-				.addText((text) =>
-					text
-						.setPlaceholder('papers/thesis')
-						.setValue(settings.customProjectRoot)
-						.onChange(async (value) => {
-							await this.host.updateSettings({ customProjectRoot: value.trim() });
-						}),
-				);
-		}
-	}
-
-	private renderPreview(containerEl: HTMLElement): void {
-		const settings = this.host.getSettings();
-
-		new Setting(containerEl).setName('Preview').setHeading();
-
-		new Setting(containerEl)
-			.setName('Refresh')
-			.setDesc('When the preview recompiles.')
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption('onType', 'As you type')
-					.addOption('onSave', 'On save')
-					.setValue(settings.previewRefresh)
-					.onChange(async (value) => {
-						await this.host.updateSettings({
-							previewRefresh: value as TypstSettings['previewRefresh'],
-						});
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName('Theme')
-			.setDesc(
-				"Default colours for the rendered page. Each preview can override this from its own toolbar.",
-			)
-			.addDropdown((dropdown) =>
-				dropdown
-					.addOption('follow-obsidian', 'Follow the app')
-					.addOption('light', 'Light')
-					.addOption('dark', 'Dark')
-					.setValue(settings.previewTheme)
-					.onChange(async (value) => {
-						await this.host.updateSettings({
-							previewTheme: value as TypstSettings['previewTheme'],
-						});
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName('Sync with the editor')
-			.setDesc(
-				'Scroll the preview to the cursor, and move the cursor when you select rendered content.',
-			)
-			.addToggle((toggle) =>
-				toggle.setValue(settings.previewSyncEnabled).onChange(async (value) => {
-					await this.host.updateSettings({ previewSyncEnabled: value });
-				}),
-			);
-	}
-
-	private renderEditor(containerEl: HTMLElement): void {
-		const settings = this.host.getSettings();
-
-		new Setting(containerEl).setName('Editor').setHeading();
-
-		new Setting(containerEl)
-			.setName('Show diagnostics')
-			.setDesc('Underline compiler errors and warnings while you edit.')
-			.addToggle((toggle) =>
-				toggle.setValue(settings.showDiagnostics).onChange(async (value) => {
-					await this.host.updateSettings({ showDiagnostics: value });
-				}),
-			);
-
-		new Setting(containerEl)
-			.setName('Enable the formatter')
-			.setDesc('Allow the "Format document" command to reformat Typst source.')
-			.addToggle((toggle) =>
-				toggle.setValue(settings.formatterEnabled).onChange(async (value) => {
-					await this.host.updateSettings({ formatterEnabled: value });
-				}),
-			);
-	}
-
-	private renderExport(containerEl: HTMLElement): void {
-		const settings = this.host.getSettings();
-
-		new Setting(containerEl).setName('Export').setHeading();
-
-		new Setting(containerEl)
-			.setName('PDF folder')
-			.setDesc(
-				'Vault-relative folder for exported PDFs. Leave empty to write the PDF beside its source document.',
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder('Beside the document')
-					.setValue(settings.exportFolder)
-					.onChange(async (value) => {
-						await this.host.updateSettings({ exportFolder: value.trim() });
-					}),
-			);
-
-		new Setting(containerEl)
-			.setName('Replace existing PDFs')
-			.setDesc(
-				'When off, exporting writes a numbered copy instead of overwriting a PDF that is already there.',
-			)
-			.addToggle((toggle) =>
-				toggle.setValue(settings.exportOverwrite).onChange(async (value) => {
-					await this.host.updateSettings({ exportOverwrite: value });
-				}),
-			);
-	}
-
-	private renderAdvanced(containerEl: HTMLElement): void {
-		const settings = this.host.getSettings();
-
-		new Setting(containerEl).setName('Advanced').setHeading();
-
-		new Setting(containerEl)
-			.setName('Use system fonts')
-			.setDesc('Let Typst use the fonts installed on this computer.')
-			.addToggle((toggle) =>
-				toggle.setValue(settings.systemFonts).onChange(async (value) => {
-					await this.host.updateSettings({ systemFonts: value });
-				}),
-			);
-
-		new Setting(containerEl)
-			.setName('Logging')
-			.setDesc('How much the plugin writes to the developer console.')
-			.addDropdown((dropdown) => {
-				for (const level of LOG_LEVELS) {
-					dropdown.addOption(level, level === 'silent' ? 'Off' : capitalize(level));
-				}
-				dropdown.setValue(settings.logLevel).onChange(async (value) => {
-					await this.host.updateSettings({ logLevel: value as TypstSettings['logLevel'] });
-				});
-			});
 	}
 }
 

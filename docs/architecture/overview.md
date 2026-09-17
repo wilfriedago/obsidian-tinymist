@@ -146,6 +146,19 @@ A crash therefore cannot silently discard unsaved edits.
 sends `SIGKILL` directly: an orphaned Tinymist outliving Obsidian is worse than
 an ungraceful exit. Both paths are covered by tests.
 
+### Settings are declarative
+
+The settings tab describes its rows through `getSettingDefinitions()` rather
+than building DOM in `display()`. Obsidian then renders, persists, validates
+and — the reason it matters — *indexes them for settings search*. A tab still
+using `display()` is invisible to that search, and the method is deprecated as
+of 1.13.0, which is why `minAppVersion` is `1.13.0`.
+
+Settings state lives in `TypstRuntime`, not on `plugin.settings`, so the tab
+overrides `getControlValue`/`setControlValue` to point at it. That keeps the
+runtime the single owner of both the values and the side effects a change
+triggers, such as restarting Tinymist.
+
 ## Tooling
 
 - **Package manager:** pnpm. `pnpm-workspace.yaml` lists `esbuild` under

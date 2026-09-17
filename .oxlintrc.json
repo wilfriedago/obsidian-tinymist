@@ -120,14 +120,6 @@
     },
     {
       "files": [
-        "src/typst/tinymist/*.ts"
-      ],
-      "rules": {
-        "obsidianmd/prefer-window-timers": "off"
-      }
-    },
-    {
-      "files": [
         "tests/**/*.ts",
         "scripts/**/*.mjs",
         "*.mjs",

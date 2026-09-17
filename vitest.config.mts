@@ -14,6 +14,9 @@ export default defineConfig({
 	test: {
 		include: ['tests/**/*.test.ts'],
 		environment: 'node',
+		// Gives the adapter's `window.setTimeout` calls somewhere to land under
+		// Node. See the file for why the adapter uses `window` at all.
+		setupFiles: ['tests/helpers/setup.ts'],
 		// Integration tests drive a real Tinymist process: a cold start scans
 		// system fonts, which comfortably exceeds the 5s default.
 		testTimeout: 90_000,

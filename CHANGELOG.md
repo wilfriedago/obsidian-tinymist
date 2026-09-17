@@ -6,6 +6,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [0.1.2] - 2026-09-17
+
+### Changed
+
+- **The settings tab is now declarative.** It implements
+  `getSettingDefinitions()` instead of `display()`, so every setting appears in
+  Obsidian's settings search. Values are still owned by the plugin runtime, via
+  the `getControlValue`/`setControlValue` hooks that exist for exactly that.
+- **`minAppVersion` is now `1.13.0`**, which the declarative settings API
+  requires. The plugin had no released user base on older versions, so the
+  migration guide's preferred path applied.
+- **Timers go through `window`.** Every `setTimeout`/`setInterval` in the
+  Tinymist adapter now uses `window.*`, for popout window compatibility. The
+  lint exemption that had been hiding this was removed rather than widened; the
+  Node test host supplies a `window` instead.
+
 ## [0.1.1] - 2026-09-17
 
 ### Fixed

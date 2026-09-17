@@ -37,7 +37,7 @@ interface PendingRequest {
 	readonly method: string;
 	resolve(value: unknown): void;
 	reject(error: unknown): void;
-	timer: ReturnType<typeof setTimeout>;
+	timer: number;
 }
 
 export interface InitializeOptions {
@@ -195,7 +195,7 @@ export class TinymistClient {
 
 		const id = this.nextRequestId++;
 		return new Promise<T>((resolve, reject) => {
-			const timer = setTimeout(() => {
+			const timer = window.setTimeout(() => {
 				this.pending.delete(id);
 				reject(
 					new TypstError('lsp-request-failed', `Tinymist did not answer "${method}" in time.`, {
@@ -219,7 +219,7 @@ export class TinymistClient {
 					...(params === undefined ? {} : { params }),
 				});
 			} catch (error) {
-				clearTimeout(timer);
+				window.clearTimeout(timer);
 				this.pending.delete(id);
 				reject(asTypstError(error, 'lsp-request-failed', { Request: method }));
 			}
@@ -251,7 +251,7 @@ export class TinymistClient {
 		this.initialized = false;
 		const error = new TypstError('lsp-request-failed', reason);
 		for (const [, pending] of this.pending) {
-			clearTimeout(pending.timer);
+			window.clearTimeout(pending.timer);
 			pending.reject(error);
 		}
 		this.pending.clear();
@@ -269,7 +269,7 @@ export class TinymistClient {
 			return;
 		}
 		this.pending.delete(message.id);
-		clearTimeout(pending.timer);
+		window.clearTimeout(pending.timer);
 
 		if (message.error) {
 			pending.reject(

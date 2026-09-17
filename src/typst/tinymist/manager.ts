@@ -63,7 +63,7 @@ export class TinymistManager {
 	private startPromise: Promise<TinymistClient> | null = null;
 
 	private consecutiveCrashes = 0;
-	private restartTimer: ReturnType<typeof setTimeout> | null = null;
+	private restartTimer: number | null = null;
 	private unloaded = false;
 
 	private detectedVersion: TinymistVersion | null = null;
@@ -328,7 +328,7 @@ export class TinymistManager {
 		const delay = RESTART_BACKOFF_MS[this.consecutiveCrashes - 1] ?? 10_000;
 		this.options.logger.info('Scheduling Tinymist restart', `delayMs=${delay}`);
 
-		this.restartTimer = setTimeout(() => {
+		this.restartTimer = window.setTimeout(() => {
 			this.restartTimer = null;
 			if (this.unloaded) {
 				return;
@@ -341,7 +341,7 @@ export class TinymistManager {
 
 	private cancelScheduledRestart(): void {
 		if (this.restartTimer !== null) {
-			clearTimeout(this.restartTimer);
+			window.clearTimeout(this.restartTimer);
 			this.restartTimer = null;
 		}
 	}
@@ -378,7 +378,7 @@ export class TinymistManager {
 			let stderr = '';
 			let settled = false;
 
-			const timer = setTimeout(() => {
+			const timer = window.setTimeout(() => {
 				if (settled) {
 					return;
 				}
@@ -404,7 +404,7 @@ export class TinymistManager {
 					return;
 				}
 				settled = true;
-				clearTimeout(timer);
+				window.clearTimeout(timer);
 				reject(asTypstError(error, 'tinymist-invalid-executable'));
 			});
 
@@ -413,7 +413,7 @@ export class TinymistManager {
 					return;
 				}
 				settled = true;
-				clearTimeout(timer);
+				window.clearTimeout(timer);
 				if (code === 0) {
 					// Some subcommands print the banner on stderr.
 					resolve(stdout.length > 0 ? stdout : stderr);

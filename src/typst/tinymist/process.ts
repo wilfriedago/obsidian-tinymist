@@ -202,16 +202,16 @@ export class TinymistProcess {
 			return Promise.resolve(true);
 		}
 		return new Promise((resolve) => {
-			const timer = setTimeout(() => resolve(this.exited), timeoutMs);
-			const poll = setInterval(() => {
+			const timer = window.setTimeout(() => resolve(this.exited), timeoutMs);
+			const poll = window.setInterval(() => {
 				if (this.exited) {
-					clearInterval(poll);
-					clearTimeout(timer);
+					window.clearInterval(poll);
+					window.clearTimeout(timer);
 					resolve(true);
 				}
 			}, 25);
 			// Both handles are cleared on whichever path resolves first.
-			setTimeout(() => clearInterval(poll), timeoutMs + 50);
+			window.setTimeout(() => window.clearInterval(poll), timeoutMs + 50);
 		});
 	}
 
@@ -223,6 +223,6 @@ export class TinymistProcess {
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | undefined> {
 	return Promise.race([
 		promise,
-		new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), timeoutMs)),
+		new Promise<undefined>((resolve) => window.setTimeout(() => resolve(undefined), timeoutMs)),
 	]);
 }

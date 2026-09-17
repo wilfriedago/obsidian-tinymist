@@ -20,7 +20,7 @@ is an ordinary vault file that opens in Obsidian's own PDF viewer.
 
 ## Requirements
 
-- Obsidian **1.7.2** or newer, on **desktop**. The plugin launches a native
+- Obsidian **1.13.0** or newer, on **desktop**. The plugin launches a native
   executable, which Obsidian mobile cannot do, so `isDesktopOnly` is `true`.
 - A vault stored on the filesystem.
 - **Tinymist 0.13.0 or newer, installed by you.** The plugin never downloads or

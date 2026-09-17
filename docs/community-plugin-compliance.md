@@ -62,7 +62,7 @@ code was copied.
 | Requirement | Status | How |
 | --- | --- | --- |
 | `fundingUrl` only for genuine funding links | ✅ | Absent from the manifest. |
-| Appropriate `minAppVersion` | ✅ | `1.7.2`, the release that introduced deferred views, which this plugin's `instanceof` view handling assumes. |
+| Appropriate `minAppVersion` | ✅ | `1.13.0`, the release that introduced the declarative settings API this plugin's settings tab is built on. |
 | Description ≤ 250 chars, ends with a period, no emoji, correct capitalization | ✅ | Enforced by `scripts/validate-manifest.mjs` in CI. |
 | Description does not start with "This is a plugin" | ✅ | Enforced by the same script. |
 | Node/Electron APIs ⇒ `isDesktopOnly: true` | ✅ | The plugin spawns a native executable. `isDesktopOnly: true`, and the validator fails the build if it is ever set to `false`. |
@@ -88,8 +88,10 @@ code was copied.
 | Prefer the Vault API over the Adapter API | ✅ | All vault I/O goes through `Vault`. The adapter is touched once, for `getBasePath()`, which Tinymist needs. |
 | Don't iterate all files to find one | ✅ | `getAbstractFileByPath` / `getFileByPath` only. |
 | Use `normalizePath()` for user-defined paths | ✅ | Applied to export destinations; `containVaultPath` additionally strips `..` so a setting cannot escape the vault. |
-| Use `setHeading()` rather than `<h1>` | ✅ | All settings headings use `new Setting(...).setHeading()`. |
+| Use `setHeading()` rather than `<h1>` | ✅ | Headings are declared as `type: 'group'` headings; the plugin builds no heading elements itself. |
 | No top-level heading naming the plugin | ✅ | General settings sit at the top with no heading. |
+| Settings are searchable | ✅ | The tab implements `getSettingDefinitions()`, so Obsidian indexes every row. `display()` is not used. |
+| Popout window compatibility | ✅ | Timers go through `window.*` and DOM through `activeDocument`/`createDiv`, enforced by `obsidianmd/prefer-window-timers` and `prefer-active-doc` with no exemptions. |
 | Sentence case in UI text | ✅ | With proper nouns and acronyms capitalized ("Typst", "PDF", "PATH"), per the style guide. `obsidianmd/ui/sentence-case` flags these as warnings; the style guide's rule for acronyms and trademarks takes precedence. |
 | No hardcoded styling | ✅ | All styling in `styles.css`, built on Obsidian's CSS variables. No `element.style` assignments. |
 | `const`/`let` over `var`, `async`/`await` over chains | ✅ | Enforced by oxlint. |
@@ -132,11 +134,11 @@ leaves **zero** `tinymist` processes behind.
 {
   "id": "tinymist",
   "name": "Tinymist",
-  "version": "0.1.0",
-  "minAppVersion": "1.7.2",
+  "version": "0.1.2",
+  "minAppVersion": "1.13.0",
   "description": "Edit, preview, and export Typst documents using the Tinymist language server.",
   "author": "Wilfried Ago",
-  "authorUrl": "https://github.com/wilfriedago/obsidian-tinymist",
+  "authorUrl": "https://github.com/wilfriedago",
   "isDesktopOnly": true
 }
 ```
@@ -169,6 +171,9 @@ capability.
 | **Release recommendation** — the release has no description | **Fixed**: 0.1.1 ships release notes. |
 | **Behaviour warning** — direct filesystem access via Node `fs` | **Narrowed and disclosed.** The dead `createTempDirectory`/`removeDirectory` helpers were removed in 0.1.1, leaving only `stat` and `access`. The plugin now has **no** ability to read file contents or to write or delete anything through Node. Everything in the vault goes through the Vault API. |
 | **Behaviour warning** — shell execution via `child_process` | **Inherent and disclosed.** The plugin must launch Tinymist. `spawn` is always called with `shell: false` and an argument array, so nothing from a document, filename, or setting can be interpreted as a command. No shell is ever invoked, and no program other than the configured executable is ever run. |
+| **Source warning** — settings tab does not implement `getSettingDefinitions()` | **Fixed** in 0.1.2: the tab is fully declarative, so its rows appear in Obsidian's settings search. `minAppVersion` is now `1.13.0`. |
+| **Source warning** — use `window.setTimeout()` etc. for popout compatibility | **Fixed** in 0.1.2: every timer in the adapter goes through `window.*`, and the lint exemption that hid this was removed rather than widened. |
+| **Source recommendation** — `display` is deprecated | **Fixed** in 0.1.2: `display()` is gone. |
 | `main.js` artifact attestation | ✅ Pass |
 | `styles.css` artifact attestation | ✅ Pass |
 | Vault read via the Obsidian API | ✅ Pass |
