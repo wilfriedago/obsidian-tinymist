@@ -305,6 +305,49 @@ describe.runIf(process.env['SKIP_TINYMIST_TESTS'] !== '1')('Tinymist, live', () 
 		off();
 	});
 
+	it('finds Tinymist from a GUI launch environment', async () => {
+		if (!available) return;
+
+		// The bug this pins: Obsidian launched from Finder or the Dock inherits
+		// the system default PATH, not the shell's. A Homebrew tinymist is then
+		// invisible, and the plugin reported "not found" for an executable the
+		// user could run in a terminal. `buildSearchPath` is what fixes it.
+		const guiPath =
+			process.platform === 'win32'
+				? 'C:\\Windows\\system32'
+				: '/usr/bin:/bin:/usr/sbin:/sbin';
+
+		const spawnWith = (path: string) =>
+			new Promise<number | null | 'error'>((settle) => {
+				const child = host.spawn('tinymist', ['-V'], {
+					env: { ...process.env, PATH: path } as Record<string, string>,
+				});
+				child.on('error', () => settle('error'));
+				child.on('exit', (code) => settle(code));
+			});
+
+		// Bare, unaugmented: this is the failure users hit.
+		const bare = await new Promise<number | null | 'error'>((settle) => {
+			const { spawn } = require('node:child_process') as typeof import('node:child_process');
+			const child = spawn('tinymist', ['-V'], {
+				shell: false,
+				env: { ...process.env, PATH: guiPath },
+			});
+			child.on('error', () => settle('error'));
+			child.on('exit', (code) => settle(code));
+		});
+
+		// Through the host, which augments PATH with the usual install dirs.
+		const augmented = await spawnWith(guiPath);
+
+		// On a machine where tinymist happens to live in /usr/bin, the bare
+		// spawn legitimately succeeds; the augmented one must never be worse.
+		if (bare === 'error') {
+			expect(augmented, 'PATH augmentation should have found tinymist').toBe(0);
+		}
+		expect(augmented).toBe(0);
+	});
+
 	it('restarts cleanly and leaves no process behind', async () => {
 		if (!available) return;
 		const before = manager.getState();

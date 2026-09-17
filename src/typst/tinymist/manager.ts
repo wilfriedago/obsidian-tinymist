@@ -306,7 +306,13 @@ export class TinymistManager {
 					)
 				: new TypstError(
 						'tinymist-not-found',
-						'No "tinymist" was found on PATH, and no path is configured.',
+						// The overwhelmingly common cause, and one a user cannot
+						// guess: an app started from Finder, the Dock, or a
+						// desktop shortcut does not inherit the shell's PATH, so
+						// a "tinymist" that works in a terminal is invisible
+						// here. Say so, rather than implying it is not installed.
+						'No "tinymist" was found. If running "tinymist -V" in a terminal works, Obsidian is not seeing your shell\'s PATH; set the full path in the plugin settings.',
+						{ context: { 'Searched PATH': truncate(process.env['PATH'] ?? '(empty)', 300) } },
 					);
 		}
 

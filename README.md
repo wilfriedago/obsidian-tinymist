@@ -42,8 +42,10 @@ Check it works:
 tinymist -V     # e.g. "tinymist 0.15.8"
 ```
 
-If `tinymist` is on your `PATH`, the plugin finds it with no configuration. If
-not, set the full path under **Settings → Tinymist → Tinymist executable**.
+If `tinymist` is on your `PATH`, the plugin finds it with no configuration,
+including the usual package-manager locations that a desktop launch does not
+inherit (see [Troubleshooting](#tinymist-is-not-found)). Otherwise set the full
+path under **Settings → Tinymist → Tinymist executable**.
 
 If you already use the Tinymist VS Code extension, it ships its own binary you
 can point at, typically at
@@ -226,6 +228,29 @@ You can confirm the absence yourself:
 grep -c 'fetch(\|XMLHttpRequest\|new WebSocket\|requestUrl' main.js   # 0
 grep -o 'require("[^"]*")' main.js | sort -u                           # no http module
 ```
+
+## Troubleshooting
+
+### Tinymist is not found
+
+If `tinymist -V` works in a terminal but the plugin reports it is missing, the
+cause is almost always that **an app launched from Finder, the Dock, or a
+desktop shortcut does not inherit your shell's `PATH`.** On macOS it gets
+`/usr/bin:/bin:/usr/sbin:/sbin`, which does not include Homebrew's
+`/opt/homebrew/bin`. You can see this yourself:
+
+```sh
+which tinymist        # /opt/homebrew/bin/tinymist
+launchctl getenv PATH # usually empty: the GUI default is used instead
+```
+
+The plugin works around this by also searching the directories package managers
+install into — Homebrew, MacPorts, Cargo, `~/.local/bin`, Snap, Flatpak, scoop,
+and winget — so the common cases need no configuration.
+
+If your Tinymist is somewhere else, set the full path under **Settings →
+Tinymist → Tinymist executable**. That always wins, and never runs a shell to
+discover anything.
 
 ## Limitations
 

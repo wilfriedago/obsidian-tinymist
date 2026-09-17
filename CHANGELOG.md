@@ -6,6 +6,24 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [0.1.5] - 2026-09-17
+
+### Fixed
+
+- **Tinymist is found automatically again.** An app launched from Finder, the
+  Dock, or a desktop shortcut does not inherit the shell's `PATH`; on macOS it
+  gets `/usr/bin:/bin:/usr/sbin:/sbin`, which does not include Homebrew's
+  `/opt/homebrew/bin`. A `tinymist` that worked in a terminal was therefore
+  invisible to the plugin, and had to be configured by hand.
+
+  The plugin now also searches the directories package managers install into
+  (Homebrew, MacPorts, Cargo, `~/.local/bin`, Snap, Flatpak, scoop, winget).
+  They are appended, so anything already on `PATH` keeps priority, and no shell
+  is run to discover them.
+
+- The "not found" message now names this cause instead of implying Tinymist is
+  not installed, and reports the `PATH` that was searched.
+
 ## [0.1.4] - 2026-09-17
 
 ### Removed

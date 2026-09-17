@@ -141,6 +141,23 @@ executable. Removing the filesystem import means the plugin cannot read, write,
 or delete anything outside Obsidian's Vault API, rather than being trusted not
 to.
 
+### Finding the executable without running a shell
+
+A desktop app started from Finder or the Dock inherits the system default
+`PATH`, not the shell's, so Homebrew's `/opt/homebrew/bin` is absent and a
+perfectly good `tinymist` is invisible.
+
+The common workaround is to run the user's login shell and read `PATH` back out
+of it. This plugin does not: executing a shell profile is a far larger
+capability than launching one known program, and the platform layer's whole
+premise is that it never runs a shell. Instead `buildSearchPath` appends the
+handful of directories package managers actually install into. It is a pure
+function, so the behaviour is unit-tested per platform, and an integration test
+reproduces the GUI environment against a real binary.
+
+Appended, never prepended: the user's own `PATH` keeps priority, so this can
+only ever find something that would otherwise not be found at all.
+
 ### Crash handling is a state machine, not a retry loop
 
 `TinymistManager` holds one of `stopped | starting | ready | failed | crashed`.

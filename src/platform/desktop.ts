@@ -26,6 +26,92 @@ import { TypstError } from '../shared/errors';
  * string from a document, a filename, or a setting is ever handed to a shell.
  */
 
+/**
+ * Directories added to `PATH` when looking for the executable.
+ *
+ * A desktop app launched from Finder, the Dock, or a desktop shortcut does not
+ * inherit the shell's environment: it gets the system default, which on macOS
+ * is `/usr/bin:/bin:/usr/sbin:/sbin`. Homebrew's `/opt/homebrew/bin` is not in
+ * it, so a `tinymist` that a terminal finds instantly is invisible to Obsidian.
+ *
+ * The usual workaround is to run the user's login shell and read `PATH` back
+ * out of it. This plugin does not do that: it would mean executing the user's
+ * shell profile, which is a much larger capability than launching one known
+ * program, and the whole point of the platform layer is that it does not run
+ * shells. Adding the handful of directories package managers actually install
+ * into gets the same result with no new capability and no surprises.
+ *
+ * `$HOME` is expanded from the environment rather than `os.homedir()`, to keep
+ * `node:child_process` the only Node module in the bundle.
+ */
+const UNIX_EXTRA_PATH_DIRS = [
+	'/opt/homebrew/bin', // Homebrew, Apple silicon
+	'/usr/local/bin', // Homebrew on Intel, and most manual installs
+	'/opt/local/bin', // MacPorts
+	'$HOME/.cargo/bin', // cargo install tinymist-cli
+	'$HOME/.local/bin', // pipx, and manual installs
+	'/home/linuxbrew/.linuxbrew/bin', // Homebrew on Linux
+	'/snap/bin', // Linux snap
+	'/var/lib/flatpak/exports/bin', // Linux flatpak
+] as const;
+
+const WINDOWS_EXTRA_PATH_DIRS = [
+	'$USERPROFILE\\scoop\\shims', // scoop
+	'$LOCALAPPDATA\\Microsoft\\WinGet\\Links', // winget
+	'$USERPROFILE\\.cargo\\bin', // cargo
+] as const;
+
+/**
+ * Builds the `PATH` used when spawning, by appending the well-known install
+ * directories that are missing from it.
+ *
+ * Appended, never prepended: anything already on the user's `PATH` keeps
+ * priority, so this can only ever find an executable that would otherwise not
+ * be found at all. Pure, so the behaviour is testable without a real
+ * environment.
+ */
+export function buildSearchPath(
+	env: Record<string, string | undefined>,
+	platform: NodeJS.Platform = process.platform,
+): string {
+	const separator = platform === 'win32' ? ';' : ':';
+	const existing = (env['PATH'] ?? env['Path'] ?? '').split(separator).filter(Boolean);
+
+	const seen = new Set(existing);
+	const candidates = platform === 'win32' ? WINDOWS_EXTRA_PATH_DIRS : UNIX_EXTRA_PATH_DIRS;
+
+	const extras: string[] = [];
+	for (const candidate of candidates) {
+		const expanded = expandEnvironmentRefs(candidate, env);
+		// An unresolved `$HOME` means the variable is not set; skip rather than
+		// adding a literal path with a dollar sign in it.
+		if (expanded === null || seen.has(expanded)) {
+			continue;
+		}
+		seen.add(expanded);
+		extras.push(expanded);
+	}
+
+	return [...existing, ...extras].join(separator);
+}
+
+/** Substitutes `$VAR` references, or returns `null` if any is unset. */
+function expandEnvironmentRefs(
+	template: string,
+	env: Record<string, string | undefined>,
+): string | null {
+	let unresolved = false;
+	const expanded = template.replace(/\$([A-Z_]+)/g, (_match, name: string) => {
+		const value = env[name];
+		if (!value) {
+			unresolved = true;
+			return '';
+		}
+		return value;
+	});
+	return unresolved ? null : expanded;
+}
+
 /** A spawned child process, narrowed to what the plugin actually uses. */
 export interface SpawnedProcess {
 	readonly pid?: number | undefined;
@@ -100,11 +186,13 @@ class NodeDesktopHost implements DesktopHost {
 	constructor(readonly vaultBasePath: string) {}
 
 	spawn(command: string, args: readonly string[], options: SpawnOptions = {}): SpawnedProcess {
+		const env = options.env ?? { ...process.env };
+
 		// `shell` stays false: arguments reach the program verbatim, so a file
 		// named `a; rm -rf ~.typ` is just an odd filename and not a command.
 		const child: ChildProcessWithoutNullStreams = spawn(command, [...args], {
 			cwd: options.cwd,
-			env: options.env ?? { ...process.env },
+			env: { ...env, PATH: buildSearchPath(env) },
 			shell: false,
 			windowsHide: true,
 			stdio: ['pipe', 'pipe', 'pipe'],
