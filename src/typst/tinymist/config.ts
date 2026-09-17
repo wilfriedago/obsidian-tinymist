@@ -1,5 +1,3 @@
-import type { DesktopHost } from '../../platform/desktop';
-import { TypstError } from '../../shared/errors';
 import type { LogLevel } from '../../shared/logging';
 
 /**
@@ -22,42 +20,24 @@ export interface ResolvedExecutable {
 }
 
 /**
- * Resolution order, in full:
+ * Decides what command to run.
  *
- *   1. An explicit path in the plugin settings. If it is set and unusable we
- *      stop with an error rather than silently falling through — a user who
- *      configured a path wants to know it is wrong.
- *   2. `tinymist` on `PATH`.
- *   3. Give up with an actionable error.
+ *   1. An explicit path from the plugin settings, if one is set.
+ *   2. Otherwise the bare name `tinymist`, which the operating system resolves
+ *      through `PATH` when the process is spawned.
+ *
+ * Deliberately pure and synchronous. Whether the command actually works is
+ * settled by running `tinymist probe` and reading the result, which is both a
+ * stronger check than a permission bit — it confirms the program really is
+ * Tinymist — and the reason this plugin needs no filesystem access at all.
  *
  * There is deliberately no step that fetches anything.
  */
-export async function resolveExecutable(
-	host: DesktopHost,
-	configuredPath: string,
-): Promise<ResolvedExecutable> {
+export function resolveExecutable(configuredPath: string): ResolvedExecutable {
 	const configured = configuredPath.trim();
-
-	if (configured.length > 0) {
-		if (!(await host.isExecutableFile(configured))) {
-			throw new TypstError(
-				'tinymist-invalid-executable',
-				'The path is not an executable file.',
-				{ context: { 'Configured executable': configured } },
-			);
-		}
-		return { path: configured, source: 'configured' };
-	}
-
-	const onPath = await host.findOnPath(TINYMIST_EXECUTABLE_NAME);
-	if (onPath) {
-		return { path: onPath, source: 'path' };
-	}
-
-	throw new TypstError(
-		'tinymist-not-found',
-		'No "tinymist" executable was found on PATH and no path is configured.',
-	);
+	return configured.length > 0
+		? { path: configured, source: 'configured' }
+		: { path: TINYMIST_EXECUTABLE_NAME, source: 'path' };
 }
 
 /** How the plugin resolves the Typst project root for a document. */

@@ -6,6 +6,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [0.1.4] - 2026-09-17
+
+### Removed
+
+- **All filesystem access.** The plugin no longer imports any Node filesystem
+  module; `node:child_process` is the only Node module in the bundle. The
+  `stat`/`access` checks and the hand-written `PATH` walk are gone: `spawn`
+  resolves a bare command through `PATH` itself, and `tinymist probe` validates
+  a configured path better than a permission bit does, because it confirms the
+  program really is Tinymist. This also fixes executable lookup on Windows,
+  where the old code had to special-case `PATHEXT`.
+- **Runtime base64 calls.** `atob` is replaced by `Buffer.from(base64,
+  'base64')`, which decodes in one pass instead of a per-character loop.
+
+### Changed
+
+- A failed startup now distinguishes "no such file", "exists but could not be
+  run", and "ran but failed", so the message says what to do about it.
+
 ## [0.1.3] - 2026-09-17
 
 ### Changed

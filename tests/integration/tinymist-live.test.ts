@@ -61,8 +61,26 @@ async function waitFor(label: string, predicate: () => boolean, timeoutMs = 25_0
 	throw new Error(`Timed out waiting for ${label}`);
 }
 
+/**
+ * Availability is decided the same way the plugin decides it: run the bare
+ * command and see whether it answers. There is no PATH walking, because the
+ * plugin imports no filesystem module.
+ */
+async function tinymistIsAvailable(): Promise<boolean> {
+	// `settle`, not `resolve`: `node:path`'s `resolve` is imported above.
+	return await new Promise((settle) => {
+		try {
+			const child = host.spawn('tinymist', ['probe']);
+			child.on('error', () => settle(false));
+			child.on('exit', (code) => settle(code === 0));
+		} catch {
+			settle(false);
+		}
+	});
+}
+
 beforeAll(async () => {
-	available = (await host.findOnPath('tinymist')) !== null;
+	available = await tinymistIsAvailable();
 	if (!available) {
 		return;
 	}

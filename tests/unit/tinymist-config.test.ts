@@ -7,8 +7,7 @@ import {
 	resolveWorkspaceRoot,
 	type TinymistInitOptions,
 } from '../../src/typst/tinymist/config';
-import { TypstError } from '../../src/shared/errors';
-import type { DesktopHost, SpawnedProcess } from '../../src/platform/desktop';
+import { classifySpawnError } from '../../src/platform/desktop';
 
 const baseOptions: TinymistInitOptions = {
 	executablePath: '',
@@ -21,17 +20,6 @@ const baseOptions: TinymistInitOptions = {
 	fontPaths: [],
 	exportStagingDirectory: '/tmp/staging',
 };
-
-/** A host whose filesystem answers are scripted by the test. */
-function fakeHost(overrides: Partial<DesktopHost> = {}): DesktopHost {
-	return {
-		vaultBasePath: '/home/me/vault',
-		spawn: () => ({}) as SpawnedProcess,
-		isExecutableFile: async () => false,
-		findOnPath: async () => null,
-		...overrides,
-	};
-}
 
 describe('resolveWorkspaceRoot', () => {
 	it('sends no root under the automatic strategy', () => {
@@ -148,34 +136,43 @@ describe('buildPreviewArgs', () => {
 });
 
 describe('resolveExecutable', () => {
-	it('prefers an explicit configured path', async () => {
-		const resolved = await resolveExecutable(
-			fakeHost({ isExecutableFile: async (p) => p === '/opt/tinymist' }),
-			'/opt/tinymist',
-		);
-		expect(resolved).toEqual({ path: '/opt/tinymist', source: 'configured' });
-	});
-
-	it('fails loudly rather than falling back when the configured path is wrong', async () => {
-		// Silently using a different binary than the one the user configured
-		// would be the worst outcome here.
-		await expect(
-			resolveExecutable(fakeHost({ findOnPath: async () => '/usr/bin/tinymist' }), '/nope'),
-		).rejects.toMatchObject({ code: 'tinymist-invalid-executable' });
-	});
-
-	it('falls back to PATH when nothing is configured', async () => {
-		const resolved = await resolveExecutable(
-			fakeHost({ findOnPath: async () => '/usr/bin/tinymist' }),
-			'',
-		);
-		expect(resolved).toEqual({ path: '/usr/bin/tinymist', source: 'path' });
-	});
-
-	it('reports a configuration error when nothing is found', async () => {
-		await expect(resolveExecutable(fakeHost(), '   ')).rejects.toBeInstanceOf(TypstError);
-		await expect(resolveExecutable(fakeHost(), '')).rejects.toMatchObject({
-			code: 'tinymist-not-found',
+	it('uses an explicit configured path', () => {
+		expect(resolveExecutable('/opt/tinymist')).toEqual({
+			path: '/opt/tinymist',
+			source: 'configured',
 		});
+	});
+
+	it('trims surrounding whitespace', () => {
+		expect(resolveExecutable('  /opt/tinymist  ').path).toBe('/opt/tinymist');
+	});
+
+	it('falls back to the bare command name, which the OS resolves via PATH', () => {
+		// The plugin imports no filesystem module, so it does not walk PATH
+		// itself: `spawn` does that natively for a bare name.
+		expect(resolveExecutable('')).toEqual({ path: 'tinymist', source: 'path' });
+		expect(resolveExecutable('   ')).toEqual({ path: 'tinymist', source: 'path' });
+	});
+});
+
+describe('classifySpawnError', () => {
+	it('recognizes a missing executable', () => {
+		expect(classifySpawnError(Object.assign(new Error('x'), { code: 'ENOENT' }))).toBe(
+			'not-found',
+		);
+	});
+
+	it('recognizes a permission problem', () => {
+		expect(classifySpawnError(Object.assign(new Error('x'), { code: 'EACCES' }))).toBe(
+			'not-executable',
+		);
+		expect(classifySpawnError(Object.assign(new Error('x'), { code: 'EPERM' }))).toBe(
+			'not-executable',
+		);
+	});
+
+	it('falls back to unknown for anything else', () => {
+		expect(classifySpawnError(new Error('boom'))).toBe('unknown');
+		expect(classifySpawnError(undefined)).toBe('unknown');
 	});
 });

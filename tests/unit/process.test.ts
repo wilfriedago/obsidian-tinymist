@@ -41,8 +41,6 @@ function setup(options: { spawnThrows?: boolean } = {}) {
 			}
 			return child;
 		},
-		isExecutableFile: async () => true,
-		findOnPath: async () => null,
 	};
 
 	const sink = new LogSink();
@@ -87,12 +85,7 @@ describe('TinymistProcess startup', () => {
 		sink.setLevel('silent');
 
 		const process = new TinymistProcess(
-			{
-				vaultBasePath: '/vault',
-				spawn,
-				isExecutableFile: async () => true,
-				findOnPath: async () => null,
-			},
+			{ vaultBasePath: '/vault', spawn },
 			new Logger(sink, 'test'),
 			{ executablePath: '/usr/bin/tinymist', cwd: '/vault' },
 			{ onMessage: () => undefined, onExit: () => undefined },

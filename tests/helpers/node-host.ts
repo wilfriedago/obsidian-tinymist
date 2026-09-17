@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
-import { access, constants, mkdtemp, rm, stat } from 'node:fs/promises';
+import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { delimiter, join } from 'node:path';
+import { join } from 'node:path';
 
 import type { DesktopHost, SpawnOptions, SpawnedProcess } from '../../src/platform/desktop';
 
@@ -14,8 +14,8 @@ import type { DesktopHost, SpawnOptions, SpawnedProcess } from '../../src/platfo
 export class NodeTestHost implements DesktopHost {
 	constructor(readonly vaultBasePath: string) {}
 
-	spawn(executable: string, args: readonly string[], options: SpawnOptions = {}): SpawnedProcess {
-		return spawn(executable, [...args], {
+	spawn(command: string, args: readonly string[], options: SpawnOptions = {}): SpawnedProcess {
+		return spawn(command, [...args], {
 			cwd: options.cwd,
 			env: options.env ?? { ...process.env },
 			shell: false,
@@ -24,42 +24,12 @@ export class NodeTestHost implements DesktopHost {
 		});
 	}
 
-	async isExecutableFile(path: string): Promise<boolean> {
-		try {
-			const info = await stat(path);
-			if (!info.isFile()) {
-				return false;
-			}
-			await access(path, constants.X_OK);
-			return true;
-		} catch {
-			return false;
-		}
-	}
-
-	async findOnPath(executableName: string): Promise<string | null> {
-		const rawPath = process.env['PATH'];
-		if (!rawPath) {
-			return null;
-		}
-		for (const directory of rawPath.split(delimiter)) {
-			if (!directory) {
-				continue;
-			}
-			const candidate = join(directory, executableName);
-			if (await this.isExecutableFile(candidate)) {
-				return candidate;
-			}
-		}
-		return null;
-	}
-
 	/**
 	 * Temporary-directory helpers for tests only.
 	 *
-	 * These are deliberately *not* on `DesktopHost`: the shipped plugin has no
-	 * ability to create or delete directories, and keeping these out of the
-	 * interface is what guarantees that.
+	 * Deliberately *not* on `DesktopHost`: the shipped plugin imports no
+	 * filesystem module at all, and keeping these out of the interface is what
+	 * guarantees it cannot acquire one by accident.
 	 */
 	async createTempDirectory(prefix: string): Promise<string> {
 		return await mkdtemp(join(tmpdir(), prefix));

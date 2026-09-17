@@ -50,7 +50,7 @@ a port number. A view asks for a URL; the controller below it deals in commands.
 | Preview | `preview/*` | A URL and a task lifetime |
 | Domain | `typst/documents`, `typst/diagnostics`, `typst/project`, `typst/compiler` | Vault paths, LSP payloads |
 | Adapter | `typst/tinymist/*` | Tinymist's process, protocol, and flags |
-| Platform | `platform/desktop.ts` | Node and Electron |
+| Platform | `platform/desktop.ts` | Node and Electron (one module: `child_process`) |
 | Shared | `shared/*` | Nothing above it |
 
 `shared/paths.ts` is pure and takes the vault's base directory as an argument,
@@ -126,6 +126,20 @@ There is deliberately **no** `sandbox` attribute. Without `allow-same-origin` th
 frame would get an opaque origin, and the preview frontend's `sessionStorage`
 access would throw — trading working isolation for a broken preview. Cross-origin
 already provides the isolation that matters here.
+
+### The platform layer spawns, and does nothing else
+
+`platform/desktop.ts` imports exactly one Node module, `node:child_process`,
+and exposes exactly one capability: spawn a command.
+
+It used to import `node:fs` as well, to check whether a candidate path was an
+executable file and to walk `PATH` by hand. Both turned out to be unnecessary.
+`spawn` resolves a bare command name through `PATH` itself, on every platform,
+and running `tinymist probe` validates the binary far better than a permission
+bit does — it confirms the program is actually Tinymist rather than merely
+executable. Removing the filesystem import means the plugin cannot read, write,
+or delete anything outside Obsidian's Vault API, rather than being trusted not
+to.
 
 ### Crash handling is a state machine, not a retry loop
 

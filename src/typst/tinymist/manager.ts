@@ -1,4 +1,4 @@
-import type { DesktopHost } from '../../platform/desktop';
+import { classifySpawnError, type DesktopHost } from '../../platform/desktop';
 import { TypstError, asTypstError } from '../../shared/errors';
 import type { Logger } from '../../shared/logging';
 import { TinymistClient } from './client';
@@ -196,22 +196,17 @@ export class TinymistManager {
 
 		const initOptions = this.options.getInitOptions();
 
-		let executable: ResolvedExecutable;
-		try {
-			executable = await resolveExecutable(this.options.host, initOptions.executablePath);
-		} catch (error) {
-			throw this.fail(asTypstError(error, 'tinymist-not-found'));
-		}
+		const executable = resolveExecutable(initOptions.executablePath);
 
-		// A binary that cannot answer `probe` is not a Tinymist we can drive.
+		// This is the whole validation step. A binary that answers `probe` with
+		// exit 0 is a Tinymist we can drive; anything else is reported by the
+		// spawn failure below. Checking the file's permission bits first would
+		// prove less and would require filesystem access the plugin otherwise
+		// has no need for.
 		try {
 			await this.runForOutput(executable.path, ['probe']);
 		} catch (error) {
-			throw this.fail(
-				asTypstError(error, 'tinymist-invalid-executable', {
-					'Configured executable': executable.path,
-				}),
-			);
+			throw this.fail(this.describeProbeFailure(error, executable));
 		}
 
 		const probed = await this.probeVersion(executable.path).catch(() => ({
@@ -288,6 +283,44 @@ export class TinymistManager {
 		this.options.onClientReady(client);
 
 		return client;
+	}
+
+	/**
+	 * Turns a failed `probe` into something the user can act on. The three
+	 * cases differ in what the user should do, so they get different messages
+	 * rather than one generic failure.
+	 */
+	private describeProbeFailure(error: unknown, executable: ResolvedExecutable): TypstError {
+		if (error instanceof TypstError && error.code !== 'tinymist-invalid-executable') {
+			return error;
+		}
+
+		const failure = classifySpawnError((error as { cause?: unknown })?.cause ?? error);
+
+		if (failure === 'not-found') {
+			return executable.source === 'configured'
+				? new TypstError(
+						'tinymist-not-found',
+						'No file exists at the configured path.',
+						{ context: { 'Configured executable': executable.path } },
+					)
+				: new TypstError(
+						'tinymist-not-found',
+						'No "tinymist" was found on PATH, and no path is configured.',
+					);
+		}
+
+		if (failure === 'not-executable') {
+			return new TypstError(
+				'tinymist-invalid-executable',
+				'The file exists but could not be run. Check its permissions.',
+				{ context: { Executable: executable.path } },
+			);
+		}
+
+		return asTypstError(error, 'tinymist-invalid-executable', {
+			Executable: executable.path,
+		});
 	}
 
 	private handleProcessExit(reason: ProcessExitReason): void {

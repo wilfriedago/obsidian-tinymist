@@ -509,7 +509,7 @@ export class TypstRuntime {
 			return;
 		}
 		if (!this.settings.formatterEnabled) {
-			new Notice('The Typst formatter is turned off in settings');
+			new Notice('The typst formatter is turned off in settings');
 			return;
 		}
 
@@ -536,7 +536,7 @@ export class TypstRuntime {
 	async openSource(vaultPath: VaultPath): Promise<void> {
 		const file = this.app.vault.getFileByPath(vaultPath);
 		if (!file) {
-			new Notice('That Typst document is no longer in the vault');
+			new Notice('That typst document is no longer in the vault');
 			return;
 		}
 

@@ -134,7 +134,7 @@ leaves **zero** `tinymist` processes behind.
 {
   "id": "tinymist",
   "name": "Tinymist",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "minAppVersion": "1.13.0",
   "description": "Edit, preview, and export Typst documents using the Tinymist language server.",
   "author": "Wilfried Ago",
@@ -169,8 +169,11 @@ capability.
 | --- | --- |
 | **Manifest warning** — `authorUrl` must not point at the plugin's own repository | **Fixed** in 0.1.1: it is now `https://github.com/wilfriedago`. `scripts/validate-manifest.mjs` now fails the build on a repository URL, so it cannot regress. |
 | **Release recommendation** — the release has no description | **Fixed**: 0.1.1 ships release notes. |
-| **Behaviour warning** — direct filesystem access via Node `fs` | **Narrowed and disclosed.** The dead `createTempDirectory`/`removeDirectory` helpers were removed in 0.1.1, leaving only `stat` and `access`. The plugin now has **no** ability to read file contents or to write or delete anything through Node. Everything in the vault goes through the Vault API. |
-| **Behaviour warning** — shell execution via `child_process` | **Inherent and disclosed.** The plugin must launch Tinymist. `spawn` is always called with `shell: false` and an argument array, so nothing from a document, filename, or setting can be interpreted as a command. No shell is ever invoked, and no program other than the configured executable is ever run. |
+| **Behaviour warning** — direct filesystem access via Node `fs` | **Eliminated** in 0.1.4. The plugin no longer imports any filesystem module: `node:child_process` is the only Node module in the bundle. `spawn` resolves a bare command through `PATH` itself, and `tinymist probe` validates a configured path better than a permission bit would, so the `stat`/`access` calls had nothing left to do. |
+| **Behaviour warning** — shell execution via `child_process` | **Irreducible, and disclosed.** Launching Tinymist is what this plugin is for; the capability cannot be removed without removing the plugin. `spawn` is always called with `shell: false` and an argument array, so nothing from a document, filename, or setting can be interpreted as a command. No shell is ever invoked, and no program other than the configured executable is ever run. |
+| **Disclosure** — number of network request calls | **No network requests exist.** The bundle contains no `fetch`, `XMLHttpRequest`, `WebSocket`, or `requestUrl`. The counted patterns are the loopback preview URL, the repository URL in the build banner, link-detection string literals inside the bundled Typst grammar, and the plugin's own `DocumentSession.open()`. Itemized in the README under "Why a scanner reports network calls". |
+| **Disclosure** — runtime base64 encode/decode | **Removed** in 0.1.4. `atob` was decoding the PDF bytes Tinymist returns; it is now Node's `Buffer.from(base64, 'base64')`, which is one pass instead of a per-character loop and keeps the pattern out of the bundle entirely. |
+| **Disclosure** — malware / obfuscation / network scans not available | Scanner-side; nothing to act on. The source is unminified TypeScript in this repository and the released `main.js` carries a build-provenance attestation. |
 | **Source warning** — settings tab does not implement `getSettingDefinitions()` | **Fixed** in 0.1.2: the tab is fully declarative, so its rows appear in Obsidian's settings search. `minAppVersion` is now `1.13.0`. |
 | **Source warning** — use `window.setTimeout()` etc. for popout compatibility | **Fixed** in 0.1.2: every timer in the adapter goes through `window.*`, and the lint exemption that hid this was removed rather than widened. |
 | **Source recommendation** — `display` is deprecated | **Fixed** in 0.1.2: `display()` is gone. |

@@ -165,25 +165,27 @@ installed, everything works offline.
 
 ### What the plugin touches
 
-Obsidian's automated review flags two capabilities in this plugin. Both are
-inherent to driving an external compiler, and both are disclosed here as the
-developer policies require. This is exactly what they amount to.
+**The plugin makes no network requests.** It imports no HTTP client; the
+shipped bundle contains no `fetch`, `XMLHttpRequest`, `WebSocket`, or
+`requestUrl` call. See [Why a scanner reports network
+calls](#why-a-scanner-reports-network-calls) if you are looking at an
+automated scan that says otherwise.
 
-**It launches one external program.** The plugin calls Node's
-`child_process.spawn` to start the Tinymist executable you configured, and
-nothing else. It is always called with `shell: false` and an argument array, so
-no string from a document, a filename, or a setting is ever handed to a shell
-and no part of it can be read as a command. The plugin runs no shell, and runs
-no program other than the one at the path you chose.
+**It requires exactly one Node module, and one capability: launching Tinymist.**
+`child_process.spawn` starts the executable you configured, and nothing else.
+It is always called with `shell: false` and an argument array, so no string
+from a document, a filename, or a setting is ever handed to a shell and no part
+of it can be read as a command. The plugin runs no shell, and runs no program
+other than the one at the path you chose.
 
-**It reads file metadata outside the vault.** The plugin calls `stat` and
-`access` to answer one question: is this path an executable file? That is how a
-configured path is validated and how `tinymist` is found on your `PATH`. The
-platform layer that holds these calls has no ability to read file contents, and
-no ability to write or delete anything, anywhere. Every byte the plugin reads
-or writes in your vault goes through Obsidian's Vault API instead.
+**It has no filesystem access outside your vault.** The plugin imports no
+filesystem module at all — `node:child_process` is the only Node module in the
+bundle. It does not stat, read, write, or delete anything through Node. A
+configured path is validated by running `tinymist probe` and reading the exit
+code, which proves more than a permission bit would, and a bare `tinymist` is
+resolved through `PATH` by the operating system when the process is spawned.
 
-Inside your vault, through that API, the plugin:
+Inside your vault, through Obsidian's Vault API, the plugin:
 
 - reads the `.typ` files you open;
 - writes PDFs you explicitly export;
@@ -204,6 +206,26 @@ The preview runs a local HTTP server that Tinymist starts, bound to `127.0.0.1`
 on an ephemeral port, for as long as a preview tab is open. It is not reachable
 from other machines. It has no authentication, so on a shared machine another
 local user's process could read a document you are previewing.
+
+### Why a scanner reports network calls
+
+Obsidian's automated review counts network calls by pattern-matching the built
+`main.js`. It reports several for this plugin. They are all accounted for, and
+none of them is a request to a remote server:
+
+| What the scanner sees | What it actually is |
+| --- | --- |
+| `http://127.0.0.1:<port>/` | The loopback address of the preview server Tinymist runs on your own machine. This is the preview. |
+| `https://github.com/wilfriedago/obsidian-tinymist` | A URL in the build banner comment, pointing at this source repository. Not fetched. |
+| `"http://"`, `"https://"` | String literals inside the bundled `codemirror-lang-typst` grammar, which uses them to recognize links while highlighting Typst source. Not fetched. |
+| `.open(` | `DocumentSession.open()`, the plugin's own method for telling Tinymist a document was opened. The pattern also matches `XMLHttpRequest.open`, which this plugin does not use. |
+
+You can confirm the absence yourself:
+
+```sh
+grep -c 'fetch(\|XMLHttpRequest\|new WebSocket\|requestUrl' main.js   # 0
+grep -o 'require("[^"]*")' main.js | sort -u                           # no http module
+```
 
 ## Limitations
 

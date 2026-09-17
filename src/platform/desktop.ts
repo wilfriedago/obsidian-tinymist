@@ -1,7 +1,5 @@
 import { FileSystemAdapter, Platform, type App } from 'obsidian';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import { access, constants, stat } from 'node:fs/promises';
-import { delimiter, join } from 'node:path';
 
 import { TypstError } from '../shared/errors';
 
@@ -13,17 +11,19 @@ import { TypstError } from '../shared/errors';
  * matter of supplying a different implementation rather than a rewrite. The
  * manifest sets `isDesktopOnly: true` because of this file.
  *
- * The surface is deliberately as small as launching an external program allows:
+ * The surface is exactly one capability: spawning the Tinymist executable.
  *
- * - `node:child_process` is used only to `spawn` the configured Tinymist
- *   executable, always with `shell: false` and an argument array. No string is
- *   ever handed to a shell, so nothing in a document, a filename, or a setting
- *   can be interpreted as a command.
- * - `node:fs/promises` is used only to *read metadata* — `stat` and `access` —
- *   when checking whether a candidate path is an executable file. This module
- *   has no way to read file contents, and no way to write or delete anything.
- *   Every byte the plugin reads or writes in the vault goes through Obsidian's
- *   Vault API instead.
+ * There is deliberately **no** filesystem module here. An earlier version used
+ * `stat` and `access` to check whether a candidate path was executable, and
+ * walked `PATH` by hand. Both are unnecessary: `spawn` resolves a bare command
+ * name through `PATH` itself, and running `tinymist probe` validates the
+ * binary far better than a permission bit does — it confirms the program is
+ * actually Tinymist. Dropping `node:fs` removes the plugin's ability to touch
+ * the filesystem outside Obsidian's Vault API altogether, rather than merely
+ * limiting it.
+ *
+ * `spawn` is always called with `shell: false` and an argument array, so no
+ * string from a document, a filename, or a setting is ever handed to a shell.
  */
 
 /** A spawned child process, narrowed to what the plugin actually uses. */
@@ -47,14 +47,30 @@ export interface DesktopHost {
 	/** Absolute path of the vault directory. */
 	readonly vaultBasePath: string;
 	/**
-	 * Spawns a program directly, without a shell. Arguments are passed as an
-	 * array so that no part of a `.typ` path can be interpreted as shell syntax.
+	 * Spawns a program directly, without a shell.
+	 *
+	 * `command` is either an absolute path or a bare name, which the operating
+	 * system resolves through `PATH`. Arguments are passed as an array, so no
+	 * part of a `.typ` path can be interpreted as shell syntax.
 	 */
-	spawn(executable: string, args: readonly string[], options?: SpawnOptions): SpawnedProcess;
-	/** Resolves to `true` when the path exists and is an executable file. */
-	isExecutableFile(path: string): Promise<boolean>;
-	/** Looks an executable name up on `PATH`, returning the first hit. */
-	findOnPath(executableName: string): Promise<string | null>;
+	spawn(command: string, args: readonly string[], options?: SpawnOptions): SpawnedProcess;
+}
+
+/** The reason a spawn failed, as far as the plugin needs to distinguish. */
+export type SpawnFailure = 'not-found' | 'not-executable' | 'unknown';
+
+/** Classifies a spawn error so the UI can say something useful about it. */
+export function classifySpawnError(error: unknown): SpawnFailure {
+	const code = (error as { code?: string } | undefined)?.code;
+	switch (code) {
+		case 'ENOENT':
+			return 'not-found';
+		case 'EACCES':
+		case 'EPERM':
+			return 'not-executable';
+		default:
+			return 'unknown';
+	}
 }
 
 /**
@@ -83,10 +99,10 @@ export function resolveDesktopHost(app: App): DesktopHost {
 class NodeDesktopHost implements DesktopHost {
 	constructor(readonly vaultBasePath: string) {}
 
-	spawn(executable: string, args: readonly string[], options: SpawnOptions = {}): SpawnedProcess {
+	spawn(command: string, args: readonly string[], options: SpawnOptions = {}): SpawnedProcess {
 		// `shell` stays false: arguments reach the program verbatim, so a file
 		// named `a; rm -rf ~.typ` is just an odd filename and not a command.
-		const child: ChildProcessWithoutNullStreams = spawn(executable, [...args], {
+		const child: ChildProcessWithoutNullStreams = spawn(command, [...args], {
 			cwd: options.cwd,
 			env: options.env ?? { ...process.env },
 			shell: false,
@@ -94,45 +110,5 @@ class NodeDesktopHost implements DesktopHost {
 			stdio: ['pipe', 'pipe', 'pipe'],
 		});
 		return child;
-	}
-
-	async isExecutableFile(path: string): Promise<boolean> {
-		try {
-			const info = await stat(path);
-			if (!info.isFile()) {
-				return false;
-			}
-			await access(path, constants.X_OK);
-			return true;
-		} catch {
-			return false;
-		}
-	}
-
-	async findOnPath(executableName: string): Promise<string | null> {
-		const rawPath = process.env['PATH'];
-		if (!rawPath) {
-			return null;
-		}
-
-		// On Windows an executable is found by appending one of PATHEXT.
-		const suffixes =
-			process.platform === 'win32'
-				? (process.env['PATHEXT'] ?? '.EXE;.CMD;.BAT').split(';').filter(Boolean)
-				: [''];
-
-		for (const directory of rawPath.split(delimiter)) {
-			if (!directory) {
-				continue;
-			}
-			for (const suffix of suffixes) {
-				const candidate = join(directory, `${executableName}${suffix}`);
-				if (await this.isExecutableFile(candidate)) {
-					return candidate;
-				}
-			}
-		}
-
-		return null;
 	}
 }
