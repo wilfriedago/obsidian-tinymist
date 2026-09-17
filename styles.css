@@ -16,6 +16,21 @@
 	min-height: 0;
 	overflow: auto;
 
+	--tinymist-selection-alpha: 0.22;
+	--tinymist-selection-alpha-blurred: 0.12;
+	--tinymist-selection: hsla(
+		var(--accent-h),
+		var(--accent-s),
+		var(--accent-l),
+		var(--tinymist-selection-alpha)
+	);
+	--tinymist-selection-blurred: hsla(
+		var(--accent-h),
+		var(--accent-s),
+		var(--accent-l),
+		var(--tinymist-selection-alpha-blurred)
+	);
+
 	.cm-editor {
 		height: 100%;
 		background-color: var(--background-primary);
@@ -42,9 +57,38 @@
 		background-color: var(--background-modifier-hover);
 	}
 
-	.cm-selectionBackground,
-	.cm-content ::selection {
-		background-color: var(--text-selection);
+	/* Selection.
+
+	   CodeMirror's base theme styles the focused selection with
+	   `&light.cm-focused > .cm-scroller > .cm-selectionLayer
+	   .cm-selectionBackground` — five classes deep — and hard-codes #d7d4f0.
+	   It also chooses light-vs-dark from its own theme flag rather than
+	   Obsidian's, so in a dark vault that pale lavender lands behind light
+	   text and the selection becomes unreadable.
+
+	   Nesting does not raise specificity, so these selectors are spelled out
+	   to match CodeMirror's depth and win on source order. The colour comes
+	   from Obsidian's accent, so the selection belongs to the user's theme in
+	   both modes, and the alpha is what keeps text legible: it tints rather
+	   than covers.
+
+	   Override `--tinymist-selection` in a snippet to restyle it wholesale. */
+
+	.cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+	.cm-editor > .cm-scroller > .cm-selectionLayer .cm-selectionBackground,
+	.cm-content ::selection,
+	.cm-line ::selection {
+		background-color: var(--tinymist-selection);
+	}
+
+	/* An unfocused editor still shows where the selection is, more faintly. */
+	.cm-editor:not(.cm-focused) > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
+		background-color: var(--tinymist-selection-blurred);
+	}
+
+	/* Sits under the selection, so it has to stay distinguishable from it. */
+	.cm-editor .cm-selectionMatch {
+		background-color: hsla(var(--accent-h), var(--accent-s), var(--accent-l), 0.12);
 	}
 
 	.cm-activeLineGutter {
@@ -82,6 +126,12 @@
 	padding: var(--size-4-1);
 	color: var(--text-muted);
 	white-space: pre-wrap;
+}
+
+/* Dark themes need a touch more opacity to register as a selection. */
+.theme-dark .tinymist-editor {
+	--tinymist-selection-alpha: 0.32;
+	--tinymist-selection-alpha-blurred: 0.18;
 }
 
 /* ---- Preview ------------------------------------------------------------ */

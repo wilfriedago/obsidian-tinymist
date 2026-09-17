@@ -26,13 +26,14 @@ import { TextFileView, type TFile, type WorkspaceLeaf } from 'obsidian';
 import type { Logger } from '../shared/logging';
 import type { VaultPath } from '../shared/paths';
 import type { Diagnostic } from '../typst/tinymist/protocol';
+import type { TextEdit } from '../typst/tinymist/protocol';
 import { toCodeMirrorDiagnostics } from './diagnostics';
 import {
 	createCompletionSource,
 	createHoverExtension,
 	type LanguageFeatureContext,
 } from './language-features';
-import { offsetToPosition, positionToOffset } from './positions';
+import { offsetToPosition, positionToOffset, rangeToOffsets } from './positions';
 
 export const TYPST_EDITOR_VIEW_TYPE = 'typst-source';
 
@@ -210,17 +211,48 @@ export class TypstEditorView extends TextFileView {
 	/* Editor operations used by commands                                     */
 	/* ---------------------------------------------------------------------- */
 
-	/** Replaces the whole document, preserving the cursor as best it can. */
-	replaceAll(text: string): void {
+	/**
+	 * Applies LSP text edits as ranged changes.
+	 *
+	 * Each edit carries a range, and that range is frequently **not** the whole
+	 * document: Tinymist's formatter returns a single edit that starts at the
+	 * first line it actually wants to change. Treating that edit's text as the
+	 * new document silently deletes everything before it — for a Typst file
+	 * that is usually the `#import` and `#show` header.
+	 *
+	 * Applying them as ranges also means CodeMirror maps the selection through
+	 * the change, so the caret survives, and the whole thing is one undo step.
+	 *
+	 * Returns false without touching the document when the edits cannot be
+	 * applied safely, so a bad response is a no-op rather than a corruption.
+	 */
+	applyTextEdits(edits: readonly TextEdit[]): boolean {
 		const editor = this.editor;
-		if (!editor || editor.state.doc.toString() === text) {
-			return;
+		if (!editor || edits.length === 0) {
+			return false;
 		}
-		const cursor = editor.state.selection.main.head;
-		editor.dispatch({
-			changes: { from: 0, to: editor.state.doc.length, insert: text },
-			selection: { anchor: Math.min(cursor, text.length) },
-		});
+
+		const doc = editor.state.doc;
+		const changes = edits
+			.map((edit) => {
+				const { from, to } = rangeToOffsets(doc, edit.range);
+				return { from, to, insert: edit.newText };
+			})
+			.sort((a, b) => a.from - b.from || a.to - b.to);
+
+		// LSP requires edits not to overlap. CodeMirror would throw on an
+		// overlapping set, so it is checked here and the format abandoned.
+		for (let index = 1; index < changes.length; index += 1) {
+			const previous = changes[index - 1];
+			const current = changes[index];
+			if (previous && current && current.from < previous.to) {
+				this.host.logger.error('Refusing to apply overlapping format edits');
+				return false;
+			}
+		}
+
+		editor.dispatch({ changes, scrollIntoView: false });
+		return true;
 	}
 
 	/**

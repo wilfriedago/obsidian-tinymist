@@ -6,6 +6,31 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [0.1.7] - 2026-09-18
+
+### Fixed
+
+- **Formatting no longer destroys the top of the file.** Tinymist's formatter
+  returns a single edit whose range starts at the first line it wants to
+  change, not at the start of the document. The plugin treated that edit's text
+  as the whole formatted document, which deleted everything above it — for a
+  Typst file, usually the `#import` and `#show` header.
+
+  Edits are now applied as ranged changes, so nothing outside a range is
+  touched, the caret is mapped through, and a format is a single undo step.
+  Overlapping edits are refused rather than partially applied, and the document
+  is re-checked after the request so a keystroke arriving mid-flight cannot make
+  the edits land in the wrong place.
+
+- **Selected text is readable in dark mode.** CodeMirror's base theme styles the
+  focused selection five classes deep and hard-codes a pale lavender, and it
+  picks light-vs-dark from its own flag rather than Obsidian's — so in a dark
+  vault that lavender sat behind light text. The plugin's rules now match that
+  specificity and derive the colour from Obsidian's accent, at an alpha that
+  tints rather than covers, in both light and dark mode.
+
+  `--tinymist-selection` is exposed for themes and snippets to override.
+
 ## [0.1.6] - 2026-09-18
 
 ### Fixed

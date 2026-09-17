@@ -10,6 +10,7 @@ at a real vault during development.
 | `basic.typ` | Valid document. The happy path for editing, preview, and export. |
 | `errors.typ` | Semantic compile errors. Diagnostics must appear in the editor. |
 | `syntax-error.typ` | A parse error, which Typst reports alone. |
+| `unformatted.typ` | Messy but valid source. Formatting it returns an edit whose range starts part way in, which is the case that used to delete the file's header. |
 | `imports.typ` + `imports/shared.typ` | Multi-file resolution without a `typst.toml`. |
 | `project/` | A real project: `typst.toml`, template, bibliography, and an image asset. Exercises per-project root detection. |
 | `pdf/existing.pdf` | A PDF that predates the plugin. Opening it must use Obsidian's native PDF viewer. |

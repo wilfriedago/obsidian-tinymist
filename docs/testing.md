@@ -108,6 +108,9 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 - [ ] Typing `#fig` offers completions from Tinymist.
 - [ ] Hovering a built-in function shows its signature.
 - [ ] **Typst: Format document** reformats the buffer.
+- [ ] Formatting `unformatted.typ` keeps its `#import` line. (A partial-range edit used to delete everything above the first change.)
+- [ ] Undo after formatting restores the document in one step.
+- [ ] Selecting text is readable in dark mode, and tinted with the theme's accent colour in both modes.
 - [ ] Edits persist: switch tabs and back, then reopen the vault.
 - [ ] Ctrl/Cmd+F opens CodeMirror's search panel (Obsidian's own find bar does not reach this view — expected).
 

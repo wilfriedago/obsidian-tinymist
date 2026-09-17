@@ -1,6 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { EditorState, Text } from '@codemirror/state';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+import { rangeToOffsets } from '../../src/editor/positions';
 
 import { LogSink, Logger } from '../../src/shared/logging';
 import { TinymistManager } from '../../src/typst/tinymist/manager';
@@ -13,6 +16,7 @@ import {
 	type ExportResult,
 	type PreviewJumpInfo,
 	type PublishDiagnosticsParams,
+	type TextEdit,
 	type StartPreviewResult,
 } from '../../src/typst/tinymist/protocol';
 import { absolutePathToFileUri } from '../../src/shared/paths';
@@ -233,6 +237,42 @@ describe.runIf(process.env['SKIP_TINYMIST_TESTS'] !== '1')('Tinymist, live', () 
 			options: { tabSize: 2, insertSpaces: true },
 		});
 		expect(edits === null || Array.isArray(edits)).toBe(true);
+	});
+
+	it('returns formatter edits whose range is not the whole document', async () => {
+		if (!available) return;
+
+		// The bug this pins: Tinymist returns a single edit, and it is tempting
+		// to treat its text as the formatted document. Its range starts at the
+		// first line that actually changes, so doing that deletes everything
+		// before it — for a Typst file, the `#import` header.
+		const uri = openDocument('unformatted.typ');
+		const original = readFileSync(resolve(VAULT, 'unformatted.typ'), 'utf8');
+
+		const edits = await client.request<TextEdit[] | null>('textDocument/formatting', {
+			textDocument: { uri },
+			options: { tabSize: 2, insertSpaces: true },
+		});
+
+		expect(Array.isArray(edits)).toBe(true);
+		expect(edits?.length).toBeGreaterThan(0);
+
+		const edit = edits![0]!;
+		const startsAtDocumentStart = edit.range.start.line === 0 && edit.range.start.character === 0;
+		expect(
+			startsAtDocumentStart,
+			'if this ever becomes true, the partial-range hazard is gone',
+		).toBe(false);
+
+		// Applying it as a range must preserve the header.
+		const document = Text.of(original.split('\n'));
+		const { from, to } = rangeToOffsets(document, edit.range);
+		const formatted = EditorState.create({ doc: document })
+			.update({ changes: { from, to, insert: edit.newText } })
+			.state.doc.toString();
+
+		expect(formatted).toContain('#import "@preview/example:0.1.0": thing');
+		expect(edit.newText).not.toContain('#import');
 	});
 
 	it('exports a PDF and returns its bytes', async () => {

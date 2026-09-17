@@ -558,17 +558,27 @@ export class TypstRuntime {
 
 		try {
 			const client = await this.ensureServer();
+
+			// The edits' positions describe the document as it is now, so a
+			// keystroke arriving while the request is in flight would make them
+			// land in the wrong place. Snapshotting is cheaper than trying to
+			// rebase them, and formatting is quick enough that a user rarely
+			// notices the refusal.
+			const before = view.getViewData();
 			const edits = await requestFormattingEdits(client, session.uriFor(vaultPath));
+
 			if (edits.length === 0) {
 				new Notice('Nothing to reformat');
 				return;
 			}
-			// Tinymist's formatter returns a single whole-document edit; using
-			// its text directly avoids replaying ranges against a buffer that
-			// may have changed while the request was in flight.
-			const replacement = edits.length === 1 ? edits[0]?.newText : undefined;
-			if (replacement !== undefined) {
-				view.replaceAll(replacement);
+
+			if (view.getViewData() !== before) {
+				new Notice('Document changed while formatting; nothing was applied');
+				return;
+			}
+
+			if (!view.applyTextEdits(edits)) {
+				new Notice('The formatter returned edits that could not be applied');
 			}
 		} catch (error) {
 			this.reportError(error);

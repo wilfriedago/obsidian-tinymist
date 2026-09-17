@@ -163,18 +163,32 @@ Specific unknowns:
 
 ---
 
-## R8. Formatting replaces the whole document
+## R8. Formatting replaced the whole document — fixed, and it was worse than rated
 
-**Severity: low**
+**Severity: was critical, now resolved**
 
-`formatDocument` applies Tinymist's formatting result by replacing the entire
-buffer when the server returns a single edit, rather than applying ranged edits.
-That is correct for typstyle's whole-document output, but it loses the selection
-and makes one large undo entry, and it would be wrong if a future Tinymist
-returned several ranged edits.
+This was filed as "low", on the assumption that Tinymist's formatter returns a
+whole-document edit. It does not. It returns a single edit whose range starts at
+the first line it wants to change:
 
-**Settled by:** applying edits as a proper CodeMirror transaction, mapping ranges
-and preserving the selection.
+```
+range: start {line: 2, character: 6} -> end {line: 11, character: 10}
+```
+
+Replacing the buffer with that edit's text therefore deleted everything above
+the first change — for a Typst document, usually the `#import` and `#show`
+header. A user hit this and lost a file's header.
+
+Fixed in 0.1.7: edits are applied as ranged CodeMirror changes, so nothing
+outside a range is touched, the selection is mapped through, and the whole
+format is one undo step. Overlapping edits are refused rather than applied
+partially, and the document is re-checked after the request so a keystroke
+arriving mid-flight cannot make the edits land in the wrong place.
+
+**The lesson worth keeping:** the original severity came from reasoning about
+what the formatter "should" return instead of asking it. The integration suite
+now asserts the range is *not* whole-document, so if that ever changes the test
+says so.
 
 ---
 
