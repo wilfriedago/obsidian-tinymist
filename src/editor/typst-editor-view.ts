@@ -50,6 +50,8 @@ export interface TypstEditorHost extends LanguageFeatureContext {
 	onDocumentClosed(vaultPath: VaultPath): void;
 	/** The cursor moved; used to drive source-to-preview scrolling. */
 	onCursorMoved(vaultPath: VaultPath, line: number, character: number): void;
+	/** The user asked for the preview from the editor's own header. */
+	onTogglePreviewRequested(vaultPath: VaultPath): void;
 	/** Diagnostics currently known for a document. */
 	getDiagnostics(vaultPath: VaultPath): readonly Diagnostic[];
 	readonly logger: Logger;
@@ -93,6 +95,16 @@ export class TypstEditorView extends TextFileView {
 	}
 
 	override async onOpen(): Promise<void> {
+		// A tab-header action, which is where Obsidian puts per-view controls
+		// (its own Markdown view uses the same slot for the reading toggle).
+		// Without it the preview is reachable only from the command palette.
+		this.addAction('book-open', 'Toggle Typst preview', () => {
+			const vaultPath = this.vaultPath;
+			if (vaultPath) {
+				this.host.onTogglePreviewRequested(vaultPath);
+			}
+		});
+
 		this.contentEl.empty();
 		this.contentEl.addClass('tinymist-editor-container');
 

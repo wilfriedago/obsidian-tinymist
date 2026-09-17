@@ -40,6 +40,10 @@ function scriptedClient(
 	return { client, requests };
 }
 
+function isCommand(request: RequestMessage, command: string): boolean {
+	return (request.params as { command?: string } | undefined)?.command === command;
+}
+
 function controller() {
 	const sink = new LogSink();
 	sink.setLevel('silent');
@@ -72,7 +76,7 @@ describe('PreviewController', () => {
 		const { client } = scriptedClient({ [TINYMIST_COMMAND.startPreview]: startResult });
 		const session = await controller().start(client, 'a.typ', '/v/a.typ', {
 			refreshOnType: true,
-			invertColors: false,
+			invertColors: 'never' as const,
 		});
 		expect(session.url).toBe('http://127.0.0.1:51285/');
 		expect(session.isPrimary).toBe(true);
@@ -85,11 +89,11 @@ describe('PreviewController', () => {
 		const c = controller();
 		const first = await c.start(client, 'a.typ', '/v/a.typ', {
 			refreshOnType: true,
-			invertColors: false,
+			invertColors: 'never' as const,
 		});
 		const second = await c.start(client, 'a.typ', '/v/a.typ', {
 			refreshOnType: true,
-			invertColors: false,
+			invertColors: 'never' as const,
 		});
 		expect(second).toBe(first);
 		expect(requests).toHaveLength(1);
@@ -101,8 +105,8 @@ describe('PreviewController', () => {
 		});
 		const c = controller();
 		const [a, b] = await Promise.all([
-			c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: false }),
-			c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: false }),
+			c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: 'never' as const }),
+			c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: 'never' as const }),
 		]);
 		expect(a).toBe(b);
 		expect(requests).toHaveLength(1);
@@ -113,8 +117,8 @@ describe('PreviewController', () => {
 			[TINYMIST_COMMAND.startPreview]: startResult,
 		});
 		const c = controller();
-		await c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: false });
-		await c.start(client, 'b.typ', '/v/b.typ', { refreshOnType: true, invertColors: false });
+		await c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: 'never' as const });
+		await c.start(client, 'b.typ', '/v/b.typ', { refreshOnType: true, invertColors: 'never' as const });
 
 		const second = requests[1] as RequestMessage;
 		const [args] = (second.params as { arguments: string[][] }).arguments;
@@ -126,7 +130,7 @@ describe('PreviewController', () => {
 		await expect(
 			controller().start(client, 'a.typ', '/v/a.typ', {
 				refreshOnType: true,
-				invertColors: false,
+				invertColors: 'never' as const,
 			}),
 		).rejects.toMatchObject({ code: 'preview-unavailable' });
 	});
@@ -136,7 +140,7 @@ describe('PreviewController', () => {
 		await expect(
 			controller().start(client, 'a.typ', '/v/a.typ', {
 				refreshOnType: true,
-				invertColors: false,
+				invertColors: 'never' as const,
 			}),
 		).rejects.toMatchObject({ code: 'preview-unavailable' });
 	});
@@ -146,7 +150,7 @@ describe('PreviewController', () => {
 			[TINYMIST_COMMAND.startPreview]: startResult,
 		});
 		const c = controller();
-		await c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: false });
+		await c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: 'never' as const });
 		await c.stop(client, 'a.typ');
 
 		expect(requests.at(-1)?.params).toMatchObject({ command: TINYMIST_COMMAND.killPreview });
@@ -159,7 +163,7 @@ describe('PreviewController', () => {
 		const c = controller();
 		const session = await c.start(client, 'a.typ', '/v/a.typ', {
 			refreshOnType: true,
-			invertColors: false,
+			invertColors: 'never' as const,
 		});
 		expect(c.vaultPathForTask(session.taskId)).toBe('a.typ');
 		c.forgetTask(session.taskId);
@@ -177,7 +181,7 @@ describe('PreviewController', () => {
 			[TINYMIST_COMMAND.startPreview]: startResult,
 		});
 		const c = controller();
-		await c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: false });
+		await c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: 'never' as const });
 		await c.scrollToSource(client, 'a.typ', '/v/a.typ', 3, 4);
 
 		expect(requests.at(-1)?.params).toMatchObject({
@@ -189,10 +193,41 @@ describe('PreviewController', () => {
 		});
 	});
 
+	it('restarts the task when the theme changes, and not otherwise', async () => {
+		const { client, requests } = scriptedClient({
+			[TINYMIST_COMMAND.startPreview]: startResult,
+		});
+		const c = controller();
+
+		const light = await c.start(client, 'a.typ', '/v/a.typ', {
+			refreshOnType: true,
+			invertColors: 'never',
+		});
+		expect(light.invertColors).toBe('never');
+
+		// Same strategy: the running task is reused.
+		await c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: 'never' });
+		expect(requests.filter((r) => isCommand(r, TINYMIST_COMMAND.startPreview))).toHaveLength(1);
+
+		// Different strategy: colour inversion is fixed at task start, so the
+		// old task has to be killed and a new one started.
+		const dark = await c.start(client, 'a.typ', '/v/a.typ', {
+			refreshOnType: true,
+			invertColors: 'always',
+		});
+		expect(dark.invertColors).toBe('always');
+		expect(requests.filter((r) => isCommand(r, TINYMIST_COMMAND.startPreview))).toHaveLength(2);
+		expect(requests.filter((r) => isCommand(r, TINYMIST_COMMAND.killPreview))).toHaveLength(1);
+
+		const last = requests.at(-1) as RequestMessage;
+		const [restartArgs] = (last.params as { arguments: string[][] }).arguments;
+		expect((restartArgs ?? []).join(' ')).toContain('--invert-colors always');
+	});
+
 	it('tolerates stopping with no client, as after a crash', async () => {
 		const { client } = scriptedClient({ [TINYMIST_COMMAND.startPreview]: startResult });
 		const c = controller();
-		await c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: false });
+		await c.start(client, 'a.typ', '/v/a.typ', { refreshOnType: true, invertColors: 'never' as const });
 		await expect(c.stop(null, 'a.typ')).resolves.toBeUndefined();
 		expect(c.activeCount).toBe(0);
 	});

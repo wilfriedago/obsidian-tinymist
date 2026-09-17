@@ -12,7 +12,7 @@ import type { ProjectRootStrategy } from '../typst/tinymist/config';
 export const SETTINGS_VERSION = 1;
 
 export type PreviewRefreshMode = 'onType' | 'onSave';
-export type PreviewTheme = 'follow-obsidian' | 'light';
+export type PreviewTheme = 'follow-obsidian' | 'light' | 'dark';
 
 export interface TypstSettings {
 	readonly version: number;
@@ -58,7 +58,7 @@ export const DEFAULT_SETTINGS: TypstSettings = {
 
 const PROJECT_ROOT_STRATEGIES: readonly ProjectRootStrategy[] = ['auto', 'vault', 'custom'];
 const PREVIEW_REFRESH_MODES: readonly PreviewRefreshMode[] = ['onType', 'onSave'];
-const PREVIEW_THEMES: readonly PreviewTheme[] = ['follow-obsidian', 'light'];
+const PREVIEW_THEMES: readonly PreviewTheme[] = ['follow-obsidian', 'light', 'dark'];
 
 /**
  * Turns whatever `loadData()` returned into valid settings.

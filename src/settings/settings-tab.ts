@@ -167,14 +167,19 @@ export class TypstSettingTab extends PluginSettingTab {
 			);
 
 		new Setting(containerEl)
-			.setName('Follow the app theme')
-			.setDesc('Invert the rendered page in dark mode instead of showing it on white.')
-			.addToggle((toggle) =>
-				toggle
-					.setValue(settings.previewTheme === 'follow-obsidian')
+			.setName('Theme')
+			.setDesc(
+				"Default colours for the rendered page. Each preview can override this from its own toolbar.",
+			)
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption('follow-obsidian', 'Follow the app')
+					.addOption('light', 'Light')
+					.addOption('dark', 'Dark')
+					.setValue(settings.previewTheme)
 					.onChange(async (value) => {
 						await this.host.updateSettings({
-							previewTheme: value ? 'follow-obsidian' : 'light',
+							previewTheme: value as TypstSettings['previewTheme'],
 						});
 					}),
 			);

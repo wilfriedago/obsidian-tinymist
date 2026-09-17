@@ -17,11 +17,11 @@ at a real vault during development.
 ## Use
 
 1. Open this folder as a vault in Obsidian.
-2. Build the plugin from the repository root, then link it in:
+2. Build the plugin from the repository root, then link `dist/` in as the
+   plugin folder:
    ```sh
    pnpm build
-   ln -sf "$PWD/main.js"       test-vault/.obsidian/plugins/tinymist/main.js
-   ln -sf "$PWD/manifest.json" test-vault/.obsidian/plugins/tinymist/manifest.json
-   ln -sf "$PWD/styles.css"    test-vault/.obsidian/plugins/tinymist/styles.css
+   mkdir -p test-vault/.obsidian/plugins
+   ln -sfn "$PWD/dist" test-vault/.obsidian/plugins/tinymist
    ```
 3. Enable **Tinymist** under **Settings → Community plugins**.

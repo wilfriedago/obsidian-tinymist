@@ -161,6 +161,9 @@ export function buildInitializationOptions(
 	return config;
 }
 
+/** The colour-inversion strategies Tinymist's preview accepts. */
+export type InvertColorsStrategy = 'never' | 'auto' | 'always';
+
 /** Arguments for `tinymist.doStartPreview`, in the CLI form the command expects. */
 export interface PreviewArgsOptions {
 	readonly taskId: string;
@@ -168,8 +171,13 @@ export interface PreviewArgsOptions {
 	readonly entryAbsolutePath: string;
 	/** `true` for every preview after the first, per Tinymist's primary-instance model. */
 	readonly notPrimary: boolean;
-	/** Follow Obsidian's theme by inverting colours in dark mode. */
-	readonly invertColors: 'never' | 'auto';
+	/**
+	 * How Tinymist should invert the rendered page's colours.
+	 * `never` is a light page, `always` a dark one, `auto` defers to the
+	 * viewer. These are the accepted values, verified against the preview
+	 * frontend's own `INVERT_COLORS_STRATEGY`.
+	 */
+	readonly invertColors: InvertColorsStrategy;
 	readonly refreshOnType: boolean;
 }
 

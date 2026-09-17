@@ -3,7 +3,11 @@ import { Notice, TFile, type App, type Plugin, type WorkspaceLeaf } from 'obsidi
 import { TypstEditorView, TYPST_EDITOR_VIEW_TYPE } from '../editor/typst-editor-view';
 import { requestFormattingEdits } from '../editor/language-features';
 import { PreviewController } from '../preview/preview-controller';
-import { TypstPreviewView, TYPST_PREVIEW_VIEW_TYPE } from '../preview/typst-preview-view';
+import {
+	TypstPreviewView,
+	TYPST_PREVIEW_VIEW_TYPE,
+	type PreviewThemeOverride,
+} from '../preview/typst-preview-view';
 import { DEFAULT_SETTINGS, migrateSettings, type TypstSettings } from '../settings/settings';
 import { TypstError, asTypstError } from '../shared/errors';
 import { LogSink, Logger } from '../shared/logging';
@@ -15,7 +19,7 @@ import { DocumentSession } from '../typst/documents/session';
 import { describeProject, resolveProject, vaultFileSystem } from '../typst/project/project';
 import type { TinymistClient } from '../typst/tinymist/client';
 import { TinymistManager, type TinymistState } from '../typst/tinymist/manager';
-import type { TinymistInitOptions } from '../typst/tinymist/config';
+import type { InvertColorsStrategy, TinymistInitOptions } from '../typst/tinymist/config';
 import {
 	TINYMIST_NOTIFICATION,
 	type CompileStatusParams,
@@ -146,6 +150,11 @@ export class TypstRuntime {
 					onCursorMoved: (vaultPath, line, character) => {
 						void this.onCursorMoved(vaultPath, line, character);
 					},
+					onTogglePreviewRequested: (vaultPath) => {
+						void this.togglePreview(vaultPath).catch((error: unknown) => {
+							this.reportError(error);
+						});
+					},
 				}),
 		);
 
@@ -154,7 +163,8 @@ export class TypstRuntime {
 			(leaf: WorkspaceLeaf) =>
 				new TypstPreviewView(leaf, {
 					logger: this.logger.child('preview'),
-					resolvePreviewUrl: (vaultPath) => this.resolvePreviewUrl(vaultPath),
+					resolvePreviewUrl: (vaultPath, themeOverride) =>
+						this.resolvePreviewUrl(vaultPath, themeOverride),
 					releasePreview: (vaultPath) => {
 						void this.previews.stop(this.manager?.getClient() ?? null, vaultPath);
 					},
@@ -412,7 +422,10 @@ export class TypstRuntime {
 		await this.openPreview(vaultPath);
 	}
 
-	private async resolvePreviewUrl(vaultPath: VaultPath): Promise<string> {
+	private async resolvePreviewUrl(
+		vaultPath: VaultPath,
+		themeOverride: PreviewThemeOverride,
+	): Promise<string> {
 		const client = await this.ensureServer();
 		const session = this.session;
 		if (!session) {
@@ -434,11 +447,28 @@ export class TypstRuntime {
 			session.absolutePathFor(vaultPath),
 			{
 				refreshOnType: this.settings.previewRefresh === 'onType',
-				invertColors:
-					this.settings.previewTheme === 'follow-obsidian' && this.isDarkMode(),
+				invertColors: this.resolveInvertColors(themeOverride),
 			},
 		);
 		return preview.url;
+	}
+
+	/**
+	 * Turns a per-preview override, or the setting when there is none, into the
+	 * strategy Tinymist takes. A dark page is produced by inverting, which is
+	 * why "dark" maps to `always`.
+	 */
+	private resolveInvertColors(themeOverride: PreviewThemeOverride): InvertColorsStrategy {
+		const theme = themeOverride ?? this.settings.previewTheme;
+		switch (theme) {
+			case 'light':
+				return 'never';
+			case 'dark':
+				return 'always';
+			case 'follow-obsidian':
+			default:
+				return this.isDarkMode() ? 'always' : 'never';
+		}
 	}
 
 	async exportPdf(vaultPath: VaultPath): Promise<void> {

@@ -40,19 +40,27 @@ jobs:
             exit 1
           fi
 
+      - name: Check the release artifacts exist
+        run: |
+          test -f dist/main.js
+          test -f dist/manifest.json
+          test -f dist/styles.css
+
       - name: Attest build provenance
         uses: actions/attest@v4
         with:
           subject-path: |
-            main.js
-            styles.css
+            dist/main.js
+            dist/styles.css
 
       - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           tag="${GITHUB_REF#refs/tags/}"
+          # Uploaded from dist/, but each asset lands under its basename, which
+          # is what Obsidian downloads: main.js, manifest.json, styles.css.
           gh release create "$tag" \
             --title="$tag" \
             --draft \
-            main.js manifest.json styles.css
+            dist/main.js dist/manifest.json dist/styles.css

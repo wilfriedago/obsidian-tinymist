@@ -151,8 +151,11 @@ an ungraceful exit. Both paths are covered by tests.
 - **Package manager:** pnpm. `pnpm-workspace.yaml` lists `esbuild` under
   `onlyBuiltDependencies`, because pnpm 10 blocks install scripts by default and
   esbuild needs its postinstall to place the platform binary.
-- **Bundler:** esbuild, producing a single CommonJS `main.js`. The CodeMirror,
-  Lezer, `obsidian`, `electron` and Node builtin modules are externals.
+- **Bundler:** esbuild, producing a single CommonJS bundle at `dist/main.js`.
+  The build also copies `manifest.json` and `styles.css` into `dist/`, so that
+  directory *is* the installable plugin folder and can be symlinked straight
+  into a vault. The CodeMirror, Lezer, `obsidian`, `electron` and Node builtin
+  modules are externals.
 - **Linting:** oxlint (`pnpm lint`) is the linter. It runs its own correctness
   and suspicious rule sets *and* 23 of the `eslint-plugin-obsidianmd` review
   rules, loaded through oxlint's `jsPlugins` support (which is ESLint v9

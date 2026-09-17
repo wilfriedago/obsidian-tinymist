@@ -82,10 +82,11 @@ yet** — it is the gate before a release, and the reason
 ```sh
 pnpm install
 pnpm build
-mkdir -p test-vault/.obsidian/plugins/tinymist
-ln -sf "$PWD/main.js"       test-vault/.obsidian/plugins/tinymist/main.js
-ln -sf "$PWD/manifest.json" test-vault/.obsidian/plugins/tinymist/manifest.json
-ln -sf "$PWD/styles.css"    test-vault/.obsidian/plugins/tinymist/styles.css
+
+# `dist/` is the whole plugin folder, so one symlink is enough and every
+# rebuild is picked up without re-copying anything.
+mkdir -p test-vault/.obsidian/plugins
+ln -sfn "$PWD/dist" test-vault/.obsidian/plugins/tinymist
 ```
 
 Open `test-vault/` as a vault, then enable **Tinymist** under
@@ -112,6 +113,8 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 
 **Preview**
 
+- [ ] The **book** button in the Typst editor's tab header opens the preview.
+- [ ] Pressing it again closes the preview.
 - [ ] **Typst: Open preview** opens a preview in a split, as a normal leaf.
 - [ ] The document renders.
 - [ ] Typing updates the preview without saving.
@@ -121,6 +124,10 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 - [ ] Moving the cursor scrolls the preview to match.
 - [ ] Clicking rendered content moves the cursor in the source.
 - [ ] In dark mode the page follows the theme.
+- [ ] The preview toolbar floats over the top-right of the page and dims when the pointer is elsewhere.
+- [ ] The theme button steps follow-the-app → light → dark → follow-the-app, and the page changes each time.
+- [ ] Two previews can hold different themes at once.
+- [ ] A preview's theme survives closing and reopening the vault.
 - [ ] Two `.typ` files can be previewed at once, each showing its own document.
 
 **Projects**

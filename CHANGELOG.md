@@ -17,13 +17,16 @@ form Obsidian requires.
   lifecycle, LSP client, crash detection with backed-off restart, and graceful
   shutdown that escalates to a forced kill.
 - Typst preview as an Obsidian workspace leaf, rendered by Tinymist's own
-  preview server in an isolated loopback iframe.
+  preview server in an isolated loopback iframe, reachable from a button in the
+  editor's tab header as well as from the command palette.
 - Source ↔ preview synchronisation in both directions, using Tinymist's
   existing span mapping.
 - PDF export into the vault through Obsidian's Vault API, with a configurable
   destination and a non-clobbering default.
 - Project root detection mirroring Tinymist's own resolver, with automatic,
   vault, and custom strategies.
+- Per-preview theme control: follow the app, light, or dark, from a floating
+  toolbar over the rendered page.
 - Status-bar indicator for server and compile state.
 - Settings tab covering the executable, project strategy, preview behaviour,
   diagnostics, export destination, fonts, and logging.

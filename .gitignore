@@ -8,7 +8,7 @@ node_modules
 .pnpm-store
 
 # Build output. Released via GitHub releases, never committed.
-main.js
+dist/
 *.map
 
 # Obsidian plugin runtime data
@@ -17,7 +17,7 @@ data.json
 # Development vault runtime state
 test-vault/.obsidian/workspace.json
 test-vault/.obsidian/workspace-mobile.json
-test-vault/.obsidian/plugins/tinymist/main.js
+test-vault/.obsidian/plugins/tinymist
 test-vault/.obsidian/plugins/tinymist/data.json
 
 # Typst / Tinymist build artifacts

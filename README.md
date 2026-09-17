@@ -59,8 +59,8 @@ cd obsidian-tinymist
 pnpm install
 pnpm build
 
-mkdir -p /path/to/vault/.obsidian/plugins/tinymist
-cp main.js manifest.json styles.css /path/to/vault/.obsidian/plugins/tinymist/
+# `dist/` is the complete plugin folder: main.js, manifest.json, styles.css.
+cp -r dist /path/to/vault/.obsidian/plugins/tinymist
 ```
 
 Then enable **Tinymist** under **Settings → Community plugins**.
@@ -69,6 +69,15 @@ Then enable **Tinymist** under **Settings → Community plugins**.
 
 Open any `.typ` file. Tinymist starts on first use, and the status bar shows
 what it is doing.
+
+The Typst editor's tab header carries a **book** button that opens and closes
+the preview, so the common case needs no command. Everything else is in the
+command palette.
+
+The preview's own controls float over the top-right of the rendered page:
+refresh, open source, and a theme button that steps between following the app,
+light, and dark. A theme change restarts that preview, because Tinymist fixes
+colour inversion when the preview starts.
 
 | Command | Does |
 | --- | --- |
@@ -139,7 +148,7 @@ a PDF renderer — opening any PDF, exported or not, uses Obsidian's own viewer.
 | Tinymist executable | empty | Empty means "find `tinymist` on `PATH`" |
 | Project root | Automatic | See [Projects](#projects) |
 | Preview refresh | As you type | Or on save |
-| Follow the app theme | on | Inverts the rendered page in dark mode |
+| Preview theme | Follow the app | Light, dark, or follow Obsidian. Each preview can override this from its own toolbar |
 | Sync with the editor | on | Cursor ↔ preview navigation |
 | Show diagnostics | on | Underline compiler errors |
 | Enable the formatter | on | |

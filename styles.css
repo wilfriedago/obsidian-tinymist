@@ -82,21 +82,58 @@
 /* ---- Preview ------------------------------------------------------------ */
 
 .tinymist-preview-container {
-	display: flex;
-	flex-direction: column;
+	position: relative;
 	height: 100%;
 	padding: 0;
 	overflow: hidden;
 }
 
+/* The rendered document fills the leaf; the toolbar floats above it so no
+   vertical space is spent on chrome. */
+.tinymist-preview-body {
+	position: absolute;
+	inset: 0;
+}
+
+.tinymist-preview-frame {
+	width: 100%;
+	height: 100%;
+	border: none;
+	display: block;
+	background-color: var(--background-primary);
+}
+
 .tinymist-preview-toolbar {
+	position: absolute;
+	top: var(--size-4-2);
+	right: var(--size-4-2);
+	z-index: var(--layer-popover);
+
 	display: flex;
 	align-items: center;
-	gap: var(--size-4-2);
-	padding: var(--size-4-1) var(--size-4-2);
-	border-bottom: 1px solid var(--background-modifier-border);
+	gap: var(--size-2-2);
+	padding: var(--size-2-2);
+
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
 	background-color: var(--background-secondary);
-	flex: 0 0 auto;
+	box-shadow: var(--shadow-s);
+
+	/* Dimmed until the pointer is nearby, so it stays out of the way of the
+	   document without ever disappearing entirely. */
+	opacity: 0.45;
+	transition: opacity 120ms ease-in-out;
+}
+
+.tinymist-preview-container:hover .tinymist-preview-toolbar,
+.tinymist-preview-toolbar:focus-within {
+	opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.tinymist-preview-toolbar {
+		transition: none;
+	}
 }
 
 .tinymist-preview-button {
@@ -109,6 +146,7 @@
 	background-color: transparent;
 	color: var(--text-muted);
 	cursor: pointer;
+	box-shadow: none;
 }
 
 .tinymist-preview-button:hover {
@@ -116,28 +154,21 @@
 	color: var(--text-normal);
 }
 
+.tinymist-preview-button .svg-icon {
+	width: var(--icon-s);
+	height: var(--icon-s);
+}
+
 .tinymist-preview-status {
-	margin-left: auto;
+	padding-inline: var(--size-2-2);
 	color: var(--text-faint);
 	font-size: var(--font-ui-smaller);
-}
-
-.tinymist-preview-body {
-	flex: 1 1 auto;
-	min-height: 0;
-	position: relative;
-}
-
-.tinymist-preview-frame {
-	width: 100%;
-	height: 100%;
-	border: none;
-	display: block;
-	background-color: var(--background-primary);
+	white-space: nowrap;
 }
 
 .tinymist-preview-message {
 	padding: var(--size-4-4);
+	padding-top: calc(var(--size-4-4) * 2);
 	color: var(--text-muted);
 	font-size: var(--font-ui-small);
 	white-space: pre-wrap;

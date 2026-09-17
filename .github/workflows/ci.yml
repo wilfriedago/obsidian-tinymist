@@ -49,9 +49,9 @@ jobs:
 
       - name: Check the release artifacts exist
         run: |
-          test -f main.js
-          test -f manifest.json
-          test -f styles.css
+          test -f dist/main.js
+          test -f dist/manifest.json
+          test -f dist/styles.css
 
   integration:
     # Exercises the adapter against a real Tinymist, which is the only way to

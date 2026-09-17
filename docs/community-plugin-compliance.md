@@ -161,7 +161,7 @@ view. Tracked as [R1](./risks.md#r1-plugin-name-reuses-an-upstream-project-name)
 
 | Requirement | Status |
 | --- | --- |
-| `main.js`, `manifest.json`, `styles.css` as release assets | ✅ `.github/workflows/release.yml` |
+| `main.js`, `manifest.json`, `styles.css` as release assets | ✅ `.github/workflows/release.yml` uploads them from `dist/`; each asset lands under its basename, which is what Obsidian downloads |
 | Release tag matches `manifest.json` version exactly, no `v` prefix | ✅ Verified by the workflow before publishing; `.npmrc` sets `tag-version-prefix=""` |
 | `main.js` not committed | ✅ In `.gitignore` |
 | `versions.json` maintained | ✅ Updated by `version-bump.mjs`, checked in CI |

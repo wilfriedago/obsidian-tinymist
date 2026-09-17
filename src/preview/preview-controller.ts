@@ -2,7 +2,7 @@ import { TypstError, asTypstError } from '../shared/errors';
 import type { Logger } from '../shared/logging';
 import type { VaultPath } from '../shared/paths';
 import type { TinymistClient } from '../typst/tinymist/client';
-import { buildPreviewArgs } from '../typst/tinymist/config';
+import { buildPreviewArgs, type InvertColorsStrategy } from '../typst/tinymist/config';
 import {
 	TINYMIST_COMMAND,
 	type PreviewScrollRequest,
@@ -24,12 +24,14 @@ export interface PreviewSession {
 	/** The URL an iframe should load. Always loopback. */
 	readonly url: string;
 	readonly isPrimary: boolean;
+	/** The strategy this task was started with, so a change can be detected. */
+	readonly invertColors: InvertColorsStrategy;
 }
 
 export interface PreviewOptions {
 	readonly refreshOnType: boolean;
-	/** Invert colours so the rendered page follows Obsidian's dark theme. */
-	readonly invertColors: boolean;
+	/** How Tinymist should invert the rendered page's colours. */
+	readonly invertColors: InvertColorsStrategy;
 }
 
 export class PreviewController {
@@ -56,7 +58,18 @@ export class PreviewController {
 	): Promise<PreviewSession> {
 		const existing = this.sessions.get(vaultPath);
 		if (existing) {
-			return existing;
+			if (existing.invertColors === options.invertColors) {
+				return existing;
+			}
+			// Colour inversion is fixed when the task starts: the strategy is a
+			// CLI argument, and the preview frontend only exposes it as a local
+			// keypress we cannot reach across the iframe's origin. Changing the
+			// theme therefore means replacing the task.
+			this.logger.info(
+				'Restarting preview for a theme change',
+				`task=${existing.taskId} ${existing.invertColors} -> ${options.invertColors}`,
+			);
+			await this.stop(client, vaultPath);
 		}
 
 		const pending = this.starting.get(vaultPath);
@@ -94,7 +107,7 @@ export class PreviewController {
 			taskId,
 			entryAbsolutePath: absolutePath,
 			notPrimary,
-			invertColors: options.invertColors ? 'auto' : 'never',
+			invertColors: options.invertColors,
 			refreshOnType: options.refreshOnType,
 		});
 
@@ -125,6 +138,7 @@ export class PreviewController {
 			// from `window.location`, so this one URL wires up both channels.
 			url: `http://127.0.0.1:${port}/`,
 			isPrimary: result.isPrimary ?? !notPrimary,
+			invertColors: options.invertColors,
 		};
 
 		this.sessions.set(vaultPath, session);

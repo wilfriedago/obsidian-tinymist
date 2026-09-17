@@ -30,7 +30,6 @@ export default defineConfig(
 	globalIgnores([
 		'node_modules',
 		'dist',
-		'main.js',
 		'test-vault',
 		'tests',
 		'docs',

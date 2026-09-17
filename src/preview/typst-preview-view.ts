@@ -22,14 +22,22 @@ export const TYPST_PREVIEW_VIEW_TYPE = 'typst-preview';
  * that matters.
  */
 
+/**
+ * A per-preview theme choice. `null` means "use the plugin setting", which is
+ * the default and follows Obsidian's own light/dark mode.
+ */
+export type PreviewThemeOverride = 'light' | 'dark' | null;
+
 export interface PreviewViewState {
 	/** Vault-relative path of the previewed `.typ` document. */
 	vaultPath: VaultPath | null;
+	/** Per-leaf theme choice, persisted with the workspace. */
+	themeOverride?: PreviewThemeOverride;
 }
 
 export interface TypstPreviewHost {
 	/** Resolves a preview URL, starting a task if needed. */
-	resolvePreviewUrl(vaultPath: VaultPath): Promise<string>;
+	resolvePreviewUrl(vaultPath: VaultPath, themeOverride: PreviewThemeOverride): Promise<string>;
 	/** The view is closing; release the task for this document. */
 	releasePreview(vaultPath: VaultPath): void;
 	/** Opens the source document beside this preview. */
@@ -39,9 +47,11 @@ export interface TypstPreviewHost {
 
 export class TypstPreviewView extends ItemView {
 	private vaultPath: VaultPath | null = null;
+	private themeOverride: PreviewThemeOverride = null;
 	private frame: HTMLIFrameElement | null = null;
 	private statusEl: HTMLElement | null = null;
 	private bodyEl: HTMLElement | null = null;
+	private themeButton: HTMLElement | null = null;
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -74,15 +84,24 @@ export class TypstPreviewView extends ItemView {
 
 	/** Persisted with the workspace, so the leaf survives a restart. */
 	override getState(): Record<string, unknown> {
-		return { ...super.getState(), vaultPath: this.vaultPath };
+		return {
+			...super.getState(),
+			vaultPath: this.vaultPath,
+			themeOverride: this.themeOverride,
+		};
 	}
 
 	override async setState(state: unknown, result: ViewStateResult): Promise<void> {
-		const requested = (state as PreviewViewState | undefined)?.vaultPath ?? null;
+		const requested = state as PreviewViewState | undefined;
+		const requestedPath = requested?.vaultPath ?? null;
+		const requestedTheme = requested?.themeOverride ?? null;
 		await super.setState(state, result);
 
-		if (requested !== this.vaultPath) {
-			this.vaultPath = requested;
+		const changed = requestedPath !== this.vaultPath || requestedTheme !== this.themeOverride;
+		this.vaultPath = requestedPath;
+		this.themeOverride = requestedTheme;
+
+		if (changed) {
 			await this.render();
 		}
 	}
@@ -91,6 +110,9 @@ export class TypstPreviewView extends ItemView {
 		this.contentEl.empty();
 		this.contentEl.addClass('tinymist-preview-container');
 
+		// The body is created first so the toolbar, which floats above it, is
+		// painted on top without needing a stacking-context workaround.
+		this.bodyEl = this.contentEl.createDiv({ cls: 'tinymist-preview-body' });
 		const toolbar = this.contentEl.createDiv({ cls: 'tinymist-preview-toolbar' });
 
 		const reload = toolbar.createEl('button', {
@@ -113,8 +135,14 @@ export class TypstPreviewView extends ItemView {
 			}
 		});
 
+		const theme = toolbar.createEl('button', { cls: 'tinymist-preview-button' });
+		this.themeButton = theme;
+		this.registerDomEvent(theme, 'click', () => {
+			void this.cycleTheme();
+		});
+		this.updateThemeButton();
+
 		this.statusEl = toolbar.createDiv({ cls: 'tinymist-preview-status' });
-		this.bodyEl = this.contentEl.createDiv({ cls: 'tinymist-preview-body' });
 
 		await this.render();
 	}
@@ -152,7 +180,7 @@ export class TypstPreviewView extends ItemView {
 
 		let url: string;
 		try {
-			url = await this.host.resolvePreviewUrl(this.vaultPath);
+			url = await this.host.resolvePreviewUrl(this.vaultPath, this.themeOverride);
 		} catch (error) {
 			const message =
 				error instanceof TypstError ? error.toUserMessage() : 'The preview could not start.';
@@ -217,6 +245,37 @@ export class TypstPreviewView extends ItemView {
 
 	getPreviewedPath(): VaultPath | null {
 		return this.vaultPath;
+	}
+
+	/**
+	 * Steps the preview's theme: follow the app, then light, then dark.
+	 *
+	 * Tinymist fixes colour inversion when the preview task starts, so each
+	 * step replaces the task. That costs a recompile, which is why this is a
+	 * deliberate button press rather than something tied to scrolling.
+	 */
+	private async cycleTheme(): Promise<void> {
+		const next: PreviewThemeOverride =
+			this.themeOverride === null ? 'light' : this.themeOverride === 'light' ? 'dark' : null;
+		this.themeOverride = next;
+		this.updateThemeButton();
+		await this.render();
+	}
+
+	private updateThemeButton(): void {
+		const button = this.themeButton;
+		if (!button) {
+			return;
+		}
+		const { icon, label } =
+			this.themeOverride === 'light'
+				? { icon: 'sun', label: 'Preview theme: light. Select for dark.' }
+				: this.themeOverride === 'dark'
+					? { icon: 'moon', label: 'Preview theme: dark. Select to follow the app.' }
+					: { icon: 'monitor', label: 'Preview theme: follows the app. Select for light.' };
+
+		setIcon(button, icon);
+		button.setAttribute('aria-label', label);
 	}
 
 	/** Reports a problem without stealing focus from the editor. */
