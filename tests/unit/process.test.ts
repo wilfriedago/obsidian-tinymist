@@ -43,8 +43,6 @@ function setup(options: { spawnThrows?: boolean } = {}) {
 		},
 		isExecutableFile: async () => true,
 		findOnPath: async () => null,
-		createTempDirectory: async () => '/tmp/x',
-		removeDirectory: async () => undefined,
 	};
 
 	const sink = new LogSink();
@@ -94,8 +92,6 @@ describe('TinymistProcess startup', () => {
 				spawn,
 				isExecutableFile: async () => true,
 				findOnPath: async () => null,
-				createTempDirectory: async () => '/tmp',
-				removeDirectory: async () => undefined,
 			},
 			new Logger(sink, 'test'),
 			{ executablePath: '/usr/bin/tinymist', cwd: '/vault' },

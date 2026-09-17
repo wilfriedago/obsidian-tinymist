@@ -29,8 +29,6 @@ function fakeHost(overrides: Partial<DesktopHost> = {}): DesktopHost {
 		spawn: () => ({}) as SpawnedProcess,
 		isExecutableFile: async () => false,
 		findOnPath: async () => null,
-		createTempDirectory: async () => '/tmp/x',
-		removeDirectory: async () => undefined,
 		...overrides,
 	};
 }

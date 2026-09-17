@@ -1,9 +1,7 @@
 import { FileSystemAdapter, Platform, type App } from 'obsidian';
 import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
-import { access, constants, mkdtemp, rm, stat } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { delimiter } from 'node:path';
+import { access, constants, stat } from 'node:fs/promises';
+import { delimiter, join } from 'node:path';
 
 import { TypstError } from '../shared/errors';
 
@@ -14,6 +12,18 @@ import { TypstError } from '../shared/errors';
  * which is what keeps a future non-desktop backend (a WASM compiler, say) a
  * matter of supplying a different implementation rather than a rewrite. The
  * manifest sets `isDesktopOnly: true` because of this file.
+ *
+ * The surface is deliberately as small as launching an external program allows:
+ *
+ * - `node:child_process` is used only to `spawn` the configured Tinymist
+ *   executable, always with `shell: false` and an argument array. No string is
+ *   ever handed to a shell, so nothing in a document, a filename, or a setting
+ *   can be interpreted as a command.
+ * - `node:fs/promises` is used only to *read metadata* — `stat` and `access` —
+ *   when checking whether a candidate path is an executable file. This module
+ *   has no way to read file contents, and no way to write or delete anything.
+ *   Every byte the plugin reads or writes in the vault goes through Obsidian's
+ *   Vault API instead.
  */
 
 /** A spawned child process, narrowed to what the plugin actually uses. */
@@ -45,10 +55,6 @@ export interface DesktopHost {
 	isExecutableFile(path: string): Promise<boolean>;
 	/** Looks an executable name up on `PATH`, returning the first hit. */
 	findOnPath(executableName: string): Promise<string | null>;
-	/** Creates a private temporary directory for preview/compile artifacts. */
-	createTempDirectory(prefix: string): Promise<string>;
-	/** Removes a directory created by {@link createTempDirectory}. */
-	removeDirectory(path: string): Promise<void>;
 }
 
 /**
@@ -128,13 +134,5 @@ class NodeDesktopHost implements DesktopHost {
 		}
 
 		return null;
-	}
-
-	async createTempDirectory(prefix: string): Promise<string> {
-		return await mkdtemp(join(tmpdir(), prefix));
-	}
-
-	async removeDirectory(path: string): Promise<void> {
-		await rm(path, { recursive: true, force: true });
 	}
 }

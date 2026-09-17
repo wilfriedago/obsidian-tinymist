@@ -157,6 +157,23 @@ view. Tracked as [R1](./risks.md#r1-plugin-name-reuses-an-upstream-project-name)
 
 ---
 
+## Automated review findings
+
+The directory's automated review of 0.1.0 (commit `ffde801`) reported the
+following. Everything is either fixed in 0.1.1 or is an inherent, disclosed
+capability.
+
+| Finding | Status |
+| --- | --- |
+| **Manifest warning** — `authorUrl` must not point at the plugin's own repository | **Fixed** in 0.1.1: it is now `https://github.com/wilfriedago`. `scripts/validate-manifest.mjs` now fails the build on a repository URL, so it cannot regress. |
+| **Release recommendation** — the release has no description | **Fixed**: 0.1.1 ships release notes. |
+| **Behaviour warning** — direct filesystem access via Node `fs` | **Narrowed and disclosed.** The dead `createTempDirectory`/`removeDirectory` helpers were removed in 0.1.1, leaving only `stat` and `access`. The plugin now has **no** ability to read file contents or to write or delete anything through Node. Everything in the vault goes through the Vault API. |
+| **Behaviour warning** — shell execution via `child_process` | **Inherent and disclosed.** The plugin must launch Tinymist. `spawn` is always called with `shell: false` and an argument array, so nothing from a document, filename, or setting can be interpreted as a command. No shell is ever invoked, and no program other than the configured executable is ever run. |
+| `main.js` artifact attestation | ✅ Pass |
+| `styles.css` artifact attestation | ✅ Pass |
+| Vault read via the Obsidian API | ✅ Pass |
+| No vulnerable dependencies | ✅ Pass |
+
 ## Release process
 
 | Requirement | Status |

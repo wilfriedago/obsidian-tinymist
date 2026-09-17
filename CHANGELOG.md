@@ -6,7 +6,26 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
-## [Unreleased]
+## [0.1.1] - 2026-09-17
+
+### Fixed
+
+- `authorUrl` now points at the author's profile rather than the plugin's own
+  repository, as the community directory requires. `validate:manifest` fails
+  the build on a repository URL so it cannot regress.
+
+### Changed
+
+- Narrowed the plugin's filesystem surface. The unused temporary-directory
+  helpers were removed from the platform layer, leaving only the `stat` and
+  `access` metadata checks needed to validate the Tinymist executable. The
+  plugin now has no ability to read file contents, or to write or delete
+  anything, outside Obsidian's Vault API.
+- The README now states precisely what the plugin does outside the vault, and
+  why: one `spawn` of the configured executable, never through a shell, and
+  read-only metadata checks.
+
+## [0.1.0] - 2026-09-17
 
 ### Added
 
@@ -38,4 +57,3 @@ form Obsidian requires.
 
 - Requires Tinymist 0.13.0 or newer, installed separately.
 - Desktop only.
-- Not yet verified inside a running Obsidian; see `docs/risks.md`.

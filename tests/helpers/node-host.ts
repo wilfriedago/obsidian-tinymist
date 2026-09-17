@@ -54,6 +54,13 @@ export class NodeTestHost implements DesktopHost {
 		return null;
 	}
 
+	/**
+	 * Temporary-directory helpers for tests only.
+	 *
+	 * These are deliberately *not* on `DesktopHost`: the shipped plugin has no
+	 * ability to create or delete directories, and keeping these out of the
+	 * interface is what guarantees that.
+	 */
 	async createTempDirectory(prefix: string): Promise<string> {
 		return await mkdtemp(join(tmpdir(), prefix));
 	}

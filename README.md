@@ -165,24 +165,37 @@ installed, everything works offline.
 
 ### What the plugin touches
 
-Inside your vault, through Obsidian's Vault API:
+Obsidian's automated review flags two capabilities in this plugin. Both are
+inherent to driving an external compiler, and both are disclosed here as the
+developer policies require. This is exactly what they amount to.
+
+**It launches one external program.** The plugin calls Node's
+`child_process.spawn` to start the Tinymist executable you configured, and
+nothing else. It is always called with `shell: false` and an argument array, so
+no string from a document, a filename, or a setting is ever handed to a shell
+and no part of it can be read as a command. The plugin runs no shell, and runs
+no program other than the one at the path you chose.
+
+**It reads file metadata outside the vault.** The plugin calls `stat` and
+`access` to answer one question: is this path an executable file? That is how a
+configured path is validated and how `tinymist` is found on your `PATH`. The
+platform layer that holds these calls has no ability to read file contents, and
+no ability to write or delete anything, anywhere. Every byte the plugin reads
+or writes in your vault goes through Obsidian's Vault API instead.
+
+Inside your vault, through that API, the plugin:
 
 - reads the `.typ` files you open;
 - writes PDFs you explicitly export;
 - stores its settings in `.obsidian/plugins/tinymist/data.json`, and stages
   exports in `.obsidian/plugins/tinymist/.staging`.
 
-Outside your vault, as the directory's disclosure rule requires:
-
-- **the Tinymist executable**, which lives outside the vault by nature. The
-  plugin reads your configured path, or searches `PATH` for `tinymist`. It
-  starts that program directly, with arguments passed as a list and no shell.
-- **whatever Tinymist itself reads** to compile your document: system fonts (if
-  "Use system fonts" is on) and Typst's package cache for any `#import` from a
-  package. That is Typst's own behaviour, not something the plugin adds. Note
-  that Tinymist may fetch a Typst package from the network the first time a
-  document imports one — a Typst feature, outside the plugin's control, and the
-  only way anything here can reach the internet.
+**What Tinymist itself reads** once launched is Typst's own behaviour, not
+something the plugin adds: system fonts, if "Use system fonts" is on, and
+Typst's package cache for any `#import` from a package. Tinymist may fetch a
+Typst package from the network the first time a document imports one. That is a
+Typst feature, outside the plugin's control, and the only path by which
+anything here can reach the internet.
 
 The plugin does not scan your filesystem, read unrelated files, collect any
 data, or send anything anywhere.

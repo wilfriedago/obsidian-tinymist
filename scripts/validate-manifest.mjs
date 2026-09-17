@@ -85,6 +85,20 @@ check(
 	`package.json is ${pkg.version} but manifest.json is ${manifest.version}`,
 );
 
+// authorUrl must be a personal or organization profile, not this repository.
+// The directory's automated review warns about this, so catch it here first.
+if (typeof manifest.authorUrl === 'string') {
+	const repoName = manifest.authorUrl.replace(/\/+$/, '').split('/').slice(3).join('/');
+	check(
+		/^https?:\/\//.test(manifest.authorUrl),
+		'authorUrl must be a URL',
+	);
+	check(
+		repoName.split('/').length < 2,
+		`authorUrl "${manifest.authorUrl}" points at a repository; a personal or organization profile is expected`,
+	);
+}
+
 // fundingUrl is only for genuine funding links.
 check(
 	manifest.fundingUrl === undefined || typeof manifest.fundingUrl !== 'string' || /^https?:\/\//.test(manifest.fundingUrl),

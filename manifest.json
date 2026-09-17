@@ -1,10 +1,10 @@
 {
 	"id": "tinymist",
 	"name": "Tinymist",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"minAppVersion": "1.7.2",
 	"description": "Edit, preview, and export Typst documents using the Tinymist language server.",
 	"author": "Wilfried AGO",
-	"authorUrl": "https://github.com/wilfriedago/obsidian-tinymist",
+	"authorUrl": "https://github.com/wilfriedago",
 	"isDesktopOnly": true
 }
