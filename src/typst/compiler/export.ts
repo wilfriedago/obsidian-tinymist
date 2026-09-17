@@ -200,8 +200,5 @@ export function decodeBase64(base64: string): ArrayBuffer {
 	const buffer = Buffer.from(base64, 'base64');
 	// `buffer` may be a view into a larger pooled allocation, so the exact
 	// range is copied out rather than handing over the whole backing store.
-	return buffer.buffer.slice(
-		buffer.byteOffset,
-		buffer.byteOffset + buffer.byteLength,
-	) as ArrayBuffer;
+	return buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
 }

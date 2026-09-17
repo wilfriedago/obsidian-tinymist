@@ -349,6 +349,11 @@ const CLIENT_CAPABILITIES = {
 	general: {
 		positionEncodings: ['utf-16'],
 	},
+	window: {
+		// Tinymist uses this to reveal a source location when the preview is
+		// clicked, unless `customizedShowDocument` routes it to a notification.
+		showDocument: { support: true },
+	},
 	workspace: {
 		configuration: true,
 		didChangeConfiguration: { dynamicRegistration: false },

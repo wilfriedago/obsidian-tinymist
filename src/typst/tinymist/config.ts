@@ -129,6 +129,12 @@ export function buildInitializationOptions(
 		// The plugin renders hovers as plain Markdown in Obsidian's own popover,
 		// so the periscope image preview would be wasted work.
 		hoverPeriscope: 'disable',
+		// Makes preview-to-source jumps arrive as `tinymist/preview/scrollSource`.
+		// Without it Tinymist falls back to a `window/showDocument` request
+		// (see `EditorScrollTo` in its preview tool), and clicking the preview
+		// does nothing unless the client answers that instead. Both paths are
+		// handled here, but this is the one the reference client uses.
+		customizedShowDocument: true,
 	};
 
 	if (root !== null) {

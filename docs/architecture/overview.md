@@ -158,6 +158,23 @@ reproduces the GUI environment against a real binary.
 Appended, never prepended: the user's own `PATH` keeps priority, so this can
 only ever find something that would otherwise not be found at all.
 
+### Two-way sync has to break its own loop
+
+Source-to-preview and preview-to-source are both wanted, and together they are
+a feedback loop: a preview click moves the caret, and a caret move scrolls the
+preview.
+
+The caret move the plugin makes in response to the preview carries a CodeMirror
+`Annotation`, and the update listener ignores annotated transactions. An
+annotation is exact, where a "recently jumped" timer would still misfire under
+load, and it does not persist into the user's next caret move.
+
+Which direction Tinymist uses to report a click depends on the client:
+`customizedShowDocument` selects the `tinymist/preview/scrollSource`
+notification, and without it Tinymist sends a standard `window/showDocument`
+request. The plugin sets the option and handles both, so neither a
+configuration change nor a future default can silently disable the feature.
+
 ### Crash handling is a state machine, not a retry loop
 
 `TinymistManager` holds one of `stopped | starting | ready | failed | crashed`.

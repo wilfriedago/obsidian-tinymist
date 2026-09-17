@@ -3,7 +3,13 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirro
 import { bracketMatching, foldGutter, foldKeymap, indentOnInput, indentUnit } from '@codemirror/language';
 import { lintGutter, setDiagnostics } from '@codemirror/lint';
 import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
-import { Compartment, EditorState, type Extension } from '@codemirror/state';
+import {
+	Annotation,
+	Compartment,
+	EditorState,
+	type Extension,
+	type Transaction,
+} from '@codemirror/state';
 import {
 	EditorView,
 	drawSelection,
@@ -55,6 +61,29 @@ export interface TypstEditorHost extends LanguageFeatureContext {
 	/** Diagnostics currently known for a document. */
 	getDiagnostics(vaultPath: VaultPath): readonly Diagnostic[];
 	readonly logger: Logger;
+}
+
+/**
+ * Marks a selection change this plugin made itself, in response to the preview.
+ *
+ * Without it the two sync directions feed each other: clicking the preview
+ * moves the cursor, the cursor move is reported back to the preview, and the
+ * preview scrolls again. Annotating the transaction lets the update listener
+ * tell "the user moved the caret" apart from "we moved it", which is the only
+ * reliable distinction — a timing guard would still misfire on a slow machine.
+ */
+export const previewOriginatedSelection = Annotation.define<boolean>();
+
+/**
+ * True when a selection change came from {@link TypstEditorView.revealPosition}
+ * rather than from the user. Exported so the rule can be tested directly.
+ */
+export function isPreviewOriginatedSelection(
+	transactions: readonly Transaction[],
+): boolean {
+	return transactions.some(
+		(transaction) => transaction.annotation(previewOriginatedSelection) === true,
+	);
 }
 
 /** How long typing settles before the buffer is pushed to Tinymist. */
@@ -194,16 +223,26 @@ export class TypstEditorView extends TextFileView {
 		});
 	}
 
-	/** Moves the cursor to a zero-based line/character and scrolls it into view. */
+	/**
+	 * Moves the cursor to a zero-based line/character and scrolls it into view.
+	 *
+	 * Used to answer a preview-to-source jump, so the resulting selection change
+	 * is annotated and any cursor push already queued is dropped. Otherwise the
+	 * move would be echoed straight back to the preview.
+	 */
 	revealPosition(line: number, character: number): void {
 		const editor = this.editor;
 		if (!editor) {
 			return;
 		}
+
+		this.cancelCursorPush();
+
 		const offset = positionToOffset(editor.state.doc, { line, character });
 		editor.dispatch({
 			selection: { anchor: offset },
 			effects: EditorView.scrollIntoView(offset, { y: 'center' }),
+			annotations: previewOriginatedSelection.of(true),
 		});
 		editor.focus();
 	}
@@ -285,7 +324,11 @@ export class TypstEditorView extends TextFileView {
 					this.scheduleChangePush();
 				}
 				if (update.selectionSet && !update.docChanged) {
-					this.scheduleCursorPush();
+					// Skip selection changes this plugin made in response to the
+					// preview; reporting them back would loop.
+					if (!isPreviewOriginatedSelection(update.transactions)) {
+						this.scheduleCursorPush();
+					}
 				}
 			}),
 		];
@@ -324,14 +367,18 @@ export class TypstEditorView extends TextFileView {
 		}, CURSOR_DEBOUNCE_MS);
 	}
 
+	private cancelCursorPush(): void {
+		if (this.cursorTimer !== null) {
+			window.clearTimeout(this.cursorTimer);
+			this.cursorTimer = null;
+		}
+	}
+
 	private cancelTimers(): void {
 		if (this.changeTimer !== null) {
 			window.clearTimeout(this.changeTimer);
 			this.changeTimer = null;
 		}
-		if (this.cursorTimer !== null) {
-			window.clearTimeout(this.cursorTimer);
-			this.cursorTimer = null;
-		}
+		this.cancelCursorPush();
 	}
 }

@@ -25,6 +25,7 @@ import {
 	type CompileStatusParams,
 	type PreviewJumpInfo,
 	type PublishDiagnosticsParams,
+	type ShowDocumentParams,
 } from '../typst/tinymist/protocol';
 import { StatusBarItem, type CompilePhase } from './status-bar';
 
@@ -302,28 +303,70 @@ export class TypstRuntime {
 
 	/** Preview to source: Tinymist asks us to reveal a location. */
 	private async onPreviewScrollSource(jump: PreviewJumpInfo): Promise<void> {
-		if (!this.settings.previewSyncEnabled || !jump.start) {
+		if (!jump.start) {
 			return;
+		}
+		const [line, character] = jump.start;
+		await this.revealSource(jump.filepath, line, character);
+	}
+
+	/**
+	 * Answers `window/showDocument`. Tinymist uses it for the same
+	 * preview-to-source jump when the custom notification is not enabled.
+	 */
+	private async handleShowDocument(params: ShowDocumentParams): Promise<{ success: boolean }> {
+		// `external: true` asks for a browser. The plugin does not open
+		// external URLs, so it declines rather than pretending it worked.
+		if (params.external) {
+			return { success: false };
+		}
+
+		const absolute = fileUriToAbsolutePath(params.uri);
+		if (absolute === null) {
+			return { success: false };
+		}
+
+		const start = params.selection?.start;
+		const revealed = await this.revealSource(absolute, start?.line ?? 0, start?.character ?? 0);
+		return { success: revealed };
+	}
+
+	/**
+	 * Puts the cursor at a source location, opening the document first if it is
+	 * not already on screen. Shared by both preview-to-source paths.
+	 */
+	private async revealSource(
+		absolutePath: string,
+		line: number,
+		character: number,
+	): Promise<boolean> {
+		if (!this.settings.previewSyncEnabled) {
+			return false;
 		}
 
 		const host = this.host;
 		if (!host) {
-			return;
-		}
-		const vaultPath = absoluteToVaultPath(host.vaultBasePath, jump.filepath);
-		if (vaultPath === null) {
-			return;
+			return false;
 		}
 
-		const [line, character] = jump.start;
+		// A location outside the vault is not ours to open. Tinymist can report
+		// one when a document imports from a Typst package.
+		const vaultPath = absoluteToVaultPath(host.vaultBasePath, absolutePath);
+		if (vaultPath === null) {
+			this.logger.debug('Ignoring a source jump outside the vault');
+			return false;
+		}
+
 		const open = this.findEditorFor(vaultPath);
 		if (open) {
 			open.revealPosition(line, character);
-			return;
+			return true;
 		}
 
 		await this.openSource(vaultPath);
-		this.findEditorFor(vaultPath)?.revealPosition(line, character);
+		const opened = this.findEditorFor(vaultPath);
+		opened?.revealPosition(line, character);
+		return opened !== null;
 	}
 
 	/** Source to preview: the caret moved, so nudge the rendered page. */

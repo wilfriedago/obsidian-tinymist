@@ -276,6 +276,17 @@ export interface PreviewScrollRequest {
 	character: number;
 }
 
+/**
+ * Params of the standard `window/showDocument` request, which Tinymist sends
+ * for a preview-to-source jump when `customizedShowDocument` is off.
+ */
+export interface ShowDocumentParams {
+	uri: string;
+	external?: boolean;
+	takeFocus?: boolean;
+	selection?: Range;
+}
+
 /** Single-document result shape of the `tinymist.export*` commands. */
 export interface ExportResult {
 	path: string | null;

@@ -123,6 +123,8 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 - [ ] Reopening it works.
 - [ ] Moving the cursor scrolls the preview to match.
 - [ ] Clicking rendered content moves the cursor in the source.
+- [ ] After a preview click, the preview does **not** scroll again on its own (no sync loop).
+- [ ] Moving the caret afterwards still scrolls the preview, so suppression is not sticky.
 - [ ] In dark mode the page follows the theme.
 - [ ] The preview toolbar floats over the top-right of the page and dims when the pointer is elsewhere.
 - [ ] The theme button steps follow-the-app → light → dark → follow-the-app, and the page changes each time.

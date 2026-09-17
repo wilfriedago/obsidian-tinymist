@@ -11,6 +11,7 @@ import {
 	TINYMIST_NOTIFICATION,
 	type CompileStatusParams,
 	type ExportResult,
+	type PreviewJumpInfo,
 	type PublishDiagnosticsParams,
 	type StartPreviewResult,
 } from '../../src/typst/tinymist/protocol';
@@ -294,6 +295,76 @@ describe.runIf(process.env['SKIP_TINYMIST_TESTS'] !== '1')('Tinymist, live', () 
 		expect(html.toLowerCase()).toContain('<!doctype html');
 
 		await client.executeCommand(TINYMIST_COMMAND.killPreview, ['vitest-preview']);
+	}, 90_000);
+
+	it('reports a source location when the preview is clicked', async () => {
+		if (!available) return;
+
+		// The feature: click rendered content, cursor moves in the editor.
+		// Tinymist only sends `tinymist/preview/scrollSource` when the client
+		// asked for it via `customizedShowDocument`; otherwise it sends a
+		// `window/showDocument` request instead, and a client handling only the
+		// notification sees nothing happen. This pins the wiring end to end.
+		const entry = resolve(VAULT, 'basic.typ');
+		openDocument('basic.typ');
+
+		const jumps: PreviewJumpInfo[] = [];
+		const stop = client.onNotification(TINYMIST_NOTIFICATION.previewScrollSource, (params) => {
+			jumps.push(params as PreviewJumpInfo);
+		});
+
+		const preview = await client.executeCommand<StartPreviewResult>(
+			TINYMIST_COMMAND.startPreview,
+			[
+				buildPreviewArgs({
+					taskId: 'vitest-jump',
+					entryAbsolutePath: entry,
+					notPrimary: false,
+					invertColors: 'never',
+					refreshOnType: true,
+				}),
+			],
+			60_000,
+		);
+
+		try {
+			const socket = new WebSocket(`ws://127.0.0.1:${preview.dataPlanePort}`);
+			await new Promise<void>((settle, fail) => {
+				socket.addEventListener('open', () => settle(), { once: true });
+				socket.addEventListener('error', () => fail(new Error('preview websocket refused')), {
+					once: true,
+				});
+			});
+
+			// `current` asks for the rendered document, exactly as the preview
+			// frontend does on connect.
+			socket.send('current');
+			await waitFor('the document to render', () => true, 3_000).catch(() => undefined);
+			await new Promise((r) => setTimeout(r, 2_500));
+
+			// What the frontend sends on click, in Typst points on the page.
+			// Several points, because a click on whitespace correctly maps to
+			// nothing at all.
+			for (const point of [
+				{ page_no: 1, x: 100, y: 60 },
+				{ page_no: 1, x: 40, y: 35 },
+				{ page_no: 1, x: 80, y: 50 },
+			]) {
+				socket.send(`src-point ${JSON.stringify(point)}`);
+				await new Promise((r) => setTimeout(r, 900));
+			}
+
+			await waitFor('a source jump', () => jumps.length > 0, 8_000);
+			socket.close();
+
+			const jump = jumps[0]!;
+			expect(jump.filepath).toBe(entry);
+			expect(jump.start?.[0]).toBeTypeOf('number');
+			expect(jump.start?.[1]).toBeTypeOf('number');
+		} finally {
+			stop();
+			await client.executeCommand(TINYMIST_COMMAND.killPreview, ['vitest-jump']);
+		}
 	}, 90_000);
 
 	it('subscribes to the preview notification channel', () => {

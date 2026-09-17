@@ -6,6 +6,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [0.1.6] - 2026-09-18
+
+### Fixed
+
+- **Clicking the preview now moves the cursor.** Tinymist only sends
+  `tinymist/preview/scrollSource` when the client sets
+  `customizedShowDocument`; otherwise it sends a standard
+  `window/showDocument` request instead. The plugin set neither, so it handled
+  a notification that was never sent and answered the request with "method not
+  found". It now sets the option *and* handles the standard request, so the
+  jump works either way.
+- **Source and preview no longer echo each other.** Answering a preview click
+  moved the cursor, the cursor move was reported back to the preview, and the
+  preview scrolled again. The selection change the plugin makes is now marked
+  as its own, so only the user's caret moves reach the preview.
+
+### Changed
+
+- Removed a redundant type assertion in the PDF decoder, and pinned the
+  pooled-buffer behaviour it relies on with tests: Node allocates small buffers
+  from a shared pool, so the exact byte range has to be copied out rather than
+  the whole backing store handed to the vault.
+
 ## [0.1.5] - 2026-09-17
 
 ### Fixed

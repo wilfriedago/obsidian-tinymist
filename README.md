@@ -151,7 +151,7 @@ a PDF renderer — opening any PDF, exported or not, uses Obsidian's own viewer.
 | Project root | Automatic | See [Projects](#projects) |
 | Preview refresh | As you type | Or on save |
 | Preview theme | Follow the app | Light, dark, or follow Obsidian. Each preview can override this from its own toolbar |
-| Sync with the editor | on | Cursor ↔ preview navigation |
+| Sync with the editor | on | Click the preview to move the cursor, and move the cursor to scroll the preview |
 | Show diagnostics | on | Underline compiler errors |
 | Enable the formatter | on | |
 | PDF folder | empty | Empty means "beside the document" |
