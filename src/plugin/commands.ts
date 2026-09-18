@@ -62,6 +62,16 @@ export function registerCommands(plugin: Plugin, runtime: TypstRuntime): void {
 		}),
 	});
 
+	// Deliberately unconditional: the point of this command is to make a Typst
+	// file when there is not one open yet.
+	plugin.addCommand({
+		id: 'create-file',
+		name: 'Create new Typst file',
+		callback: () => {
+			void runtime.createFileInDefaultFolder();
+		},
+	});
+
 	plugin.addCommand({
 		id: 'restart-server',
 		name: 'Restart language server',

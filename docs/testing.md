@@ -97,6 +97,13 @@ with **Ctrl/Cmd+R** to pick it up.
 
 Each line is pass/fail, with the acceptance criterion it comes from.
 
+**Creating**
+
+- [ ] Right-clicking a folder in the file explorer offers **New Typst file**, next to **New note**.
+- [ ] It creates `Untitled.typ` in that folder and opens it in the Typst editor.
+- [ ] Doing it again creates `Untitled 1.typ` rather than failing.
+- [ ] **Typst: Create new Typst file** puts the file where the "Default location for new notes" setting points.
+
 **Editing**
 
 - [ ] Clicking `basic.typ` in the file explorer opens the Typst editor, not a Markdown view.

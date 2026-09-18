@@ -90,6 +90,7 @@ your source. Everything else lives in the command palette:
 | **Typst: Toggle preview** | Show or hide it |
 | **Typst: Export PDF** | Compile and write a PDF into the vault |
 | **Typst: Format document** | Reformat the source |
+| **Typst: Create new Typst file** | Add a `.typ` file where new notes go |
 | **Typst: Show project root** | Which folder this document compiles against |
 | **Typst: Restart language server** | Restart Tinymist |
 
@@ -99,8 +100,10 @@ No default hotkeys are set, so nothing collides with yours. Bind your own under
 The preview's own controls float over the page: refresh, open source, and a
 theme button that steps between following the app, light, and dark.
 
-> Obsidian's **New note** always creates Markdown, so create `.typ` files the
-> way you would any other non-Markdown file.
+To start a document, right-click any folder in the file explorer and choose
+**New Typst file**, or run **Typst: Create new Typst file**. Obsidian's own
+**New note** always makes Markdown and its menu cannot be extended, so Typst
+files get their own entry right beside it.
 
 ### The status bar
 

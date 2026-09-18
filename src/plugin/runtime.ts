@@ -1,4 +1,4 @@
-import { Notice, TFile, type App, type Plugin, type WorkspaceLeaf } from 'obsidian';
+import { Notice, TFile, type App, type Plugin, type TFolder, type WorkspaceLeaf } from 'obsidian';
 
 import { TypstEditorView, TYPST_EDITOR_VIEW_TYPE } from '../editor/typst-editor-view';
 import { requestFormattingEdits } from '../editor/language-features';
@@ -27,9 +27,9 @@ import {
 	type PublishDiagnosticsParams,
 	type ShowDocumentParams,
 } from '../typst/tinymist/protocol';
+import { TYPST_EXTENSION } from './constants';
+import { createTypstFile, defaultNewFileFolder, isFolder } from './new-file';
 import { StatusBarItem, type CompilePhase } from './status-bar';
-
-export const TYPST_EXTENSION = 'typ';
 
 /**
  * Wires the subsystems together and owns their lifetimes.
@@ -182,6 +182,29 @@ export class TypstRuntime {
 		this.plugin.registerEvent(
 			this.app.workspace.on('active-leaf-change', () => {
 				this.updateStatusBar();
+			}),
+		);
+
+		// Obsidian's "New note" only ever makes Markdown, and its dropdown is
+		// not extensible, so this is the supported way to offer a Typst file
+		// where a user looks for one: the folder's context menu.
+		this.plugin.registerEvent(
+			this.app.workspace.on('file-menu', (menu, target) => {
+				if (!isFolder(target)) {
+					return;
+				}
+				menu.addItem((item) => {
+					item
+						.setTitle('New Typst file')
+						.setIcon('file-type')
+						// The same section Obsidian puts its own "New note" and
+						// "New folder" entries in, so this lands beside them
+						// rather than at the bottom of the menu.
+						.setSection('action-primary')
+						.onClick(() => {
+							void this.createFileIn(target);
+						});
+				});
 			}),
 		);
 
@@ -601,6 +624,23 @@ export class TypstRuntime {
 		}
 
 		await this.app.workspace.getLeaf(false).openFile(file);
+	}
+
+	/** Creates an empty `.typ` file in a folder and opens it. */
+	async createFileIn(folder: TFolder): Promise<void> {
+		try {
+			await createTypstFile(this.app, folder);
+		} catch (error) {
+			this.reportError(error);
+		}
+	}
+
+	/**
+	 * Creates a `.typ` file where Obsidian would put a new note, honouring the
+	 * user's "Default location for new notes" setting.
+	 */
+	async createFileInDefaultFolder(): Promise<void> {
+		await this.createFileIn(defaultNewFileFolder(this.app));
 	}
 
 	/** Describes the project a document belongs to, for the command palette. */

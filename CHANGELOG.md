@@ -6,6 +6,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [0.2.0] - 2026-09-18
+
+### Added
+
+- **Create a Typst file from the file explorer.** Right-click a folder and
+  choose **New Typst file**, or run **Typst: Create new Typst file**, which
+  puts it wherever your "Default location for new notes" setting points.
+  Obsidian's own **New note** always makes Markdown and its dropdown cannot be
+  extended, so until now a `.typ` file had to be created some other way.
+
 ## [0.1.7] - 2026-09-18
 
 ### Fixed
