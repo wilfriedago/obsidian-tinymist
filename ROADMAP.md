@@ -12,6 +12,10 @@ commitment. Items move when someone does the work.
 | **Considering** | Wanted, but a question needs answering first — usually "does Tinymist already do this?" |
 | **Not planned** | Deliberately out of scope, with the reason |
 
+Where an entry says **verified**, the mechanism was exercised against a real
+Tinymist and the observed output is quoted. That distinction matters: several
+items below look like features to build and are really features to *surface*.
+
 The guiding rule is the one the plugin was built on: **Tinymist owns Typst, the
 plugin owns Obsidian.** Anything the language server can already do should be
 surfaced rather than reimplemented. That is what keeps the plugin small and
@@ -24,6 +28,59 @@ actually hit moves faster than what looks good on a list.
 ---
 
 ## Next
+
+### Multi-file projects
+
+The largest gap between what the plugin does and how people actually write long
+documents. Open `chapter-3.typ` today and Tinymist compiles *that file alone*:
+the preview shows a fragment, and diagnostics complain about every definition
+that lives in `main.typ`. A thesis is the shape of document this plugin exists
+for, and it is the shape that works least well.
+
+Tinymist already solves it. `tinymist.pinMain` tells the server which file is
+the document, and everything else compiles as part of it. **Verified**: with
+`project/main.typ` pinned, editing `template.typ` — a fragment that cannot
+stand alone — produces
+
+```
+compileSuccess  /main.typ  pages=1
+```
+
+So the engine work is done and this is a user-interface problem:
+
+- a command to set the current file as the project's main document, and to
+  clear it
+- picking it up automatically from `typst.toml`'s `entrypoint`, which is what
+  the fixture project already declares, so most users never set it by hand
+- showing which document is pinned, because an invisible mode is worse than no
+  mode
+- deciding what the preview follows: today it follows the active editor, and
+  pinning means it should follow the pinned document while the caret still
+  drives source-to-preview sync from whichever file you are editing
+
+The open question is scope, not feasibility: whether pinning is per-vault, per
+project root, or remembered per document. Per project root is probably right,
+since that is the unit Typst itself compiles, but it is worth deciding before
+the first line rather than after.
+
+### Word count
+
+Already arriving on every compile, and currently discarded. Tinymist attaches
+it to the `tinymist/compileStatus` notification the status bar already
+consumes. **Verified**, for `basic.typ`:
+
+```json
+{"chars": 407, "cjkChars": 0, "spaces": 60, "words": 61}
+```
+
+People writing to a length care about this more than almost anything else the
+plugin does, and it is a status-bar segment rather than a feature. Note the
+separate `cjkChars`: Tinymist counts CJK characters apart from words, so the
+figure is meaningful for Chinese and Japanese rather than quietly wrong.
+
+The only real decision is what to show by default — words, or characters, or
+both — and whether it belongs in the status bar or behind a command. The status
+bar is already the place the plugin reports document state.
 
 ### Spell checking in the editor
 
@@ -64,6 +121,21 @@ Open questions, in the order they need answering:
 Nothing starts until (1) is answered, because the answer decides whether this
 is a small feature or a large one.
 
+### Document outline
+
+A long Typst document is currently unnavigable, while a Markdown note of the
+same length gets an outline for free. Tinymist answers
+`textDocument/documentSymbol` and additionally pushes
+`tinymist/documentOutline`, which the plugin subscribes to and ignores.
+
+**Verified**: `project/main.typ` returns `Introduction | Bibliography check`.
+
+The open question is where it goes. Obsidian's own outline view is built around
+Markdown, and whether a plugin can populate it for a custom file type is
+unestablished — so the first step is an hour spent finding out, not a design.
+If it cannot, the fallback is a small view of the plugin's own, which is more
+work and less native, and worth knowing before choosing.
+
 ### A tested-up-to Tinymist version
 
 The plugin enforces a minimum Tinymist version but no maximum, so an unrelated
@@ -84,22 +156,52 @@ Tracked as [R3](docs/risks.md#r3-only-one-plugin-can-own-typ).
 
 ## Considering
 
-### Outline and document symbols in Obsidian's sidebar
+### Typst files as first-class vault citizens
 
-Tinymist already sends `tinymist/documentOutline`, and answers
-`textDocument/documentSymbol`. The plugin subscribes to neither. Feeding
-Obsidian's outline view would make a long document navigable the way a Markdown
-note is.
+The strategically largest item here, and the least certain.
 
-The question is whether Obsidian's outline can be populated by a plugin for a
-non-Markdown view, or whether this needs a view of its own.
+`.typ` files are islands. You cannot link to one from a Markdown note, they do
+not appear in the graph, and they have no backlinks. The plugin's claim is that
+Typst becomes a first-class document type in Obsidian, and this is the part of
+that claim which is not yet true. Everything else on this roadmap makes the
+editor better; this is what would make the *vault* whole.
+
+It is listed here rather than under Next because feasibility is genuinely
+unknown. Obsidian's link resolution, backlink index, and graph are built around
+Markdown, and whether a plugin can contribute a non-Markdown file type to them
+is unestablished. The first step is not a design but an hour with
+`MetadataCache` and `resolvedLinks` to find out whether it is possible at all.
+
+If it is not, that is worth knowing and writing down, because it bounds what
+"first-class" can honestly mean.
 
 ### Go to definition, references, and rename
 
 Tinymist answers all three, and the plugin already declares the client
-capabilities. What is missing is the editor-side wiring: a command, a keybinding,
-and somewhere sensible to show references. Rename in particular wants care,
-since it edits files that may not be open.
+capabilities — the providers are advertised in the initialize response and
+nothing consumes them. What is missing is the editor-side wiring: a command, a
+keybinding, and somewhere sensible to show references. Rename in particular
+wants care, since it edits files that may not be open.
+
+This becomes considerably more valuable once multi-file projects work, and is
+probably best done after them rather than before.
+
+### Cross-reference completion
+
+Typing `@` in a Typst document should offer the labels defined across the
+project, the way a citation key or a heading reference would in a reference
+manager. `tinymist.getWorkspaceLabels` exists for exactly this and is unused.
+
+Worth doing after multi-file projects, since a label index across one file is
+not worth much.
+
+### Quick fixes from diagnostics
+
+`codeActionProvider` is advertised and unused. Turning "unknown variable" into
+an offer to import the thing is the difference between a diagnostic that tells
+you off and one that helps. The plugin already renders diagnostics in
+CodeMirror, and CodeMirror's lint panel has a place for actions, so the wiring
+is more plumbing than design.
 
 ### Settings that apply without a restart
 
@@ -112,10 +214,15 @@ Tracked as [R10](docs/risks.md#r10-settings-changes-require-a-restart).
 
 ### Export beyond PDF
 
-Tinymist exposes PNG, SVG, HTML, Markdown, and LaTeX export through the same
-command surface the PDF export already uses, so the mechanism exists. The
-question is UI: a submenu, a modal, or a command per format, without turning a
-tidy palette into a wall of entries.
+Tinymist exposes PNG, SVG, HTML, Markdown, LaTeX, plain text, and a bundle
+format through the same command surface the PDF export already uses — eight
+export commands, of which the plugin uses one. The mechanism is proven; the
+question is UI. A command per format would turn a tidy palette into a wall of
+entries, so a single "Export as…" with a format prompt is more likely right.
+
+Markdown export deserves separate thought: it turns a Typst document into
+something the rest of the vault can actually read, which is a different kind of
+useful from PNG.
 
 ### Incremental document sync
 
@@ -128,8 +235,14 @@ Tracked as [R9](docs/risks.md#r9-no-incremental-document-sync).
 ### Snippets and templates for a new file
 
 **New Typst file** creates an empty document, deliberately. A separate "new
-from template" affordance, reading templates from a vault folder, would be the
-honest way to offer a starting point without guessing at one.
+from template" affordance would be the honest way to offer a starting point
+without guessing at one.
+
+Tinymist has `tinymist.doInitTemplate` and `tinymist.doGetTemplateEntry`, which
+work against the Typst package registry, so "new from a Typst Universe
+template" is available without the plugin managing template files itself. That
+is probably a better first version than a vault folder of templates, because it
+starts useful rather than empty.
 
 ---
 
@@ -161,6 +274,27 @@ useful. Covered in [the architecture notes](docs/architecture/overview.md).
 Rendering Typst in a Markdown code block is a genuinely different product, and
 [Typst Renderer](https://github.com/fenjalien/obsidian-typst) already does it.
 This plugin is for documents that *are* Typst.
+
+### Semantic tokens
+
+Tinymist advertises `semanticTokensProvider`, and the plugin turns it off. The
+bundled Lezer grammar already highlights Typst, synchronously and without a
+round trip to the server. Adding a second source of highlighting would mean two
+systems colouring the same characters, disagreeing during the window before the
+server replies. One correct highlighter beats two competing ones.
+
+### Code lens, debugging, and profiling
+
+Tinymist offers all three: `codeLensProvider`, a full debug adapter, and
+`tinymist.startServerProfiling`.
+
+Code lens has no natural home in Obsidian's editor. The debug adapter is for
+stepping through Typst evaluation, which is a compiler-development activity
+rather than a writing one. Profiling and `getDocumentTrace` diagnose Tinymist's
+own performance and belong in an editor aimed at people working on Tinymist.
+
+Being available is not a reason to surface something. Each of these would add a
+setting, a command, or a panel that most users would have to learn to ignore.
 
 ### Forking Tinymist
 
