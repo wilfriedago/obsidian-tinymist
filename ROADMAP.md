@@ -168,3 +168,5 @@ Tinymist is a dependency, not a component. If something needs changing, the
 right move is a patch upstream, which benefits every editor rather than only
 this one. A fork would be a last resort for a problem with no public-interface
 solution, and no such problem has come up.
+
+<!-- CI path-filter verification. This branch is deleted after the test. -->
