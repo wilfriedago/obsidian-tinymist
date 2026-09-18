@@ -6,8 +6,93 @@ on:
   pull_request:
     branches: ['**']
 
+# Path filtering is done per job rather than with `on.push.paths-ignore`.
+#
+# A workflow skipped by `paths-ignore` never reports its checks, and GitHub
+# leaves a required check in "Pending" forever — so a docs-only pull request
+# would be permanently unmergeable. Gating the jobs instead means the workflow
+# always runs, reports every required check, and simply skips the expensive
+# work when nothing that affects the build has changed.
+
 jobs:
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # Full history, so a pull request can be diffed against its merge base.
+          fetch-depth: 0
+
+      - name: Decide whether anything build-relevant changed
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          set -euo pipefail
+
+          if [ "$EVENT" = "pull_request" ]; then
+            git fetch --no-tags --depth=0 origin "$BASE_REF" >/dev/null 2>&1 || true
+            changed="$(git diff --name-only "origin/$BASE_REF...HEAD")"
+          elif [ -n "${BEFORE:-}" ] && [ "$BEFORE" != "0000000000000000000000000000000000000000" ] \
+               && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            changed="$(git diff --name-only "$BEFORE" "${{ github.sha }}")"
+          else
+            # A new branch, a force push, or a missing base: run everything
+            # rather than guess. Skipping CI wrongly is far worse than
+            # running it needlessly.
+            echo 'code=true' >> "$GITHUB_OUTPUT"
+            echo 'Could not determine the changed files; running the full suite.'
+            exit 0
+          fi
+
+          if [ -z "$changed" ]; then
+            echo 'code=true' >> "$GITHUB_OUTPUT"
+            echo 'No diff resolved; running the full suite.'
+            exit 0
+          fi
+
+          echo 'Changed files:'
+          echo "$changed" | sed 's/^/  /'
+
+          # An allow-list would silently skip CI for any path nobody thought
+          # of. This is a deny-list instead: a file only counts as irrelevant
+          # if it is explicitly named here, so anything new runs the suite.
+          #
+          # test-vault/ is deliberately absent — the integration tests compile
+          # those fixtures, so changing one must run CI.
+          code=false
+          while IFS= read -r file; do
+            [ -z "$file" ] && continue
+            case "$file" in
+              *.md) ;;
+              LICENSE) ;;
+              docs/*) ;;
+              .github/ISSUE_TEMPLATE/*) ;;
+              .github/CODEOWNERS) ;;
+              .github/FUNDING.yml) ;;
+              .github/dependabot.yml) ;;
+              .gitignore | .editorconfig | .npmrc) ;;
+              *)
+                echo "  -> '$file' affects the build"
+                code=true
+                break
+                ;;
+            esac
+          done <<< "$changed"
+
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          if [ "$code" = 'false' ]; then
+            echo 'Only documentation and repository metadata changed; skipping the build.'
+          fi
+
   check:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -54,6 +139,8 @@ jobs:
           test -f dist/styles.css
 
   integration:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     # Exercises the adapter against a real Tinymist, which is the only way to
     # catch a change in its CLI flags, command names, or export argument shape.
     runs-on: ubuntu-latest
