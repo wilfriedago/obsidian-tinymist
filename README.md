@@ -22,6 +22,15 @@ server.
 
 Your papers, theses, and reports live beside your notes. Not in another app.
 
+<p align="center">
+  <img src="docs/images/thesis.png" width="100%"
+       alt="A Typst thesis open in Obsidian: the source with syntax highlighting on the left, and the rendered title page, complete with university logos, in a preview pane on the right.">
+</p>
+
+<p align="center">
+  <em>Source on the left, the real rendered document on the right, updating as you type.</em>
+</p>
+
 ## What you get
 
 | | |
@@ -102,6 +111,17 @@ theme button that steps between following the app, light, and dark.
 | **Typst: 2 errors** | Problems, underlined in the editor |
 | **Typst: disconnected** | Tinymist stopped — select to restart |
 | **Typst: unavailable** | It could not start — select for the reason |
+
+## Not only papers
+
+Typst does full layout — columns, floats, images, colour, and the
+[package ecosystem](https://typst.app/universe). Anything Typst can typeset,
+this previews.
+
+<p align="center">
+  <img src="docs/images/newsletter.png" width="100%"
+       alt="A newsletter built with a Typst package open in Obsidian, showing a magazine layout with a photograph, a pull quote, and a coloured sidebar rendered live in the preview pane.">
+</p>
 
 ## Projects
 
