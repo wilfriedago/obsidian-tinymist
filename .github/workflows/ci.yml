@@ -9,10 +9,18 @@ on:
 # Path filtering is done per job rather than with `on.push.paths-ignore`.
 #
 # A workflow skipped by `paths-ignore` never reports its checks, and GitHub
-# leaves a required check in "Pending" forever — so a docs-only pull request
-# would be permanently unmergeable. Gating the jobs instead means the workflow
-# always runs, reports every required check, and simply skips the expensive
-# work when nothing that affects the build has changed.
+# leaves a required check "Pending" forever, so a docs-only pull request would
+# be permanently unmergeable.
+#
+# Gating the jobs is not sufficient on its own either: a skipped matrix job
+# collapses to a single `check` result, so the per-version contexts
+# `check (20.x)` and friends never exist on that commit — the same deadlock by
+# another route. Verified on a real pull request, not assumed.
+#
+# So the only *required* check is `ci` at the bottom of this file. It always
+# runs, and it passes when every other job either succeeded or was skipped.
+# Branch protection therefore depends on one stable name that is always
+# reported, and the matrix can change without touching repository settings.
 
 jobs:
   changes:
@@ -176,3 +184,29 @@ jobs:
         env:
           TINYMIST_REQUIRED: '1'
         run: pnpm run test:integration
+
+  # The single required status check.
+  #
+  # `if: always()` is what makes it reliable: it reports whether or not the
+  # jobs above ran, which is precisely the property branch protection needs.
+  ci:
+    name: ci
+    needs: [changes, check, integration]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report the overall result
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          set -euo pipefail
+          echo "$RESULTS"
+
+          # `skipped` is a pass: it means the filter proved the change cannot
+          # affect the build. `failure` and `cancelled` are not.
+          if echo "$RESULTS" | grep -qE '"result": *"(failure|cancelled)"'; then
+            echo '::error::A required job failed or was cancelled.'
+            exit 1
+          fi
+
+          echo 'Every job succeeded or was skipped.'
