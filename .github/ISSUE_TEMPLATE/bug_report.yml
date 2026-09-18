@@ -1,0 +1,82 @@
+name: Bug report
+description: Something works differently than it should
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time. Most bugs in this plugin have been found by
+        someone using it in a real vault, so this is genuinely useful.
+
+        Please do not report a **security** problem here — use
+        [private reporting](https://github.com/wilfriedago/obsidian-tinymist/security/advisories/new)
+        instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+      placeholder: |
+        I ran "Typst: Format document" on a file starting with an #import, and
+        the import line disappeared.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: How to reproduce
+      description: |
+        Steps, and the smallest `.typ` file that shows it. A three-line document
+        that reproduces a bug is worth more than a long description of a large one.
+      placeholder: |
+        1. Create a `.typ` file containing:
+           ```typst
+           #import "@preview/example:0.1.0": thing
+           = Title
+           ```
+        2. Run "Typst: Format document"
+        3. The import line is gone
+    validations:
+      required: true
+
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      description: Settings → Community plugins → Tinymist
+      placeholder: 0.1.7
+    validations:
+      required: true
+
+  - type: input
+    id: tinymist-version
+    attributes:
+      label: Tinymist version
+      description: Run `tinymist -V` in a terminal.
+      placeholder: tinymist 0.15.8
+    validations:
+      required: true
+
+  - type: input
+    id: obsidian-version
+    attributes:
+      label: Obsidian version and operating system
+      placeholder: Obsidian 1.13.1, macOS 15.2 (Apple silicon)
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: |
+        Set **Logging** to `debug` in the plugin settings, reproduce the
+        problem, then open the developer console (Ctrl/Cmd+Shift+I) and paste
+        the lines prefixed `[tinymist:…]`.
+
+        Document contents are never logged, but do check before pasting.
+      render: text
+    validations:
+      required: false

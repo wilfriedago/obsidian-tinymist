@@ -7,7 +7,13 @@ settle each one. Ordered roughly by how much they could cost.
 
 ## R1. Plugin name reuses an upstream project name
 
-**Severity: high (blocks submission if a reviewer objects)**
+**Severity: was high, now locked in and unresolvable cheaply**
+
+**Update, 2026-09-18:** the plugin is published as `tinymist`. The `id` is now
+permanent — the directory keys installs on it — so the cheap window for a
+rename has closed. What remains possible is changing the *display name* while
+keeping the id, if the Tinymist maintainers ever object. The README and
+`THIRD_PARTY_NOTICES.md` state the plugin is unofficial and unaffiliated.
 
 The plugin is named `tinymist` / "Tinymist", which is the name of the upstream
 project it drives. Obsidian's trademark rule concerns the *Obsidian* mark, which
@@ -141,25 +147,36 @@ supported, or switching to reading the staged file from disk.
 
 ---
 
-## R7. Unverified inside a running Obsidian
+## R7. The automated suite cannot reach the user interface
 
-**Severity: high until done**
+**Severity: medium, and demonstrated**
 
-Everything below the UI is tested against real software: 174 automated tests,
-including 13 that drive a real Tinymist 0.15.8. **Nothing in this repository has
-been run inside Obsidian yet.** The editor view, preview leaf, status bar,
-settings tab, and workspace behaviour are unexercised.
+The plugin now runs in real vaults, so the original form of this risk — "never
+executed inside Obsidian" — is closed. What it revealed is worth keeping in its
+place, because it is the more durable problem.
 
-Specific unknowns:
+**Every defect found since publication was found by a person using the plugin,
+and none by the test suite**, which stood at 174 tests when the first of them
+shipped:
 
-- Whether `TextFileView` + a custom `EditorView` behaves well with Obsidian's
-  tab restore, split panes, and popout windows.
-- Whether the preview iframe renders and connects inside Electron.
-- Whether CodeMirror's search panel conflicts with Obsidian's shortcuts.
-- Whether `getViewData`/`setViewData` timing loses keystrokes on fast tab
-  switches.
+| Defect | Why no test caught it |
+| --- | --- |
+| Tinymist not detected | Tests run from a terminal, which has the full `PATH`. A desktop launch does not. |
+| Preview clicks did nothing | The wiring was right; the server needed a configuration flag to use that channel at all. |
+| Source and preview looped | Both directions were tested separately. Nothing exercised them together. |
+| Formatting deleted the file header | The formatter's edit range was assumed rather than observed. |
+| Selection unreadable in dark mode | Styling, which nothing asserts. |
 
-**Settled by:** the manual pass in [testing.md](./testing.md).
+Each now has a regression test, and the first four are covered against a real
+Tinymist. The pattern behind them is the risk: anything that only manifests
+inside Obsidian's runtime, or that depends on what a real binary does rather
+than what its source suggests, is invisible here.
+
+**Reduced by:** integration tests that reconstruct the awkward environment (a
+GUI-launch `PATH`, the preview's own websocket) rather than the convenient one.
+
+**Settled by:** the manual pass in [testing.md](./testing.md), which remains
+the only coverage for the editor view, workspace behaviour, and styling.
 
 ---
 

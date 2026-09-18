@@ -1,0 +1,33 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      # These move together and are checked by the same CI run, so one pull
+      # request per week is easier to review than a dozen.
+      codemirror:
+        patterns:
+          - '@codemirror/*'
+          - '@lezer/*'
+      dev-tooling:
+        patterns:
+          - 'oxlint'
+          - 'eslint*'
+          - 'typescript*'
+          - 'vitest'
+          - 'esbuild'
+          - '@types/*'
+          - 'globals'
+          - 'jiti'
+    ignore:
+      # Pinned deliberately: it must match the CodeMirror instance Obsidian
+      # itself loads, which is decided by the app, not by this repository.
+      - dependency-name: obsidian
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly

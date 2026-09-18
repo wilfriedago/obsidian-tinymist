@@ -1,0 +1,40 @@
+name: Feature request
+description: Suggest something the plugin should do
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The plugin's job is to make Typst feel native in Obsidian, with Tinymist
+        doing the Typst work. Requests that fit that shape are the easiest to
+        say yes to.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do?
+      description: |
+        The problem rather than the solution, if you can. It often turns out
+        there is a better fit than the first idea.
+      placeholder: |
+        I keep several papers in one vault and want to see at a glance which
+        one a document belongs to without running a command.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What did you have in mind?
+      validations:
+        required: false
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I checked whether [Tinymist](https://github.com/Myriad-Dreamin/tinymist) already does this, since the plugin prefers to expose its features rather than reimplement them.
+          required: false
+        - label: I searched existing issues.
+          required: false

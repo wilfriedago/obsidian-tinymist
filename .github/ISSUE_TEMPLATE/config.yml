@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Tinymist or Typst itself
+    url: https://github.com/Myriad-Dreamin/tinymist/issues
+    about: Compiler errors, formatting output, language features, and preview rendering come from Tinymist. If `tinymist` behaves the same way from a terminal, it belongs there.
+  - name: Security vulnerability
+    url: https://github.com/wilfriedago/obsidian-tinymist/security/advisories/new
+    about: Please report privately rather than in a public issue.
+  - name: Question or idea
+    url: https://github.com/wilfriedago/obsidian-tinymist/discussions
+    about: For anything that is not a bug report or a concrete request.

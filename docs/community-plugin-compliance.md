@@ -10,9 +10,14 @@ under oxlint (`pnpm lint`), six type-aware ones under ESLint
 (`pnpm lint:obsidian`), and the manifest rules in
 `scripts/validate-manifest.mjs`. All three run in CI.
 
-**Status: not yet submitted.** Everything below is verified in the code and by
-the automated checks noted. Items that can only be settled by a human reviewer
-are marked as such rather than claimed.
+**Status: published.** The plugin is listed in the community directory as
+[`tinymist`](https://community.obsidian.md/plugins/tinymist). Everything below
+is verified in the code and by the automated checks noted.
+
+The directory's listing appends "This plugin has not been manually reviewed by
+Obsidian staff" to the description, which is its standard note for an entry
+that passed automated review without a manual pass. The findings from that
+automated review, and what was done about each, are in the table below.
 
 ---
 
@@ -196,10 +201,19 @@ capability.
 
 ---
 
-## What remains before submission
+## Ongoing obligations
 
-1. Complete the manual UX pass in [testing.md](./testing.md) — the automated
-   suite cannot exercise Obsidian's own UI.
-2. Settle the plugin name question (R1).
-3. Publish the repository and cut the `0.1.0` release.
-4. Re-check these pages at submission time; they change.
+Publication is not the end of the checklist. These stay true or the entry can
+be delisted:
+
+1. **No telemetry, no network requests, no self-updating.** Any change here
+   needs a README disclosure first, not afterwards.
+2. **Keep `minAppVersion` honest.** It is `1.13.0` because the declarative
+   settings API requires it. Raising it again needs a real API reason.
+3. **Never change the `id`.** `tinymist` is now permanent; the directory keys
+   installs on it.
+4. **Re-read the policies before each significant release.** They change, and
+   this page is a snapshot of 2026-09-17, refreshed 2026-09-18.
+5. **Finish the manual pass** in [testing.md](./testing.md). Every defect found
+   since publication came from someone running the plugin, not from the
+   automated suite.
