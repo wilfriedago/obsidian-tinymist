@@ -250,6 +250,17 @@ The plugin works around this by also searching where package managers install
 (Homebrew, MacPorts, Cargo, `~/.local/bin`, Snap, Flatpak, scoop, winget). If
 yours lives elsewhere, set the full path in settings — that always wins.
 
+### The developer console is full of preview messages
+
+Lines like `recv diff-v1 1388` and `parse 0.20 ms, rerender 2.20 ms` come from
+Tinymist's preview frontend, not from this plugin. They are prefixed `(index)`
+and originate from `http://127.0.0.1:<port>`.
+
+The preview deliberately runs in a cross-origin iframe, which is what keeps
+rendered documents away from Obsidian's DOM and APIs, and a page cannot silence
+the console of a frame it does not share an origin with. Filter the console on
+`[tinymist:` to see only this plugin's output.
+
 ### Something else is wrong
 
 Set **Logging** to `debug` in settings, reproduce, and open the developer

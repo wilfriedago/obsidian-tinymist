@@ -52,6 +52,10 @@ export class TypstPreviewView extends ItemView {
 	private statusEl: HTMLElement | null = null;
 	private bodyEl: HTMLElement | null = null;
 	private themeButton: HTMLElement | null = null;
+	/** URL the current frame is showing, so an identical render is a no-op. */
+	private frameUrl: string | null = null;
+	/** Serializes renders; two concurrent ones would build two frames. */
+	private rendering: Promise<void> = Promise.resolve();
 
 	constructor(
 		leaf: WorkspaceLeaf,
@@ -161,27 +165,46 @@ export class TypstPreviewView extends ItemView {
 	/* Rendering                                                              */
 	/* ---------------------------------------------------------------------- */
 
-	/** Points the frame at a fresh preview URL, reporting failures in place. */
+	/**
+	 * Points the frame at a fresh preview URL, reporting failures in place.
+	 *
+	 * Renders are serialized and deduplicated. Obsidian can call `onOpen` and
+	 * `setState` in either order, and both want to render, so without this the
+	 * frame is torn down and rebuilt against the *same* URL — reloading two
+	 * megabytes of preview frontend and re-initializing its WebAssembly for
+	 * nothing.
+	 */
 	async render(): Promise<void> {
+		const run = this.rendering.then(() => this.renderOnce());
+		// Keep the chain alive even when one render rejects.
+		this.rendering = run.catch(() => undefined);
+		await run;
+	}
+
+	private async renderOnce(): Promise<void> {
 		const body = this.bodyEl;
 		if (!body) {
+			// `setState` can arrive before `onOpen` has built the DOM. The
+			// render that follows `onOpen` will do the work.
 			return;
 		}
-
-		this.teardownFrame();
-		body.empty();
 
 		if (!this.vaultPath) {
+			this.teardownFrame();
+			body.empty();
 			this.showMessage('Open a Typst document, then run "Open preview".');
+			this.setStatus('');
 			return;
 		}
 
-		this.setStatus('Starting…');
+		this.setStatus(this.frame ? 'Reloading…' : 'Starting…');
 
 		let url: string;
 		try {
 			url = await this.host.resolvePreviewUrl(this.vaultPath, this.themeOverride);
 		} catch (error) {
+			this.teardownFrame();
+			body.empty();
 			const message =
 				error instanceof TypstError ? error.toUserMessage() : 'The preview could not start.';
 			this.host.logger.error('Preview failed to start', error);
@@ -189,6 +212,16 @@ export class TypstPreviewView extends ItemView {
 			this.setStatus('Unavailable');
 			return;
 		}
+
+		// Nothing changed, so leave the frame alone. Reloading it would throw
+		// away the rendered document and the reader's scroll position.
+		if (this.frame && this.frameUrl === url) {
+			this.setStatus('Live');
+			return;
+		}
+
+		this.teardownFrame();
+		body.empty();
 
 		const frame = body.createEl('iframe', { cls: 'tinymist-preview-frame' });
 		frame.setAttribute('src', url);
@@ -198,6 +231,7 @@ export class TypstPreviewView extends ItemView {
 		frame.setAttribute('referrerpolicy', 'no-referrer');
 		frame.setAttribute('allow', '');
 		this.frame = frame;
+		this.frameUrl = url;
 
 		this.setStatus('Live');
 	}
@@ -229,6 +263,7 @@ export class TypstPreviewView extends ItemView {
 			this.frame.remove();
 			this.frame = null;
 		}
+		this.frameUrl = null;
 	}
 
 	/** Re-points an open preview at a different document. */

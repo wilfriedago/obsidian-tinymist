@@ -6,6 +6,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [0.2.1] - 2026-09-18
+
+### Fixed
+
+- The preview no longer reloads itself when nothing about it changed. Obsidian
+  can call `onOpen` and `setState` in either order and both trigger a render,
+  so the frame was being torn down and rebuilt against the same URL —
+  re-downloading the preview frontend and re-initializing its WebAssembly for
+  nothing. Renders are now serialized and skipped when the URL is unchanged.
+- Switching the preview theme now says **Reloading…** while it happens, instead
+  of going blank without explanation.
+
 ## [0.2.0] - 2026-09-18
 
 ### Added
