@@ -154,6 +154,24 @@ does not.
 - Add a `CHANGELOG.md` entry under a new *Unreleased* heading for anything
   user-visible.
 
+## Branch protection
+
+`main` is protected by a ruleset:
+
+| Rule | Effect |
+| --- | --- |
+| No force pushes | History on `main` cannot be rewritten |
+| No deletion | The branch cannot be deleted |
+| Pull request required | Contributors merge through a pull request; no approvals are required, since this is a single-maintainer project |
+| Status checks required | `check (20.x)`, `check (22.x)`, `check (24.x)` and `integration` must pass before a merge |
+
+Repository admins bypass the pull-request and status-check rules, so a
+maintainer can still push directly. Force-push and deletion protection applies
+to everyone, including them — those are the rules that exist to catch mistakes
+rather than to enforce process.
+
+Tags are not covered, so the release flow below is unaffected.
+
 ## Releases
 
 Maintainers only. A release is a tag; docs-only changes must not create one.
