@@ -277,6 +277,7 @@ vulnerability privately.
 
 | | |
 | --- | --- |
+| [Roadmap](ROADMAP.md) | What is planned, what is not, and why |
 | [Architecture](docs/architecture/overview.md) | How the pieces fit, and why |
 | [Research](docs/architecture/research.md) | Evidence behind the design decisions |
 | [Testing](docs/testing.md) | The automated suite and the manual pass |

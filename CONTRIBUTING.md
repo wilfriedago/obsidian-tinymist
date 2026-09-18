@@ -73,6 +73,13 @@ minimal ESLint config exists for exactly those six and nothing else. If oxlint
 gains type-aware plugins, `eslint.config.mts` and the `eslint` dependency can
 be deleted outright.
 
+## Picking something up
+
+[ROADMAP.md](ROADMAP.md) lists what is planned and what is deliberately not,
+with the open question that blocks each item. If you want to work on something
+there, say so in an issue first — several entries are waiting on an answer
+rather than on code, and the answer may change the shape of the work.
+
 ## Where things live
 
 Read [docs/architecture/overview.md](docs/architecture/overview.md) first — it
