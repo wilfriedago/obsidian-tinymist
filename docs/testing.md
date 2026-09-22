@@ -154,6 +154,7 @@ _Following the active document_
 - [ ] Turning **Follow the active document** off makes the *next* preview start pinned, and leaves open ones as they are.
 - [ ] Pin one preview and let another follow, both on the same document: moving the follower off it leaves the pinned one rendering (`pgrep -f "tinymist"` still shows its server).
 - [ ] Switching documents ten times leaves one preview server behind, not ten.
+- [ ] Switching away *while a preview is still starting* also leaves one: flip between two documents as fast as the status line will let you, then count with `pgrep -f "tinymist"`.
 
 **Projects**
 

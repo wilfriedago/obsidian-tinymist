@@ -558,14 +558,22 @@ export class TypstRuntime {
 	 * Tasks are keyed by document and leaves are not: a pinned preview and a
 	 * following one can land on the same file, and whichever leaves first must
 	 * not take the other's server with it.
+	 *
+	 * Read from stored state, for the same reason {@link syncFollowingPreviews}
+	 * does: a deferred leaf has no view to ask, and treating it as "not showing
+	 * this document" would kill the server it is about to want back. The
+	 * requester is excluded by leaf rather than by path, because its own stored
+	 * state may still name the document it is in the middle of leaving.
 	 */
 	private releasePreview(vaultPath: VaultPath, requester: TypstPreviewView): void {
-		const stillShown = this.app.workspace.getLeavesOfType(TYPST_PREVIEW_VIEW_TYPE).some(
-			(leaf) =>
-				leaf.view instanceof TypstPreviewView &&
-				leaf.view !== requester &&
-				leaf.view.getPreviewedPath() === vaultPath,
-		);
+		const stillShown = this.app.workspace
+			.getLeavesOfType(TYPST_PREVIEW_VIEW_TYPE)
+			.some(
+				(leaf) =>
+					leaf !== requester.leaf &&
+					(leaf.getViewState().state as PreviewViewState | undefined)?.vaultPath ===
+						vaultPath,
+			);
 		if (stillShown) {
 			return;
 		}

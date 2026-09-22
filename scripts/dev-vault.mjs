@@ -18,8 +18,12 @@
  */
 import { existsSync, lstatSync, mkdirSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = resolve(import.meta.dirname, '..');
+// Not `import.meta.dirname`, which needs Node 20.11 while the project asks for
+// Node 20. This form works on every version that has ES modules at all.
+const here = fileURLToPath(new URL('.', import.meta.url));
+const root = resolve(here, '..');
 const dist = resolve(root, 'dist');
 const pluginsDir = resolve(root, 'test-vault/.obsidian/plugins');
 const link = resolve(pluginsDir, 'tinymist');

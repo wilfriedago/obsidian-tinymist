@@ -14,14 +14,18 @@
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const RELEASE = 'https://github.com/pjeby/hot-reload/releases/latest/download';
 const FILES = ['main.js', 'manifest.json'];
 
-const root = resolve(import.meta.dirname, '..');
+// Not `import.meta.dirname`: see the note in dev-vault.mjs.
+const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const target = resolve(root, 'test-vault/.obsidian/plugins/hot-reload');
 
 mkdirSync(target, { recursive: true });
+
+const downloaded = new Map();
 
 for (const file of FILES) {
 	const url = `${RELEASE}/${file}`;
@@ -36,8 +40,15 @@ for (const file of FILES) {
 		process.exit(1);
 	}
 
-	writeFileSync(resolve(target, file), Buffer.from(await response.arrayBuffer()));
+	downloaded.set(file, Buffer.from(await response.arrayBuffer()));
 	console.log('ok');
+}
+
+// Written only once both have arrived. A plugin folder holding main.js without
+// its manifest fails to load, and the failure reads as a broken plugin rather
+// than as the interrupted download it is.
+for (const [file, bytes] of downloaded) {
+	writeFileSync(resolve(target, file), bytes);
 }
 
 console.log('');

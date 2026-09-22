@@ -186,7 +186,7 @@ export class TypstPreviewView extends ItemView {
 		});
 		setIcon(reload, 'refresh-cw');
 		this.registerDomEvent(reload, 'click', () => {
-			void this.render();
+			this.report('Refreshing the preview failed', this.render());
 		});
 
 		const openSource = toolbar.createEl('button', {
@@ -204,14 +204,14 @@ export class TypstPreviewView extends ItemView {
 		this.pinButton = pin;
 		setIcon(pin, 'pin');
 		this.registerDomEvent(pin, 'click', () => {
-			void this.togglePin();
+			this.report('Saving the preview pin failed', this.togglePin());
 		});
 		this.updatePinButton();
 
 		const theme = toolbar.createEl('button', { cls: 'tinymist-preview-button' });
 		this.themeButton = theme;
 		this.registerDomEvent(theme, 'click', () => {
-			void this.cycleTheme();
+			this.report('Changing the preview theme failed', this.cycleTheme());
 		});
 		this.updateThemeButton();
 
@@ -258,7 +258,11 @@ export class TypstPreviewView extends ItemView {
 			return;
 		}
 
-		if (!this.vaultPath) {
+		// Captured, because starting a task is slow enough for the document to
+		// change underneath it.
+		const path = this.vaultPath;
+
+		if (!path) {
 			this.teardownFrame();
 			body.empty();
 			this.showMessage('Open a Typst document, then run "Open preview".');
@@ -270,7 +274,7 @@ export class TypstPreviewView extends ItemView {
 
 		let url: string;
 		try {
-			url = await this.host.resolvePreviewUrl(this.vaultPath, this.themeOverride);
+			url = await this.host.resolvePreviewUrl(path, this.themeOverride);
 		} catch (error) {
 			this.teardownFrame();
 			body.empty();
@@ -279,6 +283,15 @@ export class TypstPreviewView extends ItemView {
 			this.host.logger.error('Preview failed to start', error);
 			this.showMessage(message);
 			this.setStatus('Unavailable');
+			return;
+		}
+
+		// The document moved on while the task was starting. `setState` already
+		// tried to release this one and could not: the task was still being
+		// created, so the controller had nothing under that path to stop yet.
+		// Without this the server stays up with no view showing it.
+		if (this.vaultPath !== path) {
+			this.host.releasePreview(path, this);
 			return;
 		}
 
@@ -407,6 +420,21 @@ export class TypstPreviewView extends ItemView {
 
 		setIcon(button, icon);
 		button.setAttribute('aria-label', label);
+	}
+
+	/**
+	 * Logs a rejected toolbar action instead of letting it escape.
+	 *
+	 * A DOM handler cannot await, and a bare `void` on a promise that rejects
+	 * becomes an unhandled rejection in the console with no clue as to which
+	 * button caused it. These failures are not worth a notice — the frame
+	 * reports its own trouble in place — but they are worth a log line that
+	 * names the action.
+	 */
+	private report(what: string, action: Promise<void>): void {
+		void action.catch((error: unknown) => {
+			this.host.logger.error(what, error);
+		});
 	}
 
 	/** Reports a problem without stealing focus from the editor. */
