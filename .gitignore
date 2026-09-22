@@ -17,8 +17,14 @@ data.json
 # Development vault runtime state
 test-vault/.obsidian/workspace.json
 test-vault/.obsidian/workspace-mobile.json
+# Per-machine state Obsidian writes on first open; the fixtures and the
+# plugin list are the only parts of the vault worth sharing.
+test-vault/.obsidian/appearance.json
+test-vault/.obsidian/core-plugins.json
 test-vault/.obsidian/plugins/tinymist
 test-vault/.obsidian/plugins/tinymist/data.json
+# A development tool, downloaded by `pnpm dev:hot-reload`.
+test-vault/.obsidian/plugins/hot-reload/
 
 # Typst / Tinymist build artifacts
 *.pdf

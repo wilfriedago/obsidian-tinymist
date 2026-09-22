@@ -17,12 +17,16 @@ at a real vault during development.
 
 ## Use
 
-1. Open this folder as a vault in Obsidian.
-2. Build the plugin from the repository root, then link `dist/` in as the
-   plugin folder:
-   ```sh
-   pnpm build
-   mkdir -p test-vault/.obsidian/plugins
-   ln -sfn "$PWD/dist" test-vault/.obsidian/plugins/tinymist
-   ```
-3. Enable **Tinymist** under **Settings → Community plugins**.
+From the repository root:
+
+```sh
+pnpm dev:hot-reload   # once
+pnpm dev
+```
+
+Then open this folder as a vault and enable **Tinymist** and **Hot Reload**
+under **Settings → Community plugins**. Saving a source file rebuilds and
+reloads the plugin without a restart.
+
+See [CONTRIBUTING.md](../CONTRIBUTING.md#running-it-in-obsidian) for what that
+wires up and what a reload does to the Tinymist process.

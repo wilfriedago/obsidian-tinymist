@@ -6,7 +6,10 @@
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "node esbuild.config.mjs",
+		"dev": "node scripts/dev-vault.mjs && node esbuild.config.mjs",
+		"dev:setup": "node scripts/dev-vault.mjs",
+		"dev:hot-reload": "node scripts/install-hot-reload.mjs",
+		"dev:check": "tsc -noEmit -skipLibCheck --watch --preserveWatchOutput",
 		"build": "pnpm run typecheck && node esbuild.config.mjs production",
 		"typecheck": "tsc -noEmit -skipLibCheck",
 		"lint": "oxlint",
