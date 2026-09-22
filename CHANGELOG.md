@@ -6,11 +6,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
-## [Unreleased]
-
-### Fixed
-
-- External edits now update the preview while the source tab is open, without triggering another save. Reloads no longer enter undo history, so Undo cannot restore the old document over an external edit.
+## [0.4.0] - 2026-09-22
 
 ### Added
 
@@ -20,6 +16,14 @@ form Obsidian requires.
   appeared. Matches the default in Tinymist's own VS Code extension, and can be
   turned off under **Preview → Render only visible pages** if a document ever
   draws incorrectly.
+
+### Fixed
+
+- External edits now update the preview while the source tab is open, without
+  triggering another save. Reloads no longer enter undo history, so Undo cannot
+  restore the old document over an external edit. Thanks to
+  [@jas-ho](https://github.com/jas-ho) in
+  [#10](https://github.com/wilfriedago/obsidian-tinymist/pull/10).
 
 ## [0.3.1] - 2026-09-22
 
