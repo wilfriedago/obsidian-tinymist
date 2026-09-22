@@ -387,7 +387,7 @@ export class TypstPreviewView extends ItemView {
 	 * choice made just before a quit is lost.
 	 */
 	private async persistState(): Promise<void> {
-		await this.app.workspace.requestSaveLayout();
+		this.app.workspace.requestSaveLayout();
 	}
 
 	/**
@@ -398,8 +398,7 @@ export class TypstPreviewView extends ItemView {
 	 * deliberate button press rather than something tied to scrolling.
 	 */
 	private async cycleTheme(): Promise<void> {
-		const next: PreviewThemeOverride =
-			this.themeOverride === null ? 'light' : this.themeOverride === 'light' ? 'dark' : null;
+		const next: PreviewThemeOverride = this.themeOverride === null ? 'light' : this.themeOverride === 'light' ? 'dark' : null;
 		this.themeOverride = next;
 		this.updateThemeButton();
 		await this.render();

@@ -6,6 +6,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [0.3.1] - 2026-09-22
+
+### Fixed
+
+- Removed an `await` on `requestSaveLayout`, which is a debouncer rather than a
+  promise, so awaiting it did nothing. No behaviour changes: the layout was
+  already being saved on Obsidian's own schedule.
+
 ## [0.3.0] - 2026-09-22
 
 ### Added
