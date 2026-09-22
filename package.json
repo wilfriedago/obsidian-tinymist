@@ -1,12 +1,15 @@
 {
 	"name": "obsidian-tinymist",
-	"version": "0.2.1",
+	"version": "0.3.0",
 	"description": "Edit, preview, and export Typst documents in Obsidian using the Tinymist language server.",
 	"main": "dist/main.js",
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"dev": "node esbuild.config.mjs",
+		"dev": "node scripts/dev-vault.mjs && node esbuild.config.mjs",
+		"dev:setup": "node scripts/dev-vault.mjs",
+		"dev:hot-reload": "node scripts/install-hot-reload.mjs",
+		"dev:check": "tsc -noEmit -skipLibCheck --watch --preserveWatchOutput",
 		"build": "pnpm run typecheck && node esbuild.config.mjs production",
 		"typecheck": "tsc -noEmit -skipLibCheck",
 		"lint": "oxlint",

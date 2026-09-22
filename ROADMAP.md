@@ -54,9 +54,13 @@ So the engine work is done and this is a user-interface problem:
   the fixture project already declares, so most users never set it by hand
 - showing which document is pinned, because an invisible mode is worse than no
   mode
-- deciding what the preview follows: today it follows the active editor, and
-  pinning means it should follow the pinned document while the caret still
-  drives source-to-preview sync from whichever file you are editing
+- deciding what the preview follows: an unpinned preview follows the active
+  editor, and pinning a main document means it should follow that instead,
+  while the caret still drives source-to-preview sync from whichever file you
+  are editing. The preview's own pin
+  ([#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7)) is a
+  per-leaf choice and does not decide the project's main file; these two need
+  to end up as one idea rather than two.
 
 The open question is scope, not feasibility: whether pinning is per-vault, per
 project root, or remembered per document. Per project root is probably right,

@@ -32,17 +32,38 @@ most of the plugin either way.
 
 ### Running it in Obsidian
 
-`dist/` is the complete plugin folder, so one symlink is enough and every
-rebuild is picked up:
-
 ```sh
-mkdir -p test-vault/.obsidian/plugins
-ln -sfn "$PWD/dist" test-vault/.obsidian/plugins/tinymist
-pnpm dev                      # rebuilds on change
+pnpm dev:hot-reload           # once: installs the live-reload plugin
+pnpm dev                      # links the vault, then rebuilds on change
 ```
 
-Open `test-vault/` as a vault and enable **Tinymist** under **Settings →
-Community plugins**. Reload Obsidian with **Ctrl/Cmd+R** to pick up a rebuild.
+Open `test-vault/` as a vault and enable both **Tinymist** and **Hot Reload**
+under **Settings → Community plugins**. From then on, saving a source file
+rebuilds it and Obsidian reloads the plugin on its own — no **Ctrl/Cmd+R**.
+
+`pnpm dev` runs `pnpm dev:setup` first, which is idempotent and does three
+things a live reload needs, each of which fails silently when it is missing:
+
+- symlinks `test-vault/.obsidian/plugins/tinymist` → `dist/`, which is the
+  complete plugin folder the build produces. It replaces the empty directory a
+  fresh clone has there — worth knowing, because `ln -s dist …` against an
+  existing directory puts the link *inside* it and nothing appears to be wrong.
+- writes `dist/.hotreload`, the marker [Hot Reload](https://github.com/pjeby/hot-reload)
+  looks for to decide a plugin is under development.
+- seeds `dist/data.json` with `logLevel: debug`, so the console is worth
+  opening. Only when there is no `data.json` yet, so a setting changed in the
+  app is never overwritten.
+
+Hot Reload is a third-party plugin and is not in the community directory, which
+is why it needs a script rather than an in-app install. It is the only command
+here that touches the network, and it writes nothing outside `test-vault/`.
+
+Two things to expect from a reload, both specific to this plugin:
+
+- The Tinymist process is killed and respawned, so an open preview restarts and
+  the first compile after a reload is a cold one.
+- esbuild does not typecheck. Run `pnpm dev:check` in a second terminal, or a
+  type error will reach the vault as a runtime failure instead of a build one.
 
 **Never develop against a vault you care about.** `test-vault/` exists for
 this, with fixtures covering valid and broken documents, multi-file imports, a
@@ -51,7 +72,10 @@ real project with a `typst.toml`, and a PDF that predates the plugin.
 ## The commands
 
 ```sh
-pnpm dev               # watch build
+pnpm dev               # link the dev vault, then watch build
+pnpm dev:setup         # just the vault wiring, without the watch
+pnpm dev:hot-reload    # install the live-reload plugin into test-vault/
+pnpm dev:check         # typecheck in watch mode; esbuild does not typecheck
 pnpm build             # typecheck, then production build into dist/
 pnpm typecheck
 pnpm lint              # oxlint, including 23 Obsidian review rules

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { LogSink, Logger } from '../../src/shared/logging';
 import { PreviewController, taskIdFor } from '../../src/preview/preview-controller';
+import { shouldRetargetPreview } from '../../src/preview/typst-preview-view';
 import { presentStatus } from '../../src/plugin/status-bar';
 import { hoverText, stripSnippetPlaceholders } from '../../src/editor/language-features';
 import { TinymistClient, type ClientTransport } from '../../src/typst/tinymist/client';
@@ -293,5 +294,36 @@ describe('snippet and hover conversion', () => {
 		expect(hoverText({ contents: { kind: 'markdown', value: 'md' } })).toBe('md');
 		expect(hoverText({ contents: ['a', { kind: 'markdown', value: 'b' }] })).toBe('a\nb');
 		expect(hoverText(null)).toBe('');
+	});
+});
+
+describe('shouldRetargetPreview', () => {
+	const following = { vaultPath: 'a.typ', pinned: false };
+
+	it('re-points a following preview at the document being edited', () => {
+		expect(shouldRetargetPreview(following, 'b.typ', false)).toBe(true);
+	});
+
+	it('leaves a pinned preview alone', () => {
+		expect(shouldRetargetPreview({ vaultPath: 'a.typ', pinned: true }, 'b.typ', false)).toBe(
+			false,
+		);
+	});
+
+	it('does nothing when the preview already shows that document', () => {
+		expect(shouldRetargetPreview(following, 'a.typ', false)).toBe(false);
+	});
+
+	it('fills an idle preview rather than leaving it empty', () => {
+		expect(shouldRetargetPreview({ vaultPath: null, pinned: false }, 'a.typ', false)).toBe(true);
+	});
+
+	// A leaf restored from a workspace saved before pinning existed, and one
+	// Obsidian has deferred, both arrive without a stored choice.
+	it('falls back to the setting when the leaf has no stored choice', () => {
+		expect(shouldRetargetPreview({ vaultPath: 'a.typ' }, 'b.typ', false)).toBe(true);
+		expect(shouldRetargetPreview({ vaultPath: 'a.typ' }, 'b.typ', true)).toBe(false);
+		expect(shouldRetargetPreview(undefined, 'b.typ', false)).toBe(true);
+		expect(shouldRetargetPreview(undefined, 'b.typ', true)).toBe(false);
 	});
 });

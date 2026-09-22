@@ -59,6 +59,8 @@ export interface TypstEditorHost extends LanguageFeatureContext {
 	onCursorMoved(vaultPath: VaultPath, line: number, character: number): void;
 	/** The user asked for the preview from the editor's own header. */
 	onTogglePreviewRequested(vaultPath: VaultPath): void;
+	/** The user asked for the preview to take over this tab. */
+	onShowPreviewHereRequested(vaultPath: VaultPath): void;
 	/** Diagnostics currently known for a document. */
 	getDiagnostics(vaultPath: VaultPath): readonly Diagnostic[];
 	readonly logger: Logger;
@@ -125,13 +127,24 @@ export class TypstEditorView extends TextFileView {
 	}
 
 	override async onOpen(): Promise<void> {
-		// A tab-header action, which is where Obsidian puts per-view controls
+		// Tab-header actions, which is where Obsidian puts per-view controls
 		// (its own Markdown view uses the same slot for the reading toggle).
-		// Without it the preview is reachable only from the command palette.
-		this.addAction('book-open', 'Toggle Typst preview', () => {
+		// Without them the preview is reachable only from the command palette.
+		//
+		// Two, because the useful place for a preview depends on the window: a
+		// split on a wide screen, and this very tab on a narrow one, where a
+		// split leaves neither pane wide enough to read.
+		this.addAction('book-open', 'Toggle Typst preview in a split', () => {
 			const vaultPath = this.vaultPath;
 			if (vaultPath) {
 				this.host.onTogglePreviewRequested(vaultPath);
+			}
+		});
+
+		this.addAction('eye', 'Show Typst preview in this tab', () => {
+			const vaultPath = this.vaultPath;
+			if (vaultPath) {
+				this.host.onShowPreviewHereRequested(vaultPath);
 			}
 		});
 

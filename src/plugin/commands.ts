@@ -42,6 +42,16 @@ export function registerCommands(plugin: Plugin, runtime: TypstRuntime): void {
 		checkCallback: withActiveDocument((_view, vaultPath) => runtime.togglePreview(vaultPath)),
 	});
 
+	// The preview replaces the editor in its own tab rather than splitting it,
+	// which is the only way it fits on a narrow window.
+	plugin.addCommand({
+		id: 'open-preview-here',
+		name: 'Open preview in this tab',
+		checkCallback: withActiveDocument((_view, vaultPath) =>
+			runtime.openPreview(vaultPath, 'here'),
+		),
+	});
+
 	plugin.addCommand({
 		id: 'export-pdf',
 		name: 'Export PDF',

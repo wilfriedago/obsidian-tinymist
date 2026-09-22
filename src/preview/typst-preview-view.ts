@@ -28,18 +28,50 @@ export const TYPST_PREVIEW_VIEW_TYPE = 'typst-preview';
  */
 export type PreviewThemeOverride = 'light' | 'dark' | null;
 
-export interface PreviewViewState {
+export type PreviewViewState = {
 	/** Vault-relative path of the previewed `.typ` document. */
 	vaultPath: VaultPath | null;
 	/** Per-leaf theme choice, persisted with the workspace. */
 	themeOverride?: PreviewThemeOverride;
+	/**
+	 * Hold this preview on its document instead of following the editor.
+	 *
+	 * This is the preview's own pin, not Obsidian's tab pinning: it says which
+	 * document is rendered, not whether the tab can be navigated away.
+	 * `undefined` means "not decided yet", which resolves to the plugin
+	 * setting — that is what carries a workspace saved before pinning existed.
+	 */
+	pinned?: boolean;
+};
+
+/**
+ * Whether a preview leaf should be re-pointed at the document being edited.
+ *
+ * Kept pure and separate from the view so the rule can be tested without an
+ * Obsidian workspace, and so the runtime can apply it to a leaf whose view has
+ * been deferred and is not constructed yet.
+ */
+export function shouldRetargetPreview(
+	state: PreviewViewState | undefined,
+	activePath: VaultPath,
+	pinnedByDefault: boolean,
+): boolean {
+	if ((state?.pinned ?? pinnedByDefault) === true) {
+		return false;
+	}
+	return (state?.vaultPath ?? null) !== activePath;
 }
 
 export interface TypstPreviewHost {
 	/** Resolves a preview URL, starting a task if needed. */
 	resolvePreviewUrl(vaultPath: VaultPath, themeOverride: PreviewThemeOverride): Promise<string>;
-	/** The view is closing; release the task for this document. */
-	releasePreview(vaultPath: VaultPath): void;
+	/**
+	 * This view is done with the document; release its task unless another
+	 * preview is still showing it.
+	 */
+	releasePreview(vaultPath: VaultPath, requester: TypstPreviewView): void;
+	/** Whether a preview with no stored choice starts pinned. */
+	previewStartsPinned(): boolean;
 	/** Opens the source document beside this preview. */
 	openSource(vaultPath: VaultPath): Promise<void>;
 	readonly logger: Logger;
@@ -48,10 +80,13 @@ export interface TypstPreviewHost {
 export class TypstPreviewView extends ItemView {
 	private vaultPath: VaultPath | null = null;
 	private themeOverride: PreviewThemeOverride = null;
+	/** Resolved from the setting until the leaf has a choice of its own. */
+	private pinned = false;
 	private frame: HTMLIFrameElement | null = null;
 	private statusEl: HTMLElement | null = null;
 	private bodyEl: HTMLElement | null = null;
 	private themeButton: HTMLElement | null = null;
+	private pinButton: HTMLElement | null = null;
 	/** URL the current frame is showing, so an identical render is a no-op. */
 	private frameUrl: string | null = null;
 	/** Serializes renders; two concurrent ones would build two frames. */
@@ -64,6 +99,10 @@ export class TypstPreviewView extends ItemView {
 		super(leaf);
 		// A preview follows its document rather than being navigated to.
 		this.navigation = false;
+		// The setting decides until the leaf's own stored choice arrives in
+		// `setState` — which is not guaranteed to happen before `onOpen` builds
+		// the toolbar, so the button would otherwise start out lying.
+		this.pinned = host.previewStartsPinned();
 	}
 
 	override getViewType(): string {
@@ -92,20 +131,42 @@ export class TypstPreviewView extends ItemView {
 			...super.getState(),
 			vaultPath: this.vaultPath,
 			themeOverride: this.themeOverride,
+			pinned: this.pinned,
 		};
 	}
 
+	/**
+	 * The only way a preview changes document.
+	 *
+	 * Going through the leaf's state rather than mutating the view keeps the
+	 * tab header, the workspace file, and the view in step — Obsidian updates
+	 * the header off a state change, and there is no public API to ask it to.
+	 */
 	override async setState(state: unknown, result: ViewStateResult): Promise<void> {
 		const requested = state as PreviewViewState | undefined;
 		const requestedPath = requested?.vaultPath ?? null;
 		const requestedTheme = requested?.themeOverride ?? null;
+		// A leaf restored from a workspace saved before pinning existed has no
+		// stored choice, so the setting decides for it.
+		const requestedPin = requested?.pinned ?? this.host.previewStartsPinned();
 		await super.setState(state, result);
 
-		const changed = requestedPath !== this.vaultPath || requestedTheme !== this.themeOverride;
+		const previousPath = this.vaultPath;
+		const needsRender =
+			requestedPath !== previousPath || requestedTheme !== this.themeOverride;
+
 		this.vaultPath = requestedPath;
 		this.themeOverride = requestedTheme;
+		this.pinned = requestedPin;
+		this.updatePinButton();
 
-		if (changed) {
+		// Following the editor would otherwise leave a preview server running
+		// for every document visited.
+		if (previousPath !== null && previousPath !== requestedPath) {
+			this.host.releasePreview(previousPath, this);
+		}
+
+		if (needsRender) {
 			await this.render();
 		}
 	}
@@ -125,7 +186,7 @@ export class TypstPreviewView extends ItemView {
 		});
 		setIcon(reload, 'refresh-cw');
 		this.registerDomEvent(reload, 'click', () => {
-			void this.render();
+			this.report('Refreshing the preview failed', this.render());
 		});
 
 		const openSource = toolbar.createEl('button', {
@@ -139,10 +200,18 @@ export class TypstPreviewView extends ItemView {
 			}
 		});
 
+		const pin = toolbar.createEl('button', { cls: 'tinymist-preview-button' });
+		this.pinButton = pin;
+		setIcon(pin, 'pin');
+		this.registerDomEvent(pin, 'click', () => {
+			this.report('Saving the preview pin failed', this.togglePin());
+		});
+		this.updatePinButton();
+
 		const theme = toolbar.createEl('button', { cls: 'tinymist-preview-button' });
 		this.themeButton = theme;
 		this.registerDomEvent(theme, 'click', () => {
-			void this.cycleTheme();
+			this.report('Changing the preview theme failed', this.cycleTheme());
 		});
 		this.updateThemeButton();
 
@@ -155,7 +224,7 @@ export class TypstPreviewView extends ItemView {
 		// Releasing here, rather than in the plugin's unload, is what keeps a
 		// closed tab from leaving a preview server running.
 		if (this.vaultPath) {
-			this.host.releasePreview(this.vaultPath);
+			this.host.releasePreview(this.vaultPath, this);
 		}
 		this.teardownFrame();
 		this.contentEl.empty();
@@ -189,7 +258,11 @@ export class TypstPreviewView extends ItemView {
 			return;
 		}
 
-		if (!this.vaultPath) {
+		// Captured, because starting a task is slow enough for the document to
+		// change underneath it.
+		const path = this.vaultPath;
+
+		if (!path) {
 			this.teardownFrame();
 			body.empty();
 			this.showMessage('Open a Typst document, then run "Open preview".');
@@ -201,7 +274,7 @@ export class TypstPreviewView extends ItemView {
 
 		let url: string;
 		try {
-			url = await this.host.resolvePreviewUrl(this.vaultPath, this.themeOverride);
+			url = await this.host.resolvePreviewUrl(path, this.themeOverride);
 		} catch (error) {
 			this.teardownFrame();
 			body.empty();
@@ -210,6 +283,15 @@ export class TypstPreviewView extends ItemView {
 			this.host.logger.error('Preview failed to start', error);
 			this.showMessage(message);
 			this.setStatus('Unavailable');
+			return;
+		}
+
+		// The document moved on while the task was starting. `setState` already
+		// tried to release this one and could not: the task was still being
+		// created, so the controller had nothing under that path to stop yet.
+		// Without this the server stays up with no view showing it.
+		if (this.vaultPath !== path) {
+			this.host.releasePreview(path, this);
 			return;
 		}
 
@@ -266,20 +348,46 @@ export class TypstPreviewView extends ItemView {
 		this.frameUrl = null;
 	}
 
-	/** Re-points an open preview at a different document. */
-	async showDocument(vaultPath: VaultPath): Promise<void> {
-		if (this.vaultPath === vaultPath) {
-			return;
-		}
-		if (this.vaultPath) {
-			this.host.releasePreview(this.vaultPath);
-		}
-		this.vaultPath = vaultPath;
-		await this.render();
-	}
-
 	getPreviewedPath(): VaultPath | null {
 		return this.vaultPath;
+	}
+
+	/**
+	 * Holds this preview on its document, or lets it follow the editor again.
+	 *
+	 * Releasing the pin retargets nothing by itself; the next document switch
+	 * does that, which keeps a click from recompiling something the reader is
+	 * still looking at.
+	 */
+	private async togglePin(): Promise<void> {
+		this.pinned = !this.pinned;
+		this.updatePinButton();
+		await this.persistState();
+	}
+
+	private updatePinButton(): void {
+		const button = this.pinButton;
+		if (!button) {
+			return;
+		}
+		button.toggleClass('is-active', this.pinned);
+		button.setAttribute(
+			'aria-label',
+			this.pinned
+				? 'Pinned to this document. Select to follow the editor.'
+				: 'Following the editor. Select to pin this document.',
+		);
+		button.setAttribute('aria-pressed', String(this.pinned));
+	}
+
+	/**
+	 * Writes the leaf's state to the workspace file.
+	 *
+	 * Obsidian saves the layout on its own schedule, so without this a toolbar
+	 * choice made just before a quit is lost.
+	 */
+	private async persistState(): Promise<void> {
+		await this.app.workspace.requestSaveLayout();
 	}
 
 	/**
@@ -295,6 +403,7 @@ export class TypstPreviewView extends ItemView {
 		this.themeOverride = next;
 		this.updateThemeButton();
 		await this.render();
+		await this.persistState();
 	}
 
 	private updateThemeButton(): void {
@@ -311,6 +420,21 @@ export class TypstPreviewView extends ItemView {
 
 		setIcon(button, icon);
 		button.setAttribute('aria-label', label);
+	}
+
+	/**
+	 * Logs a rejected toolbar action instead of letting it escape.
+	 *
+	 * A DOM handler cannot await, and a bare `void` on a promise that rejects
+	 * becomes an unhandled rejection in the console with no clue as to which
+	 * button caused it. These failures are not worth a notice — the frame
+	 * reports its own trouble in place — but they are worth a log line that
+	 * names the action.
+	 */
+	private report(what: string, action: Promise<void>): void {
+		void action.catch((error: unknown) => {
+			this.host.logger.error(what, error);
+		});
 	}
 
 	/** Reports a problem without stealing focus from the editor. */

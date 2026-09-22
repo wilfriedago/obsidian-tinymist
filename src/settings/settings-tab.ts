@@ -180,6 +180,12 @@ export class TypstSettingTab extends PluginSettingTab {
 					},
 				},
 				{
+					name: 'Follow the active document',
+					desc: 'A new preview re-points itself at whichever Typst document you switch to. Pin a preview from its own toolbar to hold it on one document.',
+					aliases: ['switch', 'pin', 'active', 'track'],
+					control: { type: 'toggle', key: 'previewFollowsActiveDocument' },
+				},
+				{
 					name: 'Sync with the editor',
 					desc: 'Scroll the preview to the cursor, and move the cursor when you select rendered content.',
 					aliases: ['scroll', 'jump', 'navigate'],
