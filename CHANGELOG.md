@@ -8,6 +8,10 @@ form Obsidian requires.
 
 ## [Unreleased]
 
+### Fixed
+
+- External edits now update the preview while the source tab is open, without triggering another save. Reloads no longer enter undo history, so Undo cannot restore the old document over an external edit.
+
 ### Added
 
 - **The preview renders only the pages on screen.** Tinymist supports this and

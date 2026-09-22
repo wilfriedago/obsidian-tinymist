@@ -123,6 +123,8 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 
 **Preview**
 
+- [ ] With source and preview tabs open, append text from an external editor twice. Both tabs update without typing in Obsidian.
+- [ ] After those external edits, press Undo, then type and save. Both additions remain on disk.
 - [ ] The **book** button in the Typst editor's tab header opens the preview in a split.
 - [ ] Pressing it again closes the preview.
 - [ ] The **eye** button shows the preview in the editor's own tab instead, and the preview's **Open source** button goes back.
@@ -193,6 +195,12 @@ _Following the active document_
 - [ ] A `.typ` editor and its preview both restore after restarting Obsidian.
 - [ ] Popping a Typst editor out into its own window works.
 - [ ] Three `.typ` files open at once stay independent.
+
+### External editing limits
+
+Keep the source tab open when editing externally; preview-only reloads are not covered by this fix. Avoid simultaneous writes from Obsidian and another editor. Obsidian's save path does not provide an atomic check against disk changes.
+
+External reloads do not enter undo history. Recover unwanted external changes from version control or backups. Cursor and history mapping preserve unchanged text outside the replaced span; multiple separated edits are treated as one span. Reloads during IME composition have not been verified.
 
 ### Before reporting a problem
 

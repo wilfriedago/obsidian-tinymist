@@ -58,7 +58,9 @@ export class View extends Component {}
 export class ItemView extends View {}
 export class FileView extends ItemView {}
 export class EditableFileView extends FileView {}
-export class TextFileView extends EditableFileView {}
+export class TextFileView extends EditableFileView {
+	async onUnloadFile(): Promise<void> {}
+}
 export class Plugin extends Component {}
 export class PluginSettingTab {}
 export class Setting {}

@@ -8,7 +8,8 @@ import {
 	Compartment,
 	EditorState,
 	type Extension,
-	type Transaction,
+	Transaction,
+	type TransactionSpec,
 } from '@codemirror/state';
 import {
 	EditorView,
@@ -94,12 +95,29 @@ const CHANGE_DEBOUNCE_MS = 150;
 /** Cursor moves are rate-limited separately; they are cheap but frequent. */
 const CURSOR_DEBOUNCE_MS = 250;
 
+/** Reload disk edits without making Undo restore an obsolete document. */
+export function externalReplaceSpec(state: EditorState, next: string): TransactionSpec | null {
+	const previous = state.doc.toString();
+	if (previous === next) return null;
+	let from = 0;
+	const limit = Math.min(previous.length, next.length);
+	while (from < limit && previous[from] === next[from]) from += 1;
+	let suffix = 0;
+	while (suffix < limit - from && previous[previous.length - suffix - 1] === next[next.length - suffix - 1]) {
+		suffix += 1;
+	}
+	return {
+		changes: { from, to: previous.length - suffix, insert: next.slice(from, next.length - suffix) },
+		annotations: Transaction.addToHistory.of(false),
+	};
+}
+
 export class TypstEditorView extends TextFileView {
 	private editor: EditorView | null = null;
 	private readonly diagnosticsCompartment = new Compartment();
 	private changeTimer: number | null = null;
 	private cursorTimer: number | null = null;
-	/** Set while `setViewData` is loading a file, so we do not echo it back. */
+	/** Disk reloads reach the language server, but must not request another save. */
 	private loading = false;
 
 	constructor(
@@ -177,9 +195,14 @@ export class TypstEditorView extends TextFileView {
 	}
 
 	override async onUnloadFile(file: TFile): Promise<void> {
+		this.cancelTimers();
 		this.flushPendingChange();
-		this.host.onDocumentClosed(file.path);
-		await super.onUnloadFile(file);
+		try {
+			await super.onUnloadFile(file);
+		} finally {
+			this.cancelTimers();
+			this.host.onDocumentClosed(file.path);
+		}
 	}
 
 	/* ---------------------------------------------------------------------- */
@@ -191,6 +214,9 @@ export class TypstEditorView extends TextFileView {
 	}
 
 	override setViewData(data: string, clear: boolean): void {
+		// TextFileView already watches vault modifications and merges dirty text.
+		// Retain that contract. Its save path does not provide a filesystem CAS:
+		// simultaneous external writers still need to coordinate their writes.
 		this.data = data;
 		const editor = this.editor;
 		if (!editor) {
@@ -205,10 +231,9 @@ export class TypstEditorView extends TextFileView {
 				editor.setState(
 					EditorState.create({ doc: data, extensions: this.buildExtensions() }),
 				);
-			} else if (editor.state.doc.toString() !== data) {
-				editor.dispatch({
-					changes: { from: 0, to: editor.state.doc.length, insert: data },
-				});
+			} else {
+				const change = externalReplaceSpec(editor.state, data);
+				if (change) editor.dispatch(change);
 			}
 		} finally {
 			this.loading = false;
@@ -362,10 +387,13 @@ export class TypstEditorView extends TextFileView {
 			]),
 			EditorView.lineWrapping,
 			EditorView.updateListener.of((update) => {
-				if (update.docChanged && !this.loading) {
-					this.data = update.state.doc.toString();
-					// Tells Obsidian to persist the buffer on its own schedule.
-					this.requestSave();
+				if (update.docChanged) {
+					if (!this.loading) {
+						this.data = update.state.doc.toString();
+						// Tells Obsidian to persist the buffer on its own schedule.
+						this.requestSave();
+					}
+					// External reloads must also replace Tinymist's in-memory text.
 					this.scheduleChangePush();
 				}
 				if (update.selectionSet && !update.docChanged) {
