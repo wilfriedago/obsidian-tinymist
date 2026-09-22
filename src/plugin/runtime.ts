@@ -6,7 +6,9 @@ import { PreviewController } from '../preview/preview-controller';
 import {
 	TypstPreviewView,
 	TYPST_PREVIEW_VIEW_TYPE,
+	shouldRetargetPreview,
 	type PreviewThemeOverride,
+	type PreviewViewState,
 } from '../preview/typst-preview-view';
 import { DEFAULT_SETTINGS, migrateSettings, type TypstSettings } from '../settings/settings';
 import { TypstError, asTypstError } from '../shared/errors';
@@ -30,6 +32,13 @@ import {
 import { TYPST_EXTENSION } from './constants';
 import { createTypstFile, defaultNewFileFolder, isFolder } from './new-file';
 import { StatusBarItem, type CompilePhase } from './status-bar';
+
+/**
+ * Where a newly opened preview goes: beside the editor, or in its place.
+ *
+ * `here` exists for narrow windows, where a split leaves neither pane usable.
+ */
+export type PreviewLocation = 'split' | 'here';
 
 /**
  * Wires the subsystems together and owns their lifetimes.
@@ -156,6 +165,11 @@ export class TypstRuntime {
 							this.reportError(error);
 						});
 					},
+					onShowPreviewHereRequested: (vaultPath) => {
+						void this.openPreview(vaultPath, 'here').catch((error: unknown) => {
+							this.reportError(error);
+						});
+					},
 				}),
 		);
 
@@ -166,9 +180,10 @@ export class TypstRuntime {
 					logger: this.logger.child('preview'),
 					resolvePreviewUrl: (vaultPath, themeOverride) =>
 						this.resolvePreviewUrl(vaultPath, themeOverride),
-					releasePreview: (vaultPath) => {
-						void this.previews.stop(this.manager?.getClient() ?? null, vaultPath);
+					releasePreview: (vaultPath, requester) => {
+						this.releasePreview(vaultPath, requester);
 					},
+					previewStartsPinned: () => !this.settings.previewFollowsActiveDocument,
 					openSource: (vaultPath) => this.openSource(vaultPath),
 				}),
 		);
@@ -182,6 +197,15 @@ export class TypstRuntime {
 		this.plugin.registerEvent(
 			this.app.workspace.on('active-leaf-change', () => {
 				this.updateStatusBar();
+				this.syncFollowingPreviews();
+			}),
+		);
+
+		// `active-leaf-change` covers switching tabs; `file-open` covers the
+		// same tab being pointed at another file, which does not change leaf.
+		this.plugin.registerEvent(
+			this.app.workspace.on('file-open', () => {
+				this.syncFollowingPreviews();
 			}),
 		);
 
@@ -456,27 +480,96 @@ export class TypstRuntime {
 		}
 	}
 
-	/** Opens (or focuses) the preview for a document, beside its editor. */
-	async openPreview(vaultPath: VaultPath): Promise<void> {
+	/**
+	 * Opens (or focuses) the preview for a document.
+	 *
+	 * A preview that is already open wins over the requested location: one
+	 * Tinymist task serves one document, and a second frame on the same server
+	 * would show the same page twice for no gain.
+	 */
+	async openPreview(vaultPath: VaultPath, location: PreviewLocation = 'split'): Promise<void> {
 		const existing = this.findPreviewFor(vaultPath);
 		if (existing) {
 			await this.app.workspace.revealLeaf(existing.leaf);
 			return;
 		}
 
-		// Reuse an idle preview leaf before opening a second one, so previewing
-		// a different document does not pile up tabs.
-		const idle = this.app.workspace
-			.getLeavesOfType(TYPST_PREVIEW_VIEW_TYPE)
-			.find((leaf) => leaf.view instanceof TypstPreviewView && !leaf.view.getPreviewedPath());
-
-		const leaf = idle ?? this.app.workspace.getLeaf('split', 'vertical');
+		const leaf =
+			location === 'here' ? this.app.workspace.getLeaf(false) : this.previewSplitLeaf();
 		await leaf.setViewState({
 			type: TYPST_PREVIEW_VIEW_TYPE,
 			active: true,
 			state: { vaultPath },
 		});
 		await this.app.workspace.revealLeaf(leaf);
+	}
+
+	/**
+	 * A leaf to split a preview into, reusing an idle one before making a new
+	 * one so previewing several documents does not pile up tabs.
+	 */
+	private previewSplitLeaf(): WorkspaceLeaf {
+		const idle = this.app.workspace
+			.getLeavesOfType(TYPST_PREVIEW_VIEW_TYPE)
+			.find((leaf) => leaf.view instanceof TypstPreviewView && !leaf.view.getPreviewedPath());
+		return idle ?? this.app.workspace.getLeaf('split', 'vertical');
+	}
+
+	/**
+	 * Re-points every unpinned preview at the document being edited.
+	 *
+	 * Reads each leaf's stored state rather than its view: Obsidian defers the
+	 * views of leaves that are not visible, so a background preview has no view
+	 * object to ask and would otherwise come back showing a document the reader
+	 * left long ago.
+	 */
+	private syncFollowingPreviews(): void {
+		const activePath = this.activeEditor()?.vaultPath;
+		if (!activePath) {
+			// The focus is on a preview, a Markdown note, or nothing at all.
+			// None of those mean "stop showing what I was just editing".
+			return;
+		}
+
+		const pinnedByDefault = !this.settings.previewFollowsActiveDocument;
+		for (const leaf of this.app.workspace.getLeavesOfType(TYPST_PREVIEW_VIEW_TYPE)) {
+			const current = leaf.getViewState();
+			const state = current.state as PreviewViewState | undefined;
+			if (!shouldRetargetPreview(state, activePath, pinnedByDefault)) {
+				continue;
+			}
+
+			void leaf
+				.setViewState({
+					...current,
+					// The resolved pin is written back, so the leaf stops
+					// depending on a setting the user may change later.
+					state: { ...state, vaultPath: activePath, pinned: false },
+				})
+				.catch((error: unknown) => {
+					this.logger.debug('Re-pointing a preview failed', error);
+				});
+		}
+	}
+
+	/**
+	 * Stops a document's preview task unless another preview still shows it.
+	 *
+	 * Tasks are keyed by document and leaves are not: a pinned preview and a
+	 * following one can land on the same file, and whichever leaves first must
+	 * not take the other's server with it.
+	 */
+	private releasePreview(vaultPath: VaultPath, requester: TypstPreviewView): void {
+		const stillShown = this.app.workspace.getLeavesOfType(TYPST_PREVIEW_VIEW_TYPE).some(
+			(leaf) =>
+				leaf.view instanceof TypstPreviewView &&
+				leaf.view !== requester &&
+				leaf.view.getPreviewedPath() === vaultPath,
+		);
+		if (stillShown) {
+			return;
+		}
+		void this.previews.stop(this.manager?.getClient() ?? null, vaultPath);
 	}
 
 	async togglePreview(vaultPath: VaultPath): Promise<void> {

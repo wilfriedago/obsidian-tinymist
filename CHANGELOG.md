@@ -6,6 +6,36 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [Unreleased]
+
+### Added
+
+- **The preview follows the document you are editing.** Switching to another
+  `.typ` file re-points an open preview at it, instead of leaving it showing
+  the file it was opened with. Turn it off under **Preview → Follow the active
+  document**, which sets what a *new* preview does.
+- **A pin, per preview.** The pin in a preview's toolbar holds it on one
+  document while you edit others — the counterpart to following, for people
+  who keep one main file on screen. The choice is remembered per leaf and
+  survives a restart.
+- **The preview can take over the editor's tab.** A second button in the
+  `.typ` tab header, and the **Typst: Open preview in this tab** command, show
+  the preview in place of the editor rather than beside it, which is the only
+  way it fits on a narrow window. The preview's **Open source** button goes
+  back. A preview of that document that is already open is revealed instead,
+  since one Tinymist task serves one document.
+
+### Fixed
+
+- A preview that changed document left the previous one's Tinymist server
+  running. Re-pointing now releases the old task, and a task is only stopped
+  once no preview is showing it — so two previews on the same document no
+  longer take each other's server down.
+- A preview's theme choice is now written to the workspace when it is made,
+  rather than whenever Obsidian next happened to save the layout.
+
+Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
+
 ## [0.2.1] - 2026-09-18
 
 ### Fixed

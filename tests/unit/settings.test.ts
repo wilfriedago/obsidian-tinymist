@@ -20,12 +20,15 @@ describe('migrateSettings', () => {
 			logLevel: 'debug',
 			projectRootStrategy: 'vault',
 			previewRefresh: 'onSave',
+			// Defaults to true, so a stored opt-out is the one that must survive.
+			previewFollowsActiveDocument: false,
 			exportOverwrite: true,
 		});
 		expect(migrated.tinymistPath).toBe('/opt/tinymist');
 		expect(migrated.logLevel).toBe('debug');
 		expect(migrated.projectRootStrategy).toBe('vault');
 		expect(migrated.previewRefresh).toBe('onSave');
+		expect(migrated.previewFollowsActiveDocument).toBe(false);
 		expect(migrated.exportOverwrite).toBe(true);
 	});
 

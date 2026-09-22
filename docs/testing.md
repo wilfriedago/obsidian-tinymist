@@ -123,9 +123,11 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 
 **Preview**
 
-- [ ] The **book** button in the Typst editor's tab header opens the preview.
+- [ ] The **book** button in the Typst editor's tab header opens the preview in a split.
 - [ ] Pressing it again closes the preview.
+- [ ] The **eye** button shows the preview in the editor's own tab instead, and the preview's **Open source** button goes back.
 - [ ] **Typst: Open preview** opens a preview in a split, as a normal leaf.
+- [ ] **Typst: Open preview in this tab** does the same as the eye button.
 - [ ] The document renders.
 - [ ] Typing updates the preview without saving.
 - [ ] The preview leaf can be moved, split, and resized like any other.
@@ -141,6 +143,17 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 - [ ] Two previews can hold different themes at once.
 - [ ] A preview's theme survives closing and reopening the vault.
 - [ ] Two `.typ` files can be previewed at once, each showing its own document.
+
+_Following the active document_
+
+- [ ] With a preview open, switching to another `.typ` file re-points it, and the tab header renames to match.
+- [ ] Switching to a Markdown note or clicking into the preview leaves it showing the last Typst document.
+- [ ] The **pin** button holds the preview on its document while you switch files, and is coloured while pinned.
+- [ ] Unpinning does not retarget on its own; the next document switch does.
+- [ ] A pinned preview survives closing and reopening the vault.
+- [ ] Turning **Follow the active document** off makes the *next* preview start pinned, and leaves open ones as they are.
+- [ ] Pin one preview and let another follow, both on the same document: moving the follower off it leaves the pinned one rendering (`pgrep -f "tinymist"` still shows its server).
+- [ ] Switching documents ten times leaves one preview server behind, not ten.
 
 **Projects**
 

@@ -209,6 +209,11 @@
 	color: var(--text-normal);
 }
 
+/* A toggled toolbar button, coloured the way Obsidian colours its own. */
+.tinymist-preview-button.is-active {
+	color: var(--text-accent);
+}
+
 .tinymist-preview-button .svg-icon {
 	width: var(--icon-s);
 	height: var(--icon-s);

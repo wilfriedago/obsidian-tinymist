@@ -29,6 +29,12 @@ export interface TypstSettings {
 	previewTheme: PreviewTheme;
 	/** Move the preview when the cursor moves, and the cursor when the preview is clicked. */
 	previewSyncEnabled: boolean;
+	/**
+	 * Whether a new preview re-points itself at whichever document you are
+	 * editing. Each preview can be pinned from its own toolbar, which is what
+	 * this seeds — it is a default, not a master switch.
+	 */
+	previewFollowsActiveDocument: boolean;
 
 	showDiagnostics: boolean;
 	formatterEnabled: boolean;
@@ -49,6 +55,7 @@ export const DEFAULT_SETTINGS: TypstSettings = {
 	previewRefresh: 'onType',
 	previewTheme: 'follow-obsidian',
 	previewSyncEnabled: true,
+	previewFollowsActiveDocument: true,
 	showDiagnostics: true,
 	formatterEnabled: true,
 	systemFonts: true,
@@ -89,6 +96,10 @@ export function migrateSettings(raw: unknown): TypstSettings {
 		previewSyncEnabled: asBoolean(
 			stored['previewSyncEnabled'],
 			DEFAULT_SETTINGS.previewSyncEnabled,
+		),
+		previewFollowsActiveDocument: asBoolean(
+			stored['previewFollowsActiveDocument'],
+			DEFAULT_SETTINGS.previewFollowsActiveDocument,
 		),
 		showDiagnostics: asBoolean(stored['showDiagnostics'], DEFAULT_SETTINGS.showDiagnostics),
 		formatterEnabled: asBoolean(stored['formatterEnabled'], DEFAULT_SETTINGS.formatterEnabled),
