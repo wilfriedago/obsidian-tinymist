@@ -186,6 +186,12 @@ export class TypstSettingTab extends PluginSettingTab {
 					control: { type: 'toggle', key: 'previewFollowsActiveDocument' },
 				},
 				{
+					name: 'Render only visible pages',
+					desc: 'Send and draw the pages on screen rather than the whole document. Much faster on a long document; turn it off if the preview ever renders incorrectly.',
+					aliases: ['performance', 'partial', 'speed', 'large'],
+					control: { type: 'toggle', key: 'previewPartialRendering' },
+				},
+				{
 					name: 'Sync with the editor',
 					desc: 'Scroll the preview to the cursor, and move the cursor when you select rendered content.',
 					aliases: ['scroll', 'jump', 'navigate'],

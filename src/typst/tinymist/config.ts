@@ -165,6 +165,14 @@ export interface PreviewArgsOptions {
 	 */
 	readonly invertColors: InvertColorsStrategy;
 	readonly refreshOnType: boolean;
+	/**
+	 * Render only the visible part of the document.
+	 *
+	 * On a long document this is the difference between the frontend receiving
+	 * and rendering every page up front and receiving only what is on screen.
+	 * Measured on a 316-page document: 1.1 MB of initial payload without it.
+	 */
+	readonly partialRendering: boolean;
 }
 
 export function buildPreviewArgs(options: PreviewArgsOptions): string[] {
@@ -182,6 +190,10 @@ export function buildPreviewArgs(options: PreviewArgsOptions): string[] {
 		// Verified against tinymist 0.15.8.
 		'--refresh-style',
 		options.refreshOnType ? 'on-type' : 'on-save',
+		// Takes an explicit value: the flag is an `Option<bool>`, and passing it
+		// bare is rejected with "a value is required".
+		'--partial-rendering',
+		String(options.partialRendering),
 		// The preview is shown inside Obsidian; opening a browser too would be
 		// a surprise, and the flag defaults to on for the CLI.
 		'--no-open',

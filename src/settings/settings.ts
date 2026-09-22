@@ -29,6 +29,8 @@ export interface TypstSettings {
 	previewTheme: PreviewTheme;
 	/** Move the preview when the cursor moves, and the cursor when the preview is clicked. */
 	previewSyncEnabled: boolean;
+	/** Render only the visible pages of the preview. */
+	previewPartialRendering: boolean;
 	/**
 	 * Whether a new preview re-points itself at whichever document you are
 	 * editing. Each preview can be pinned from its own toolbar, which is what
@@ -55,6 +57,7 @@ export const DEFAULT_SETTINGS: TypstSettings = {
 	previewRefresh: 'onType',
 	previewTheme: 'follow-obsidian',
 	previewSyncEnabled: true,
+	previewPartialRendering: true,
 	previewFollowsActiveDocument: true,
 	showDiagnostics: true,
 	formatterEnabled: true,
@@ -96,6 +99,10 @@ export function migrateSettings(raw: unknown): TypstSettings {
 		previewSyncEnabled: asBoolean(
 			stored['previewSyncEnabled'],
 			DEFAULT_SETTINGS.previewSyncEnabled,
+		),
+		previewPartialRendering: asBoolean(
+			stored['previewPartialRendering'],
+			DEFAULT_SETTINGS.previewPartialRendering,
 		),
 		previewFollowsActiveDocument: asBoolean(
 			stored['previewFollowsActiveDocument'],

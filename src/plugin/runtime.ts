@@ -614,6 +614,7 @@ export class TypstRuntime {
 			session.absolutePathFor(vaultPath),
 			{
 				refreshOnType: this.settings.previewRefresh === 'onType',
+				partialRendering: this.settings.previewPartialRendering,
 				invertColors: this.resolveInvertColors(themeOverride),
 			},
 		);

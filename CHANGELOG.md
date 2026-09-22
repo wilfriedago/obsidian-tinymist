@@ -6,6 +6,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires.
 
+## [Unreleased]
+
+### Added
+
+- **The preview renders only the pages on screen.** Tinymist supports this and
+  the plugin was not asking for it, so every preview sent and drew the whole
+  document. On a 316-page document that was 1.1 MB of payload before anything
+  appeared. Matches the default in Tinymist's own VS Code extension, and can be
+  turned off under **Preview → Render only visible pages** if a document ever
+  draws incorrectly.
+
 ## [0.3.1] - 2026-09-22
 
 ### Fixed

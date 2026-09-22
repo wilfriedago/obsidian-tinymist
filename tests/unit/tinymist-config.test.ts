@@ -99,6 +99,7 @@ describe('buildPreviewArgs', () => {
 			notPrimary: false,
 			invertColors: 'never',
 			refreshOnType: true,
+			partialRendering: true,
 			...overrides,
 		});
 
@@ -128,6 +129,13 @@ describe('buildPreviewArgs', () => {
 	it('marks a secondary preview as not primary', () => {
 		expect(args({ notPrimary: true })).toContain('--not-primary');
 		expect(args({ notPrimary: false })).not.toContain('--not-primary');
+	});
+
+	it('passes partial rendering as an explicit value, not a bare flag', () => {
+		// `--partial-rendering` is an Option<bool>: passing it bare is rejected
+		// with "a value is required for '--partial-rendering <ENABLE_PARTIAL_RENDERING>'".
+		expect(args().join(' ')).toContain('--partial-rendering true');
+		expect(args({ partialRendering: false }).join(' ')).toContain('--partial-rendering false');
 	});
 
 	it('passes the invert-colors choice through', () => {

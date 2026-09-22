@@ -266,16 +266,35 @@ says so.
 
 ---
 
-## R9. No incremental document sync
+## R9. No incremental document sync — measured, and not the bottleneck
 
-**Severity: low**
+**Severity: low, and now evidenced**
 
 `DocumentSession.change` sends full document text on every debounced change.
-Simple and impossible to desynchronize, but on a very large `.typ` file it sends
-more bytes than an incremental edit would.
+This was filed as a probable inefficiency to fix later. Measured on a real
+Tinymist, it is not where the time goes.
 
-**Settled by:** measuring on a large document before optimizing. Tinymist's
-compile cost is expected to dominate.
+A 316-page document (66 KB of source, 6,003 lines):
+
+| Stage | Cost | Already incremental? |
+| --- | --- | --- |
+| Typst compile, cold | 854 ms | — |
+| Typst compile, per edit | 0–25 ms | **yes**, Typst memoizes |
+| Preview transport, per edit | ~9 KB | **yes**, `diff-v1` deltas |
+| Initial preview payload | **1.1 MB** | **no** — fixed by partial rendering |
+| `didChange` | full text | no |
+
+Typst's incremental compilation makes an edit cost tens of milliseconds even on
+316 pages, and the preview protocol already sends deltas. Sending the full text
+costs bytes through a local pipe, not user-visible time.
+
+Tinymist does advertise `textDocumentSync.change: 2` (Incremental), so the
+option exists. But a mistake in range conversion desynchronizes the editor from
+the compiler, which produces wrong diagnostics and a wrong preview — a bad
+failure mode traded for a cost that does not currently register.
+
+**Settled by:** a document large enough for full-text sync to show up in a
+measurement. Not yet observed.
 
 ---
 

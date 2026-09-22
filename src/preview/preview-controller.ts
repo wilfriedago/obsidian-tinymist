@@ -30,6 +30,8 @@ export interface PreviewSession {
 
 export interface PreviewOptions {
 	readonly refreshOnType: boolean;
+	/** Render only the visible pages, rather than the whole document. */
+	readonly partialRendering: boolean;
 	/** How Tinymist should invert the rendered page's colours. */
 	readonly invertColors: InvertColorsStrategy;
 }
@@ -109,6 +111,7 @@ export class PreviewController {
 			notPrimary,
 			invertColors: options.invertColors,
 			refreshOnType: options.refreshOnType,
+			partialRendering: options.partialRendering,
 		});
 
 		let result: StartPreviewResult;
