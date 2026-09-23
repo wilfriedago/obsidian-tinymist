@@ -23,6 +23,13 @@ form Obsidian requires.
   adds **New Hayagriva file**. It is off by default because it claims every
   YAML file in the vault, not only bibliographies.
 
+### Changed
+
+- **A new file opens ready to be named.** `Untitled` is selected in the tab
+  title, as it is for a new note or canvas, or asked for in a dialog when the
+  tab title bar is hidden. Typst and bibliography tabs can also be renamed from
+  their title now; before, it was read-only.
+
 ## [0.4.0] - 2026-09-22
 
 ### Added

@@ -101,7 +101,10 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 **Creating**
 
 - [ ] Right-clicking a folder in the file explorer offers **New Typst file**, next to **New note**.
-- [ ] It creates `Untitled.typ` in that folder and opens it in the Typst editor.
+- [ ] It creates `Untitled.typ` in that folder and opens it in the Typst editor, with `Untitled` selected in the tab title.
+- [ ] Typing a name and pressing Enter renames the file and puts the caret in the editor; Escape keeps `Untitled` and does the same.
+- [ ] With **Appearance → Show tab title bar** off, creating a file opens Obsidian's rename dialog instead.
+- [ ] An existing `.typ` or `.bib` can be renamed by clicking its tab title, and the preview follows the new name.
 - [ ] Doing it again creates `Untitled 1.typ` rather than failing.
 - [ ] **Typst: Create new Typst file** puts the file where the "Default location for new notes" setting points.
 - [ ] The same menu offers **New BibLaTeX file**, which creates `Untitled.bib` and opens it in the bibliography editor.
