@@ -54,7 +54,10 @@ export class Component {
 	registerDomEvent(): void {}
 }
 
-export class View extends Component {}
+export class View extends Component {
+	async onOpen(): Promise<void> {}
+	setEphemeralState(_state: unknown): void {}
+}
 export class ItemView extends View {}
 export class FileView extends ItemView {}
 export class EditableFileView extends FileView {}
