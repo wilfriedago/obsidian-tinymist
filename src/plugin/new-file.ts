@@ -13,7 +13,8 @@ import { TYPST_EXTENSION } from './constants';
  *
  * The file is created empty, matching what "New note" does. Seeding a template
  * would be a guess about the document the user wants, and a wrong guess is
- * more annoying than an empty file.
+ * more annoying than an empty file. Its name, on the other hand, is offered for
+ * renaming straight away, since `Untitled` is never the name anyone wants.
  */
 
 /** Obsidian's own naming for new files: `Untitled`, then `Untitled 1`, … */
@@ -74,8 +75,12 @@ export async function createFile(
 	try {
 		const file = await app.vault.create(path, '');
 		// `false` keeps the file in the current tab group rather than splitting,
-		// which is what Obsidian's own "New note" does.
-		await app.workspace.getLeaf(false).openFile(file);
+		// and `rename` selects its name for typing over, both as Obsidian's own
+		// "New note" and "New canvas" do. The base view resolves `rename` to the
+		// tab title when it is shown and to the rename dialog when it is hidden.
+		await app.workspace
+			.getLeaf(false)
+			.openFile(file, { active: true, eState: { rename: 'all' } });
 		return file;
 	} catch (error) {
 		throw asTypstError(error, 'document-sync-failed', { Path: path });

@@ -103,7 +103,10 @@ theme button that steps between following the app, light, and dark.
 To start a document, right-click any folder in the file explorer and choose
 **New Typst file**, or run **Typst: Create new Typst file**. Obsidian's own
 **New note** always makes Markdown and its menu cannot be extended, so Typst
-files get their own entry right beside it.
+files get their own entry right beside it. As with a new note, the name is
+selected in the tab title so you can type over `Untitled` straight away — or,
+with the tab title bar hidden, asked for in a dialog. Any Typst file can be
+renamed from its tab title the same way.
 
 ### The status bar
 

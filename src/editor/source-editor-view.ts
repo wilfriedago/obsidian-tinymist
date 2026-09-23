@@ -91,6 +91,11 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 	}
 
 	override async onOpen(): Promise<void> {
+		// Obsidian's own setup for the tab title: this is what makes it editable,
+		// so a file can be renamed there the way a Markdown note can, and what a
+		// new file's `rename` state lands in. Skipping it leaves a read-only title.
+		await super.onOpen();
+
 		this.contentEl.empty();
 		this.contentEl.addClass('tinymist-editor-container');
 
@@ -190,6 +195,21 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 
 	focusEditor(): void {
 		this.editor?.focus();
+	}
+
+	/**
+	 * Adds `focus` to what Obsidian's base view already handles, `rename`
+	 * included.
+	 *
+	 * The tab title asks for `{ focus: true }` when Enter, Tab, or Escape ends a
+	 * rename. Obsidian's editors answer it by focusing their text, and without
+	 * this the caret would be left nowhere after naming a new file.
+	 */
+	override setEphemeralState(state: unknown): void {
+		super.setEphemeralState(state);
+		if (typeof state === 'object' && state !== null && 'focus' in state && state.focus === true) {
+			this.focusEditor();
+		}
 	}
 
 	/* ---------------------------------------------------------------------- */
