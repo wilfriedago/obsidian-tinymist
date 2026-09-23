@@ -103,6 +103,9 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 - [ ] It creates `Untitled.typ` in that folder and opens it in the Typst editor.
 - [ ] Doing it again creates `Untitled 1.typ` rather than failing.
 - [ ] **Typst: Create new Typst file** puts the file where the "Default location for new notes" setting points.
+- [ ] The same menu offers **New BibLaTeX file**, which creates `Untitled.bib` and opens it in the bibliography editor.
+- [ ] **Typst: Create new BibLaTeX file** is offered in the command palette.
+- [ ] With another plugin that registers `.bib` enabled first, the plugin still loads, `.typ` still opens, and neither the menu entry nor the command is offered.
 
 **Editing**
 
@@ -161,6 +164,10 @@ _Following the active document_
 **Projects**
 
 - [ ] `project/main.typ` compiles: the template, bibliography, and `assets/diagram.svg` all resolve.
+- [ ] `project/bibliography.bib` shows in the file explorer and opens in the bibliography editor, with the book icon in its tab.
+- [ ] With `main.typ` previewed beside it, adding an entry to the `.bib` and citing it updates the preview before the `.bib` is saved.
+- [ ] Deleting a closing brace in the `.bib` underlines the error in the `.bib`; restoring it clears the underline.
+- [ ] Renaming the `.bib` while it is open keeps the preview compiling once `main.typ` points at the new name.
 - [ ] **Typst: Show project root** reports `project (typst.toml)`.
 - [ ] For `basic.typ` it reports the file's own folder.
 - [ ] Setting the strategy to "Always the vault root" changes the answer and restarts the server.
