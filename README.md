@@ -150,6 +150,19 @@ The alternatives are **Always the vault root** (one project; `/`-absolute
 imports reach anywhere) and **A folder I choose**. Changing this restarts
 Tinymist, which reads it at startup.
 
+### Bibliographies
+
+`.bib` files open in a plain editor of their own, and **New BibLaTeX file** sits
+beside **New Typst file** in a folder's context menu. While a bibliography is
+open, the document citing it compiles against what you have typed — saved or
+not — and a syntax error in the bibliography is underlined in the bibliography
+itself.
+
+A bibliography you edit *outside* Obsidian, or in another plugin, is not picked
+up until the citing document is reopened: Tinymist only follows files the
+plugin has open. If another plugin already opens `.bib` files, it keeps them,
+and the menu entry is not offered.
+
 ## PDF export
 
 Export writes a normal file into your vault, and Obsidian takes it from there.
@@ -277,6 +290,8 @@ Then [open an issue](https://github.com/wilfriedago/obsidian-tinymist/issues/new
 - Markdown features — backlinks, tags, the outline — do not apply to `.typ`.
 - Only one plugin can own the `.typ` extension. Do not enable another Typst
   editor plugin in the same vault.
+- Bibliographies are plain text: no BibTeX highlighting, completion, or
+  Hayagriva (`.yml`) support yet.
 - Changing the executable, project, font, or formatter settings restarts
   Tinymist.
 

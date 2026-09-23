@@ -1,6 +1,6 @@
 import { TypstError } from '../../shared/errors';
 import type { Logger } from '../../shared/logging';
-import { absolutePathToFileUri, vaultPathToAbsolute, type VaultPath } from '../../shared/paths';
+import { absolutePathToFileUri, extensionOf, vaultPathToAbsolute, type VaultPath } from '../../shared/paths';
 import type { TinymistClient } from '../tinymist/client';
 
 /**
@@ -165,10 +165,21 @@ export class DocumentSession {
 		this.client?.notify('textDocument/didOpen', {
 			textDocument: {
 				uri: document.uri,
-				languageId: 'typst',
+				languageId: languageIdFor(document.vaultPath),
 				version: document.version,
 				text: document.text,
 			},
 		});
 	}
+}
+
+/**
+ * The `languageId` a document is announced with.
+ *
+ * Tinymist compiles whatever it is handed at that URI, bibliography included,
+ * so this is informational rather than load-bearing — but announcing a `.bib`
+ * as Typst would be a lie in the server's own logs.
+ */
+export function languageIdFor(vaultPath: VaultPath): string {
+	return extensionOf(vaultPath) === 'bib' ? 'bibtex' : 'typst';
 }

@@ -4,7 +4,8 @@ import { EditorView, type ViewUpdate } from '@codemirror/view';
 import { TextFileView, type TFile, type WorkspaceLeaf } from 'obsidian';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { externalReplaceSpec, TypstEditorView, type TypstEditorHost } from '../../src/editor/typst-editor-view';
+import { externalReplaceSpec } from '../../src/editor/source-editor-view';
+import { TypstEditorView, type TypstEditorHost } from '../../src/editor/typst-editor-view';
 
 describe('external editor updates', () => {
 	it.each([

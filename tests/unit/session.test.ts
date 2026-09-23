@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { LogSink, Logger } from '../../src/shared/logging';
-import { DocumentSession } from '../../src/typst/documents/session';
+import { DocumentSession, languageIdFor } from '../../src/typst/documents/session';
 import { TinymistClient, type ClientTransport } from '../../src/typst/tinymist/client';
 import { JSONRPC_VERSION, type NotificationMessage } from '../../src/typst/tinymist/protocol';
 
@@ -181,5 +181,30 @@ describe('notification shape', () => {
 		const { session, last } = setup();
 		session.open('a.typ', 'x');
 		expect(last()?.jsonrpc).toBe(JSONRPC_VERSION);
+	});
+});
+
+describe('bibliographies', () => {
+	it('announces a bibliography as BibTeX and a document as Typst', () => {
+		const { session, sent } = setup();
+		session.open('paper/main.typ', '= Hi');
+		session.open('paper/refs.bib', '@book{k, title = {T}}');
+		const languages = sent.map(
+			(m) => (m.params as { textDocument: { languageId: string } }).textDocument.languageId,
+		);
+		expect(languages).toEqual(['typst', 'bibtex']);
+	});
+
+	it('matches the extension case-insensitively', () => {
+		expect(languageIdFor('Refs.BIB')).toBe('bibtex');
+		expect(languageIdFor('main.typ')).toBe('typst');
+	});
+
+	it('replays an open bibliography after a restart', () => {
+		const { session, client, methods } = setup();
+		session.open('paper/refs.bib', 'unsaved entry');
+		session.detach();
+		session.attach(client);
+		expect(methods()).toEqual(['textDocument/didOpen', 'textDocument/didOpen']);
 	});
 });

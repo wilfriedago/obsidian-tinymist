@@ -4,10 +4,10 @@ import { TypstError, asTypstError } from '../shared/errors';
 import { TYPST_EXTENSION } from './constants';
 
 /**
- * Creating `.typ` files.
+ * Creating `.typ` files, and the `.bib` files they cite.
  *
  * Obsidian's own "New note" always produces Markdown, and there is no API to
- * add an entry to that dropdown, so a new Typst file needs its own affordance.
+ * add an entry to that dropdown, so these files need an affordance of their own.
  * The supported route is the `file-menu` event, which fires when the file
  * explorer's context menu opens on a folder.
  *
@@ -49,19 +49,26 @@ export function availableFilePath(
 
 	throw new TypstError(
 		'document-sync-failed',
-		'Too many untitled Typst files already exist in that folder.',
+		'Too many untitled files already exist in that folder.',
 		{ context: { Folder: folderPath || 'vault root' } },
 	);
 }
 
 /**
- * Creates an empty `.typ` file in `folder` and opens it.
+ * Creates an empty file with `extension` in `folder` and opens it.
  *
  * Returns the new file so a caller can act on it further.
  */
-export async function createTypstFile(app: App, folder: TFolder): Promise<TFile> {
-	const path = availableFilePath(folder.path === '/' ? '' : folder.path, (candidate) =>
-		app.vault.getAbstractFileByPath(candidate) !== null,
+export async function createFile(
+	app: App,
+	folder: TFolder,
+	extension: string = TYPST_EXTENSION,
+): Promise<TFile> {
+	const path = availableFilePath(
+		folder.path === '/' ? '' : folder.path,
+		(candidate) => app.vault.getAbstractFileByPath(candidate) !== null,
+		undefined,
+		extension,
 	);
 
 	try {

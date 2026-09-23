@@ -1,5 +1,7 @@
 import { Notice, TFile, type App, type Plugin, type TFolder, type WorkspaceLeaf } from 'obsidian';
 
+import { BibliographyEditorView, BIBLIOGRAPHY_EDITOR_VIEW_TYPE } from '../editor/bibliography-editor-view';
+import { SourceEditorView } from '../editor/source-editor-view';
 import { TypstEditorView, TYPST_EDITOR_VIEW_TYPE } from '../editor/typst-editor-view';
 import { requestFormattingEdits } from '../editor/language-features';
 import { PreviewController } from '../preview/preview-controller';
@@ -29,8 +31,8 @@ import {
 	type PublishDiagnosticsParams,
 	type ShowDocumentParams,
 } from '../typst/tinymist/protocol';
-import { TYPST_EXTENSION } from './constants';
-import { createTypstFile, defaultNewFileFolder, isFolder } from './new-file';
+import { BIBLATEX_EXTENSION, TYPST_EXTENSION } from './constants';
+import { createFile, defaultNewFileFolder, isFolder } from './new-file';
 import { StatusBarItem, type CompilePhase } from './status-bar';
 
 /**
@@ -39,6 +41,9 @@ import { StatusBarItem, type CompilePhase } from './status-bar';
  * `here` exists for narrow windows, where a split leaves neither pane usable.
  */
 export type PreviewLocation = 'split' | 'here';
+
+/** Files kept in step with Tinymist: the documents, and what they cite. */
+const DOCUMENT_EXTENSIONS: ReadonlySet<string> = new Set([TYPST_EXTENSION, BIBLATEX_EXTENSION]);
 
 /**
  * Wires the subsystems together and owns their lifetimes.
@@ -65,6 +70,8 @@ export class TypstRuntime {
 	private startupError: TypstError | null = null;
 	/** Disposers for notification subscriptions bound to the current client. */
 	private clientSubscriptions: (() => void)[] = [];
+	/** Extensions this plugin opens, as opposed to ones another plugin got first. */
+	private readonly claimedExtensions = new Set<string>();
 
 	constructor(
 		private readonly app: App,
@@ -99,7 +106,7 @@ export class TypstRuntime {
 		this.registerWorkspaceEvents();
 
 		this.diagnostics.onChange((vaultPath) => {
-			this.forEachEditor((view) => {
+			this.forEachSourceView((view) => {
 				if (view.vaultPath === vaultPath) {
 					view.refreshDiagnostics();
 				}
@@ -138,24 +145,29 @@ export class TypstRuntime {
 	}
 
 	private registerViews(): void {
+		// What every editor needs to keep Tinymist in step with its buffer.
+		const documentSync = {
+			getDiagnostics: (vaultPath: VaultPath) =>
+				this.settings.showDiagnostics ? this.diagnostics.get(vaultPath) : [],
+			onDocumentChanged: (vaultPath: VaultPath, text: string) => {
+				this.session?.change(vaultPath, text);
+			},
+			onDocumentClosed: (vaultPath: VaultPath) => {
+				this.session?.close(vaultPath);
+				this.diagnostics.clear(vaultPath);
+			},
+		};
+
 		this.plugin.registerView(
 			TYPST_EDITOR_VIEW_TYPE,
 			(leaf: WorkspaceLeaf) =>
 				new TypstEditorView(leaf, {
+					...documentSync,
 					logger: this.logger.child('editor'),
 					getClient: () => this.manager?.getClient() ?? null,
 					getDocumentUri: () => this.activeDocumentUri(),
-					getDiagnostics: (vaultPath) =>
-						this.settings.showDiagnostics ? this.diagnostics.get(vaultPath) : [],
 					onDocumentOpened: (vaultPath, text) => {
 						void this.onDocumentOpened(vaultPath, text);
-					},
-					onDocumentChanged: (vaultPath, text) => {
-						this.session?.change(vaultPath, text);
-					},
-					onDocumentClosed: (vaultPath) => {
-						this.session?.close(vaultPath);
-						this.diagnostics.clear(vaultPath);
 					},
 					onCursorMoved: (vaultPath, line, character) => {
 						void this.onCursorMoved(vaultPath, line, character);
@@ -188,9 +200,51 @@ export class TypstRuntime {
 				}),
 		);
 
-		// Claims `.typ` only. Obsidian's own PDF view keeps `.pdf`, so an
-		// exported PDF opens exactly like any other PDF in the vault.
+		this.plugin.registerView(
+			BIBLIOGRAPHY_EDITOR_VIEW_TYPE,
+			(leaf: WorkspaceLeaf) =>
+				new BibliographyEditorView(leaf, {
+					...documentSync,
+					logger: this.logger.child('bibliography'),
+					// Registered, but without starting the server: a bibliography
+					// on its own gives Tinymist nothing to compile. The session
+					// replays it once a document that cites it starts one.
+					onDocumentOpened: (vaultPath, text) => {
+						this.session?.open(vaultPath, text);
+					},
+				}),
+		);
+
+		// Obsidian's own PDF view keeps `.pdf`, so an exported PDF opens exactly
+		// like any other PDF in the vault.
 		this.plugin.registerExtensions([TYPST_EXTENSION], TYPST_EDITOR_VIEW_TYPE);
+		this.claimedExtensions.add(TYPST_EXTENSION);
+		this.claimExtension(BIBLATEX_EXTENSION, BIBLIOGRAPHY_EDITOR_VIEW_TYPE);
+	}
+
+	/**
+	 * Claims an extension that another plugin may already have.
+	 *
+	 * `.typ` is this plugin's reason to exist and is claimed unguarded. A
+	 * bibliography is not: a citation plugin may already open `.bib` files, and
+	 * Obsidian throws on a second claim, which would otherwise abort loading the
+	 * whole plugin over a secondary feature.
+	 */
+	private claimExtension(extension: string, viewType: string): void {
+		try {
+			this.plugin.registerExtensions([extension], viewType);
+			this.claimedExtensions.add(extension);
+		} catch (error) {
+			this.logger.warn(
+				`Another plugin already opens .${extension} files; leaving them to it`,
+				error instanceof Error ? error.message : String(error),
+			);
+		}
+	}
+
+	/** True when files with this extension open in one of this plugin's editors. */
+	ownsExtension(extension: string): boolean {
+		return this.claimedExtensions.has(extension);
 	}
 
 	private registerWorkspaceEvents(): void {
@@ -229,12 +283,23 @@ export class TypstRuntime {
 							void this.createFileIn(target);
 						});
 				});
+				if (this.ownsExtension(BIBLATEX_EXTENSION)) {
+					menu.addItem((item) => {
+						item
+							.setTitle('New BibLaTeX file')
+							.setIcon('book-marked')
+							.setSection('action-primary')
+							.onClick(() => {
+								void this.createFileIn(target, BIBLATEX_EXTENSION);
+							});
+					});
+				}
 			}),
 		);
 
 		this.plugin.registerEvent(
 			this.app.vault.on('rename', (file, oldPath) => {
-				if (file instanceof TFile && extensionOf(file.path) === TYPST_EXTENSION) {
+				if (file instanceof TFile && DOCUMENT_EXTENSIONS.has(extensionOf(file.path))) {
 					this.session?.rename(oldPath, file.path);
 				}
 			}),
@@ -728,21 +793,21 @@ export class TypstRuntime {
 		await this.app.workspace.getLeaf(false).openFile(file);
 	}
 
-	/** Creates an empty `.typ` file in a folder and opens it. */
-	async createFileIn(folder: TFolder): Promise<void> {
+	/** Creates an empty file in a folder and opens it. */
+	async createFileIn(folder: TFolder, extension: string = TYPST_EXTENSION): Promise<void> {
 		try {
-			await createTypstFile(this.app, folder);
+			await createFile(this.app, folder, extension);
 		} catch (error) {
 			this.reportError(error);
 		}
 	}
 
 	/**
-	 * Creates a `.typ` file where Obsidian would put a new note, honouring the
-	 * user's "Default location for new notes" setting.
+	 * Creates a file where Obsidian would put a new note, honouring the user's
+	 * "Default location for new notes" setting.
 	 */
-	async createFileInDefaultFolder(): Promise<void> {
-		await this.createFileIn(defaultNewFileFolder(this.app));
+	async createFileInDefaultFolder(extension: string = TYPST_EXTENSION): Promise<void> {
+		await this.createFileIn(defaultNewFileFolder(this.app), extension);
 	}
 
 	/** Describes the project a document belongs to, for the command palette. */
@@ -783,7 +848,7 @@ export class TypstRuntime {
 		this.logSink.setLevel(this.settings.logLevel);
 
 		if ('showDiagnostics' in patch) {
-			this.forEachEditor((view) => view.refreshDiagnostics());
+			this.forEachSourceView((view) => view.refreshDiagnostics());
 		}
 
 		// Tinymist reads most of this at initialize time, so a restart is the
@@ -874,10 +939,13 @@ export class TypstRuntime {
 		return null;
 	}
 
-	private forEachEditor(callback: (view: TypstEditorView) => void): void {
-		for (const leaf of this.app.workspace.getLeavesOfType(TYPST_EDITOR_VIEW_TYPE)) {
-			if (leaf.view instanceof TypstEditorView) {
-				callback(leaf.view);
+	/** Every open editor Tinymist is kept in step with, bibliographies included. */
+	private forEachSourceView(callback: (view: SourceEditorView) => void): void {
+		for (const viewType of [TYPST_EDITOR_VIEW_TYPE, BIBLIOGRAPHY_EDITOR_VIEW_TYPE]) {
+			for (const leaf of this.app.workspace.getLeavesOfType(viewType)) {
+				if (leaf.view instanceof SourceEditorView) {
+					callback(leaf.view);
+				}
 			}
 		}
 	}
