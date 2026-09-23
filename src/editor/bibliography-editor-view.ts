@@ -5,7 +5,8 @@ import { SourceEditorView } from './source-editor-view';
 export const BIBLIOGRAPHY_EDITOR_VIEW_TYPE = 'typst-bibliography';
 
 /**
- * The editor for a bibliography a Typst document cites.
+ * The editor for a bibliography a Typst document cites: BibLaTeX `.bib`, and
+ * Hayagriva `.yml` when the user opts in.
  *
  * It is a plain text editor on purpose. Tinymist compiles against the buffer
  * and reports parse errors on it, which the shared base already wires up, but
@@ -27,7 +28,9 @@ export class BibliographyEditorView extends SourceEditorView {
 	}
 
 	protected override languageExtensions(): Extension[] {
-		// No highlighting yet: there is no maintained CodeMirror 6 BibTeX mode.
+		// No highlighting yet, for either format: there is no maintained
+		// CodeMirror 6 BibTeX mode, and a YAML one would be the plugin's first
+		// runtime dependency beyond the Typst grammar.
 		return [];
 	}
 }

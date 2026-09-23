@@ -65,6 +65,7 @@ A throwaway vault. Never point the plugin at a real one during development.
 | `syntax-error.typ` | A parse error, which Typst reports alone |
 | `imports.typ`, `imports/shared.typ` | Multi-file resolution with no `typst.toml` |
 | `project/` | `typst.toml`, template, bibliography, image asset — per-project root detection |
+| `hayagriva/` | A document citing a Hayagriva `.yml` bibliography |
 | `pdf/existing.pdf` | A PDF predating the plugin; must open in Obsidian's own viewer |
 
 Each fixture's behaviour was confirmed with the real compiler.
@@ -168,6 +169,9 @@ _Following the active document_
 - [ ] With `main.typ` previewed beside it, adding an entry to the `.bib` and citing it updates the preview before the `.bib` is saved.
 - [ ] Deleting a closing brace in the `.bib` underlines the error in the `.bib`; restoring it clears the underline.
 - [ ] Renaming the `.bib` while it is open keeps the preview compiling once `main.typ` points at the new name.
+- [ ] With **Open YAML files as Hayagriva bibliographies** off, `hayagriva/references.yml` does not open in the plugin, and **New Hayagriva file** is not offered.
+- [ ] Turning it on makes `references.yml` open in the bibliography editor straight away, without a restart, and offers **New Hayagriva file**, which creates `Untitled.yml`.
+- [ ] With `hayagriva/main.typ` previewed, citing a key added to the unsaved `references.yml` updates the preview.
 - [ ] **Typst: Show project root** reports `project (typst.toml)`.
 - [ ] For `basic.typ` it reports the file's own folder.
 - [ ] Setting the strategy to "Always the vault root" changes the answer and restarts the server.

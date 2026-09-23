@@ -139,4 +139,16 @@ describe.runIf(process.env['SKIP_TINYMIST_TESTS'] !== '1')('bibliographies, live
 		expect(await nextOutcome(() => session.change(BIB, withNewKey))).toBe('compileSuccess');
 		expect(await nextOutcome(() => session.close(BIB))).toBe('compileError');
 	});
+
+	it('compiles against an unsaved Hayagriva buffer the same way', async () => {
+		if (!available) return;
+		const main = 'hayagriva/main.typ';
+		const yml = 'hayagriva/references.yml';
+		const citing = onDisk(main).replace('@knuth1984', '@knuth1984 @unsaved2026');
+		expect(await nextOutcome(() => session.open(main, citing))).toBe('compileError');
+		const extended = `${onDisk(yml)}unsaved2026:\n  type: misc\n  title: Unsaved\n  date: 2026\n`;
+		expect(await nextOutcome(() => session.open(yml, extended))).toBe('compileSuccess');
+		session.close(yml);
+		session.close(main);
+	});
 });

@@ -111,3 +111,15 @@ describe('normalizing a write', () => {
 		expect(merged.previewTheme).toBe('dark');
 	});
 });
+
+describe('Hayagriva files', () => {
+	it('are not claimed unless the user opts in', () => {
+		// Claiming `.yml` claims every YAML file in the vault.
+		expect(migrateSettings({}).openHayagrivaFiles).toBe(false);
+	});
+
+	it('keeps a stored opt-in and rejects a non-boolean', () => {
+		expect(migrateSettings({ openHayagrivaFiles: true }).openHayagrivaFiles).toBe(true);
+		expect(migrateSettings({ openHayagrivaFiles: 'yes' }).openHayagrivaFiles).toBe(false);
+	});
+});

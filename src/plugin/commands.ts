@@ -1,7 +1,7 @@
 import { Notice, type Plugin } from 'obsidian';
 
 import { TypstEditorView } from '../editor/typst-editor-view';
-import { BIBLATEX_EXTENSION } from './constants';
+import { BIBLATEX_EXTENSION, HAYAGRIVA_EXTENSIONS } from './constants';
 import type { TypstRuntime } from './runtime';
 
 /**
@@ -94,6 +94,21 @@ export function registerCommands(plugin: Plugin, runtime: TypstRuntime): void {
 			}
 			if (!checking) {
 				void runtime.createFileInDefaultFolder(BIBLATEX_EXTENSION);
+			}
+			return true;
+		},
+	});
+
+	plugin.addCommand({
+		id: 'create-hayagriva',
+		name: 'Create new Hayagriva file',
+		checkCallback: (checking) => {
+			const extension = HAYAGRIVA_EXTENSIONS[0];
+			if (!runtime.ownsExtension(extension)) {
+				return false;
+			}
+			if (!checking) {
+				void runtime.createFileInDefaultFolder(extension);
 			}
 			return true;
 		},
