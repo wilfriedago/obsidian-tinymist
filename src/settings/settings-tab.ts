@@ -218,6 +218,12 @@ export class TypstSettingTab extends PluginSettingTab {
 					aliases: ['format', 'typstyle'],
 					control: { type: 'toggle', key: 'formatterEnabled' },
 				},
+				{
+					name: 'Open YAML files as Hayagriva bibliographies',
+					desc: 'Every .yml and .yaml file in the vault will open in the bibliography editor, not only bibliographies. Turning this off takes effect after restarting Obsidian.',
+					aliases: ['hayagriva', 'yaml', 'yml', 'bibliography', 'citations'],
+					control: { type: 'toggle', key: 'openHayagrivaFiles' },
+				},
 			],
 		};
 	}

@@ -163,6 +163,11 @@ up until the citing document is reopened: Tinymist only follows files the
 plugin has open. If another plugin already opens `.bib` files, it keeps them,
 and the menu entry is not offered.
 
+Hayagriva bibliographies (`.yml`, Typst's own format) are off by default,
+because Obsidian cannot tell a bibliography from any other YAML file: turning on
+**Editor → Open YAML files as Hayagriva bibliographies** opens *every* `.yml`
+and `.yaml` in the vault this way, and adds **New Hayagriva file** to the menu.
+
 ## PDF export
 
 Export writes a normal file into your vault, and Obsidian takes it from there.
@@ -186,6 +191,7 @@ a PDF renderer — opening any PDF uses Obsidian's own viewer.
 | Sync with the editor | on | Click the preview to move the caret, and back |
 | Show diagnostics | on | Underline compiler errors |
 | Enable the formatter | on | |
+| Open YAML files as Hayagriva bibliographies | off | Claims every `.yml`/`.yaml` in the vault |
 | PDF folder | empty | Empty means "beside the document" |
 | Replace existing PDFs | off | |
 | Use system fonts | on | |
@@ -290,8 +296,7 @@ Then [open an issue](https://github.com/wilfriedago/obsidian-tinymist/issues/new
 - Markdown features — backlinks, tags, the outline — do not apply to `.typ`.
 - Only one plugin can own the `.typ` extension. Do not enable another Typst
   editor plugin in the same vault.
-- Bibliographies are plain text: no BibTeX highlighting, completion, or
-  Hayagriva (`.yml`) support yet.
+- Bibliographies are plain text: no highlighting or completion inside them.
 - Changing the executable, project, font, or formatter settings restarts
   Tinymist.
 

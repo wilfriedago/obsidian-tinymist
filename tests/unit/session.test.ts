@@ -200,6 +200,11 @@ describe('bibliographies', () => {
 		expect(languageIdFor('main.typ')).toBe('typst');
 	});
 
+	it('announces a Hayagriva file as YAML, under either extension', () => {
+		expect(languageIdFor('refs.yml')).toBe('yaml');
+		expect(languageIdFor('refs.yaml')).toBe('yaml');
+	});
+
 	it('replays an open bibliography after a restart', () => {
 		const { session, client, methods } = setup();
 		session.open('paper/refs.bib', 'unsaved entry');

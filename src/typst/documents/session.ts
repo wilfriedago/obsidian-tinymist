@@ -181,5 +181,13 @@ export class DocumentSession {
  * as Typst would be a lie in the server's own logs.
  */
 export function languageIdFor(vaultPath: VaultPath): string {
-	return extensionOf(vaultPath) === 'bib' ? 'bibtex' : 'typst';
+	switch (extensionOf(vaultPath)) {
+		case 'bib':
+			return 'bibtex';
+		case 'yml':
+		case 'yaml':
+			return 'yaml';
+		default:
+			return 'typst';
+	}
 }
