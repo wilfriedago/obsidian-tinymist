@@ -19,6 +19,10 @@ release turns them into its section and its GitHub release notes.
   error is underlined in the bibliography itself. If another plugin already
   opens `.bib` files, it keeps them. Requested in
   [#11](https://github.com/wilfriedago/obsidian-tinymist/issues/11).
+- **Hayagriva bibliographies, opt-in.** **Editor → Open YAML files as
+  Hayagriva bibliographies** opens `.yml` and `.yaml` in the same editor and
+  adds **New Hayagriva file**. It is off by default because it claims every
+  YAML file in the vault, not only bibliographies.
 
 ## [0.4.0] - 2026-09-22
 

@@ -17,13 +17,17 @@ describe('renaming a file', () => {
 	}
 
 	function runtimeTracking(oldPath: string) {
-		const runtime = new TypstRuntime({} as App, {} as Plugin)
+		const plugin = { registerExtensions: vi.fn() } as unknown as Plugin
+		const runtime = new TypstRuntime({} as App, plugin)
 		const session = { rename: vi.fn(), close: vi.fn() }
 		const internals = runtime as unknown as {
 			session: typeof session
 			diagnostics: DiagnosticsStore
+			claimExtension(extension: string, viewType: string): void
 			onFileRenamed(oldPath: string, newPath: string): void
 		}
+		// Hayagriva's `.yml` stays unclaimed, as it is with the setting off.
+		internals.claimExtension('bib', 'typst-bibliography')
 		internals.session = session
 		internals.diagnostics.set(oldPath, [problem])
 		const rename = (newPath: string) => internals.onFileRenamed(oldPath, newPath)
@@ -44,6 +48,13 @@ describe('renaming a file', () => {
 		expect(session.close).toHaveBeenCalledWith('refs.bib')
 		expect(session.rename).not.toHaveBeenCalled()
 		expect(diagnostics.get('refs.bib')).toEqual([])
+	})
+
+	it('closes a document renamed to an extension this plugin does not own', () => {
+		const { session, rename } = runtimeTracking('refs.bib')
+		rename('refs.yml')
+		expect(session.close).toHaveBeenCalledWith('refs.bib')
+		expect(session.rename).not.toHaveBeenCalled()
 	})
 
 	it('leaves Tinymist alone for a file it never had', () => {

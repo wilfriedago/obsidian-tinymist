@@ -31,7 +31,7 @@ import {
 	type PublishDiagnosticsParams,
 	type ShowDocumentParams
 } from '../typst/tinymist/protocol'
-import { BIBLATEX_EXTENSION, TYPST_EXTENSION } from './constants'
+import { BIBLATEX_EXTENSION, HAYAGRIVA_EXTENSIONS, TYPST_EXTENSION } from './constants'
 import { createFile, defaultNewFileFolder, isFolder } from './new-file'
 import { StatusBarItem, type CompilePhase } from './status-bar'
 
@@ -41,9 +41,6 @@ import { StatusBarItem, type CompilePhase } from './status-bar'
  * `here` exists for narrow windows, where a split leaves neither pane usable.
  */
 export type PreviewLocation = 'split' | 'here'
-
-/** Files kept in step with Tinymist: the documents, and what they cite. */
-const DOCUMENT_EXTENSIONS: ReadonlySet<string> = new Set([TYPST_EXTENSION, BIBLATEX_EXTENSION])
 
 /**
  * Wires the subsystems together and owns their lifetimes.
@@ -218,6 +215,18 @@ export class TypstRuntime {
 		this.plugin.registerExtensions([TYPST_EXTENSION], TYPST_EDITOR_VIEW_TYPE)
 		this.claimedExtensions.add(TYPST_EXTENSION)
 		this.claimExtension(BIBLATEX_EXTENSION, BIBLIOGRAPHY_EDITOR_VIEW_TYPE)
+		if (this.settings.openHayagrivaFiles) {
+			this.claimHayagrivaFiles()
+		}
+	}
+
+	/** Claims each YAML extension on its own, so losing one keeps the other. */
+	private claimHayagrivaFiles(): void {
+		for (const extension of HAYAGRIVA_EXTENSIONS) {
+			if (!this.ownsExtension(extension)) {
+				this.claimExtension(extension, BIBLIOGRAPHY_EDITOR_VIEW_TYPE)
+			}
+		}
 	}
 
 	/**
@@ -290,6 +299,17 @@ export class TypstRuntime {
 							})
 					})
 				}
+				const hayagriva = HAYAGRIVA_EXTENSIONS[0]
+				if (this.ownsExtension(hayagriva)) {
+					menu.addItem((item) => {
+						item.setTitle('New Hayagriva file')
+							.setIcon('book-marked')
+							.setSection('action-primary')
+							.onClick(() => {
+								void this.createFileIn(target, hayagriva)
+							})
+					})
+				}
 			})
 		)
 
@@ -317,10 +337,10 @@ export class TypstRuntime {
 	 * the buffer and citing documents compile against a file that is gone.
 	 */
 	private onFileRenamed(oldPath: VaultPath, newPath: VaultPath): void {
-		if (!DOCUMENT_EXTENSIONS.has(extensionOf(oldPath))) {
+		if (!this.ownsExtension(extensionOf(oldPath))) {
 			return
 		}
-		if (DOCUMENT_EXTENSIONS.has(extensionOf(newPath))) {
+		if (this.ownsExtension(extensionOf(newPath))) {
 			this.session?.rename(oldPath, newPath)
 		} else {
 			this.session?.close(oldPath)
@@ -833,6 +853,14 @@ export class TypstRuntime {
 
 		if ('showDiagnostics' in patch) {
 			this.forEachSourceView((view) => view.refreshDiagnostics())
+		}
+
+		// Claiming takes effect at once. Obsidian has no public way to hand an
+		// extension back, so turning this off waits for the next start, which
+		// the setting's description says. `session` is set only once the views
+		// are registered, i.e. on a platform the plugin can serve at all.
+		if (this.settings.openHayagrivaFiles && this.session) {
+			this.claimHayagrivaFiles()
 		}
 
 		// Tinymist reads most of this at initialize time, so a restart is the
