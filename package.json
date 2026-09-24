@@ -40,17 +40,17 @@
 		"@codemirror/search": "6.7.1",
 		"@codemirror/state": "6.5.0",
 		"@codemirror/view": "6.38.6",
-		"@types/node": "^22.15.17",
+		"@types/node": "^26.6.2",
 		"esbuild": "0.28.2",
-		"eslint": "^9.39.4",
+		"eslint": "^10.11.0",
 		"eslint-plugin-obsidianmd": "^0.4.2",
 		"globals": "^17.6.0",
 		"jiti": "^2.6.1",
 		"obsidian": "1.13.1",
 		"oxlint": "^1.83.0",
-		"typescript": "^5.8.3",
+		"typescript": "^7.0.2",
 		"typescript-eslint": "^8.70.0",
-		"vitest": "^4.1.11"
+		"vitest": "^5.0.1"
 	},
 	"packageManager": "pnpm@10.30.0"
 }
