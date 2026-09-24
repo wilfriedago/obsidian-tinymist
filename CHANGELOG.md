@@ -7,6 +7,19 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under *Unreleased*; each
 release turns them into its section and its GitHub release notes.
 
+## [Unreleased]
+
+### Added
+
+- **BibLaTeX bibliographies open in Obsidian.** `.bib` files were not
+  registered, so Obsidian hid them and could not open them, even though Typst
+  read them fine. They now open in a plain editor, and **New BibLaTeX file** is
+  offered beside **New Typst file**. An open bibliography is kept in step with
+  Tinymist, so a citing document compiles against unsaved edits and a parse
+  error is underlined in the bibliography itself. If another plugin already
+  opens `.bib` files, it keeps them. Requested in
+  [#11](https://github.com/wilfriedago/obsidian-tinymist/issues/11).
+
 ## [0.4.0] - 2026-09-22
 
 ### Added

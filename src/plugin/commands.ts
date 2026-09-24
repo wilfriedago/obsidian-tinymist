@@ -1,6 +1,7 @@
 import { Notice, type Plugin } from 'obsidian';
 
 import { TypstEditorView } from '../editor/typst-editor-view';
+import { BIBLATEX_EXTENSION } from './constants';
 import type { TypstRuntime } from './runtime';
 
 /**
@@ -79,6 +80,22 @@ export function registerCommands(plugin: Plugin, runtime: TypstRuntime): void {
 		name: 'Create new Typst file',
 		callback: () => {
 			void runtime.createFileInDefaultFolder();
+		},
+	});
+
+	// Offered only while `.bib` files open here; when another plugin has them,
+	// a new one would open somewhere this plugin cannot see it.
+	plugin.addCommand({
+		id: 'create-bibliography',
+		name: 'Create new BibLaTeX file',
+		checkCallback: (checking) => {
+			if (!runtime.ownsExtension(BIBLATEX_EXTENSION)) {
+				return false;
+			}
+			if (!checking) {
+				void runtime.createFileInDefaultFolder(BIBLATEX_EXTENSION);
+			}
+			return true;
 		},
 	});
 

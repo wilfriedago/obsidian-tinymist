@@ -62,3 +62,27 @@ describe('availableFilePath', () => {
 		);
 	});
 });
+
+describe('availableFilePath for bibliographies', () => {
+	const vault = (...paths: string[]) => {
+		const set = new Set(paths);
+		return (path: string) => set.has(path);
+	};
+
+	it('names a bibliography the same way', () => {
+		expect(availableFilePath('papers', vault(), undefined, 'bib')).toBe('papers/Untitled.bib');
+	});
+
+	it('does not collide with a Typst file of the same name', () => {
+		// `Untitled.typ` and `Untitled.bib` side by side is the normal project shape.
+		expect(availableFilePath('papers', vault('papers/Untitled.typ'), undefined, 'bib')).toBe(
+			'papers/Untitled.bib',
+		);
+	});
+
+	it('numbers past an existing bibliography', () => {
+		expect(availableFilePath('papers', vault('papers/Untitled.bib'), undefined, 'bib')).toBe(
+			'papers/Untitled 1.bib',
+		);
+	});
+});
