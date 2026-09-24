@@ -18,8 +18,9 @@ Closes #
 
 ## Checklist
 
+- [ ] The title follows Conventional Commits (`feat: …`, `fix: …`, `docs: …`, `!` for breaking) — it becomes the commit, and the release is worked out from it
 - [ ] `CHANGELOG.md` updated under **Unreleased**, if this is user-visible
 - [ ] Docs updated, if behaviour or setup changed
 - [ ] No new Node module imported outside `src/platform/desktop.ts`
 - [ ] No new runtime dependency, or the pull request explains why one is needed
-- [ ] Version numbers untouched — releases are a separate, maintainer-only step
+- [ ] Version numbers untouched — the release pull request bumps them

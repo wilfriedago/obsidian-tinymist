@@ -182,8 +182,14 @@ does not.
   pushing. CI runs all of it anyway.
 - Write the commit message for someone reading it in a year: what changed, and
   why it was the right call. If you rejected an alternative, say which and why.
-- Add a `CHANGELOG.md` entry under a new *Unreleased* heading for anything
-  user-visible.
+- Title the pull request in [Conventional Commits](https://www.conventionalcommits.org/)
+  form: `feat: …`, `fix: …`, `docs: …`, with `!` after the type for a breaking
+  change. Pull requests are squash-merged, so the title becomes the commit on
+  `main`, and releases are worked out from those commits. The
+  **Conventional Commits** check says whether a title will be understood.
+- Add a `CHANGELOG.md` entry under an *Unreleased* heading for anything
+  user-visible, written for users rather than reviewers. It becomes the release
+  notes. Without one, the release lists pull request titles instead.
 
 ## Branch protection
 
@@ -194,35 +200,53 @@ does not.
 | No force pushes | History on `main` cannot be rewritten |
 | No deletion | The branch cannot be deleted |
 | Pull request required | Contributors merge through a pull request; no approvals are required, since this is a single-maintainer project |
-| Status checks required | `check (20.x)`, `check (22.x)`, `check (24.x)` and `integration` must pass before a merge |
+| Status checks required | `ci` must pass before a merge. It is the one check that always reports, and it fails if any matrix or integration job did |
 
 Repository admins bypass the pull-request and status-check rules, so a
 maintainer can still push directly. Force-push and deletion protection applies
 to everyone, including them — those are the rules that exist to catch mistakes
 rather than to enforce process.
 
-Tags are not covered, so the release flow below is unaffected.
+Tags are not covered by these rules. Release tags are created by the release
+workflow below.
 
 ## Releases
 
-Maintainers only. A release is a tag; docs-only changes must not create one.
+Releases are automated by [release-please](https://github.com/googleapis/release-please)
+and `.github/workflows/release.yml`, and follow from the commit subjects on
+`main`:
 
-```sh
-# 1. bump manifest.json, package.json and versions.json to the same x.y.z
-pnpm validate:manifest
-# 2. commit, then tag with the bare version — no `v` prefix
-git tag -a 0.2.0 -m "0.2.0"
-git push origin main 0.2.0
-```
+| Subjects since the last release | Next version |
+| --- | --- |
+| Any `feat:` | minor, `0.4.0` → `0.5.0` |
+| Otherwise any `fix:`, `perf:` or `revert:` | patch, `0.4.0` → `0.4.1` |
+| A `!`, or a `BREAKING CHANGE:` footer | minor while below 1.0 |
+| Only `docs:`, `test:`, `ci:`, `chore:` … | no release |
 
-The tag triggers `.github/workflows/release.yml`, which validates that the tag
-matches the manifest, builds, attests the artifacts, and opens a **draft**
-release. Publish it once the notes read well. Obsidian installs `main.js`,
-`manifest.json` and `styles.css` from that release, so it must be published —
-not left as a draft — before the directory can see it.
+1. After every push to `main`, the workflow keeps one pull request open, titled
+   `chore: release x.y.z`. It bumps `package.json`, `manifest.json` and
+   `versions.json`, and turns *Unreleased* in `CHANGELOG.md` into the new
+   version's section.
+2. CI runs on it like on any other pull request. The workflow starts that run
+   itself, since GitHub does not run workflows for a pull request the workflow
+   opened.
+3. **Merging it is the release.** The workflow tags `x.y.z` (bare, no `v`),
+   builds, attests, attaches `main.js`, `manifest.json` and `styles.css`, and
+   publishes, with that changelog section as the notes.
 
-`minAppVersion` changes only when a new Obsidian API genuinely requires it, and
-`versions.json` must gain a matching entry.
+To change the notes, edit *Unreleased* on `main`. The release branch is
+regenerated every time `main` moves, so edits made there do not last. To cut
+1.0, add `Release-As: 1.0.0` as a footer on a commit to `main`.
+
+If publishing fails after the tag exists, run the **Release** workflow by hand
+with that tag. It rebuilds and re-uploads without creating anything new.
+
+Direct pushes to `main` count too, so their subjects need the same form. The
+**Conventional Commits** check flags any that do not, but only after the push.
+
+`minAppVersion` changes only when a new Obsidian API genuinely requires it. Change
+it in `manifest.json` in an ordinary pull request; `versions.json` follows at
+the next release.
 
 ## Code of conduct
 

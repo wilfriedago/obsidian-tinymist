@@ -192,10 +192,10 @@ capability.
 
 | Requirement | Status |
 | --- | --- |
-| `main.js`, `manifest.json`, `styles.css` as release assets | ✅ `.github/workflows/release.yml` uploads them from `dist/`; each asset lands under its basename, which is what Obsidian downloads |
-| Release tag matches `manifest.json` version exactly, no `v` prefix | ✅ Verified by the workflow before publishing; `.npmrc` sets `tag-version-prefix=""` |
+| `main.js`, `manifest.json`, `styles.css` as release assets | ✅ `.github/workflows/release.yml` uploads them from `dist/` before publishing; each asset lands under its basename, which is what Obsidian downloads |
+| Release tag matches `manifest.json` version exactly, no `v` prefix | ✅ release-please tags without a `v` (`include-v-in-tag: false`), and the workflow verifies the tag against the manifest before publishing |
 | `main.js` not committed | ✅ In `.gitignore` |
-| `versions.json` maintained | ✅ Updated by `version-bump.mjs`, checked in CI |
+| `versions.json` maintained | ✅ Added to every release pull request by `version-bump.mjs`, checked in CI |
 | Semantic versioning | ✅ `x.y.z` enforced by the validator |
 | README and LICENSE at the repository root | ✅ |
 
