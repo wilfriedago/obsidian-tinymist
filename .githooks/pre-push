@@ -1,0 +1,48 @@
+#!/bin/sh
+# Checks every subject about to land on main.
+#
+# Pull request titles are checked in CI, but a direct push to main skips pull
+# requests, and CI can only flag a subject after it has landed. This stops it
+# before, including commits made before the hooks were installed or with
+# `--no-verify`. Pushes to any other branch are not checked here: their
+# subjects only matter once squash-merged, and then it is the title that counts.
+#
+# Bypass once with `git push --no-verify`.
+
+zero='0000000000000000000000000000000000000000'
+status=0
+
+if ! command -v node > /dev/null 2>&1; then
+	echo 'pre-push: node is not on PATH, so the subjects were not checked.' >&2
+	exit 0
+fi
+root="$(git rev-parse --show-toplevel)"
+
+# Git passes one line per ref being pushed.
+while read -r _local_ref local_sha remote_ref remote_sha; do
+	[ "$remote_ref" = 'refs/heads/main' ] || continue
+	# Deleting main: the ruleset refuses it anyway.
+	[ "$local_sha" = "$zero" ] && continue
+
+	if [ "$remote_sha" = "$zero" ] || ! git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+		# Nothing to compare against locally; check the tip, as CI would.
+		range="-1 $local_sha"
+	else
+		range="$remote_sha..$local_sha"
+	fi
+
+	# shellcheck disable=SC2086 # `range` is deliberately split into arguments.
+	subjects="$(git log --format=%s $range)"
+	[ -z "$subjects" ] && continue
+
+	if ! printf '%s\n' "$subjects" | node "$root/scripts/check-commit-subject.mjs"; then
+		status=1
+	fi
+done
+
+if [ "$status" -ne 0 ]; then
+	echo '' >&2
+	echo 'Reword them with git rebase -i before pushing to main.' >&2
+	echo 'To push anyway: git push --no-verify' >&2
+fi
+exit "$status"

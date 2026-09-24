@@ -5,6 +5,10 @@ on:
     branches: ['**']
   pull_request:
     branches: ['**']
+  # How the release pull request gets its checks: release.yml dispatches this
+  # on the release branch, because pushes made with GITHUB_TOKEN start nothing.
+  # With no base to diff against, `changes` runs the full suite.
+  workflow_dispatch:
 
 # Path filtering is done per job rather than with `on.push.paths-ignore`.
 #

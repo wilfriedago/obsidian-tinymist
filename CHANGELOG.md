@@ -4,7 +4,8 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
-form Obsidian requires.
+form Obsidian requires. Entries are written by hand under *Unreleased*; each
+release turns them into its section and its GitHub release notes.
 
 ## [0.4.0] - 2026-09-22
 

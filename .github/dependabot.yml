@@ -26,8 +26,17 @@ updates:
       # Pinned deliberately: it must match the CodeMirror instance Obsidian
       # itself loads, which is decided by the app, not by this repository.
       - dependency-name: obsidian
+    # Titles release-please can read. A runtime dependency ships to users, so
+    # its bump is a `fix` and releases a patch; a development one does not.
+    commit-message:
+      prefix: fix
+      prefix-development: chore
+      include: scope
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
       interval: monthly
+    commit-message:
+      prefix: ci
+      include: scope

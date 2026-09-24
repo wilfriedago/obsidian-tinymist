@@ -1,0 +1,62 @@
+name: Conventional Commits
+
+# release-please reads commit subjects to decide the next version, and skips
+# any it cannot parse without a word. Pull requests are squash-merged, so a
+# pull request's title is the subject that lands on main: that is what is
+# checked, including when the title is edited.
+#
+# Direct pushes to main skip pull requests, so their subjects are checked after
+# the fact. That cannot stop the push; it makes a subject release-please will
+# ignore visible straight away, while a follow-up commit can still fix it.
+#
+# Advisory, not a required check: the release pull request is opened with
+# GITHUB_TOKEN, which starts no `pull_request` workflows, so requiring this
+# would leave that pull request waiting on a check that never reports.
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: The title follows Conventional Commits
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: node scripts/check-commit-subject.mjs "$TITLE"
+
+  pushed-subjects:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Every pushed subject follows Conventional Commits
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            git log --format=%s "$BEFORE..$GITHUB_SHA" | node scripts/check-commit-subject.mjs
+          else
+            git log -1 --format=%s | node scripts/check-commit-subject.mjs
+          fi

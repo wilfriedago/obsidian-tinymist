@@ -1,0 +1,37 @@
+#!/bin/sh
+# Rejects a commit whose subject release-please could not read.
+#
+# release-please works out the next version, and the fallback changelog, from
+# commit subjects on main, and skips any it cannot parse without a word. This
+# is the same check CI runs, moved to the moment the subject is written.
+#
+# Bypass once with `git commit --no-verify`. Installed by `pnpm install`; see
+# CONTRIBUTING.md.
+
+message_file="$1"
+
+# The subject is the first line that is neither blank nor a git comment.
+subject="$(grep -v '^#' "$message_file" | sed '/^[[:space:]]*$/d' | head -n 1)"
+
+case "$subject" in
+	# An empty message: git aborts the commit itself, with its own message.
+	'') exit 0 ;;
+	# Made by `git commit --fixup` and friends, and gone after `rebase --autosquash`.
+	'fixup! '* | 'squash! '* | 'amend! '*) exit 0 ;;
+	# Git's own merge subjects, e.g. when updating a branch from main. Pull
+	# requests are squash-merged, so they never reach main as they are.
+	'Merge '*) exit 0 ;;
+esac
+
+if ! command -v node > /dev/null 2>&1; then
+	echo 'commit-msg: node is not on PATH, so the subject was not checked.' >&2
+	exit 0
+fi
+
+root="$(git rev-parse --show-toplevel)"
+if ! node "$root/scripts/check-commit-subject.mjs" "$subject"; then
+	echo '' >&2
+	echo "The message was not lost: git commit -e -F $(git rev-parse --git-path COMMIT_EDITMSG)" >&2
+	echo 'To commit anyway: git commit --no-verify' >&2
+	exit 1
+fi
