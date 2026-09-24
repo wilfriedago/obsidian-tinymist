@@ -30,6 +30,19 @@ You also need Tinymist on your machine — `brew install tinymist`, or see the
 README. The integration tests skip themselves without it, so you can work on
 most of the plugin either way.
 
+`pnpm install` also enables the repository's git hooks, in `.githooks/`, by
+setting `core.hooksPath`. If you already set a hooks path yourself, it is left
+alone, and the install says how to opt in. The hooks run the same
+commit-subject check as CI (see [Pull requests](#pull-requests)):
+
+| Hook | Checks |
+| --- | --- |
+| `commit-msg` | The subject of each commit, as it is written. `fixup!`, `squash!` and merge subjects pass, since they never reach `main` as they are |
+| `pre-push` | Every subject about to land on `main`, including commits made before the hooks were enabled |
+
+`--no-verify` skips either one once; `git config --unset core.hooksPath` turns
+them off.
+
 ### Running it in Obsidian
 
 ```sh
