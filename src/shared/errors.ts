@@ -61,14 +61,8 @@ export class TypstError extends Error {
 	/** Extra key/value context shown in the detail block, e.g. the executable path. */
 	readonly context: Readonly<Record<string, string>>
 
-	/** The original failure, kept for the log and never shown to the user. */
-	readonly cause: unknown
-
 	constructor(code: TypstErrorCode, reason: string, options: { context?: Record<string, string>; cause?: unknown } = {}) {
-		// `Error`'s `cause` option is ES2022; the build targets ES2021, so the
-		// original failure is carried on an own field instead.
-		super(reason)
-		this.cause = options.cause
+		super(reason, { cause: options.cause })
 		this.name = 'TypstError'
 		this.code = code
 		this.context = Object.freeze({ ...options.context })

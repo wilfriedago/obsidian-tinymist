@@ -232,7 +232,7 @@ triggers, such as restarting Tinymist.
     because the index also builds ESLint presets that load `typescript-eslint`,
     which refuses to run alongside TypeScript 7.
   - `unicorn/no-array-sort` is off: its fix is `toSorted()`, which is ES2023,
-    and the build targets ES2021 to match Obsidian's runtime.
+    and the build targets ES2022 to match Obsidian's runtime.
   - `no-new` is off: Obsidian's `Notice` is constructed for its side effect.
   - `ui/sentence-case` is a warning, not an error: it lowercases proper nouns
     and acronyms ("Typst", "PDF", "PATH") that Obsidian's own style guide says

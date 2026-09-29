@@ -3,7 +3,7 @@
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "ESNext",
-    "target": "ES2021",
+    "target": "es2022",
     "strict": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
@@ -16,7 +16,7 @@
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "types": ["node"],
-    "lib": ["ES2021", "DOM"]
+    "lib": ["ES2022", "DOM"]
   },
   "include": ["src/**/*.ts", "tests/**/*.ts", "scripts/**/*.mjs"]
 }
