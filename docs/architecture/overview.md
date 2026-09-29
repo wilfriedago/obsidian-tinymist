@@ -42,16 +42,16 @@ a port number. A view asks for a URL; the controller below it deals in commands.
 
 ## Layers
 
-| Layer | Modules | Knows about |
-| --- | --- | --- |
-| Entry | `main.ts` | Composition only — no behaviour |
-| Coordination | `plugin/runtime.ts`, `plugin/commands.ts`, `plugin/status-bar.ts` | Obsidian and the subsystems below |
-| Editor | `editor/*` | CodeMirror 6, LSP request shapes |
-| Preview | `preview/*` | A URL and a task lifetime |
-| Domain | `typst/documents`, `typst/diagnostics`, `typst/project`, `typst/compiler` | Vault paths, LSP payloads |
-| Adapter | `typst/tinymist/*` | Tinymist's process, protocol, and flags |
-| Platform | `platform/desktop.ts` | Node and Electron (one module: `child_process`) |
-| Shared | `shared/*` | Nothing above it |
+| Layer        | Modules                                                                   | Knows about                                     |
+| ------------ | ------------------------------------------------------------------------- | ----------------------------------------------- |
+| Entry        | `main.ts`                                                                 | Composition only — no behaviour                 |
+| Coordination | `plugin/runtime.ts`, `plugin/commands.ts`, `plugin/status-bar.ts`         | Obsidian and the subsystems below               |
+| Editor       | `editor/*`                                                                | CodeMirror 6, LSP request shapes                |
+| Preview      | `preview/*`                                                               | A URL and a task lifetime                       |
+| Domain       | `typst/documents`, `typst/diagnostics`, `typst/project`, `typst/compiler` | Vault paths, LSP payloads                       |
+| Adapter      | `typst/tinymist/*`                                                        | Tinymist's process, protocol, and flags         |
+| Platform     | `platform/desktop.ts`                                                     | Node and Electron (one module: `child_process`) |
+| Shared       | `shared/*`                                                                | Nothing above it                                |
 
 `shared/paths.ts` is pure and takes the vault's base directory as an argument,
 which is what lets every path conversion be unit-tested without a live vault.
@@ -84,7 +84,7 @@ flatten every paper in the vault into one project and make every `typst.toml`
 inert.
 
 So the default strategy, `auto`, sends **no** root and lets Tinymist discover
-per file. `typst/project/project.ts` mirrors the same walk, but only to *report*
+per file. `typst/project/project.ts` mirrors the same walk, but only to _report_
 the answer in the UI — it never overrides the compiler.
 
 The other strategies exist for the cases where a user genuinely wants them:
@@ -198,7 +198,7 @@ an ungraceful exit. Both paths are covered by tests.
 
 The settings tab describes its rows through `getSettingDefinitions()` rather
 than building DOM in `display()`. Obsidian then renders, persists, validates
-and — the reason it matters — *indexes them for settings search*. A tab still
+and — the reason it matters — _indexes them for settings search_. A tab still
 using `display()` is invisible to that search, and the method is deprecated as
 of 1.13.0, which is why `minAppVersion` is `1.13.0`.
 
@@ -214,11 +214,11 @@ triggers, such as restarting Tinymist.
   esbuild needs its postinstall to place the platform binary.
 - **Bundler:** esbuild, producing a single CommonJS bundle at `dist/main.js`.
   The build also copies `manifest.json` and `styles.css` into `dist/`, so that
-  directory *is* the installable plugin folder and can be symlinked straight
+  directory _is_ the installable plugin folder and can be symlinked straight
   into a vault. The CodeMirror, Lezer, `obsidian`, `electron` and Node builtin
   modules are externals.
 - **Linting:** oxlint (`pnpm lint`) is the linter. It runs its own correctness
-  and suspicious rule sets *and* 23 of the `eslint-plugin-obsidianmd` review
+  and suspicious rule sets _and_ 23 of the `eslint-plugin-obsidianmd` review
   rules, loaded through oxlint's `jsPlugins` support (which is ESLint v9
   compatible).
   - Six obsidianmd rules call `getParserServices()` and need the type checker,
@@ -240,10 +240,10 @@ triggers, such as restarting Tinymist.
 
 ## Where to add things
 
-| To add | Start in |
-| --- | --- |
-| A command | `plugin/commands.ts` |
-| A setting | `settings/settings.ts`, then `settings/settings-tab.ts` |
-| An LSP feature | `editor/language-features.ts` |
-| A Tinymist command or flag | `typst/tinymist/protocol.ts` and `config.ts` |
-| Anything touching Node | `platform/desktop.ts`, and nowhere else |
+| To add                     | Start in                                                |
+| -------------------------- | ------------------------------------------------------- |
+| A command                  | `plugin/commands.ts`                                    |
+| A setting                  | `settings/settings.ts`, then `settings/settings-tab.ts` |
+| An LSP feature             | `editor/language-features.ts`                           |
+| A Tinymist command or flag | `typst/tinymist/protocol.ts` and `config.ts`            |
+| Anything touching Node     | `platform/desktop.ts`, and nowhere else                 |

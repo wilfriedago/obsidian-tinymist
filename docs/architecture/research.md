@@ -6,13 +6,13 @@ code suggested, the running binary won and the discrepancy is recorded.
 
 Versions under test:
 
-| Component | Version |
-| --- | --- |
-| Tinymist | 0.15.8 (Homebrew bottle, `aarch64-apple-darwin`) |
-| Typst (inside Tinymist) | 0.15.1 |
-| Obsidian API (`obsidian` on npm) | 1.13.1 |
-| `codemirror-lang-typst` | 0.6.0 |
-| Node | 24.18.0 |
+| Component                        | Version                                          |
+| -------------------------------- | ------------------------------------------------ |
+| Tinymist                         | 0.15.8 (Homebrew bottle, `aarch64-apple-darwin`) |
+| Typst (inside Tinymist)          | 0.15.1                                           |
+| Obsidian API (`obsidian` on npm) | 1.13.1                                           |
+| `codemirror-lang-typst`          | 0.6.0                                            |
+| Node                             | 24.18.0                                          |
 
 ---
 
@@ -43,7 +43,7 @@ This is what makes a custom editor view viable — see §4.
 
 ### Requirements that shape the architecture
 
-From *Developer policies* and *Submission requirements for plugins*:
+From _Developer policies_ and _Submission requirements for plugins_:
 
 - A plugin must not "install or update themselves or their dependencies". This
   rules out the plugin downloading or auto-updating Tinymist.
@@ -59,15 +59,15 @@ From *Developer policies* and *Submission requirements for plugins*:
 
 `community-plugins.json` (7,729 plugins) contains these Typst-related entries:
 
-| id | name |
-| --- | --- |
-| `typst` | Typst Renderer |
-| `typst-mate` | Typst Mate |
-| `typst-pdf-export` | Typst PDF Export |
-| `typst-book-preview` | Typster |
-| `typstian` | Typstian |
-| `omd-to-typst` | Omd2Typst |
-| `wypst` | Wypst |
+| id                   | name             |
+| -------------------- | ---------------- |
+| `typst`              | Typst Renderer   |
+| `typst-mate`         | Typst Mate       |
+| `typst-pdf-export`   | Typst PDF Export |
+| `typst-book-preview` | Typster          |
+| `typstian`           | Typstian         |
+| `omd-to-typst`       | Omd2Typst        |
+| `wypst`              | Wypst            |
 
 `typst` and `typstian` are taken. `tinymist` is free, and is the id this project
 uses. See [the risk register](../risks.md#r1-plugin-name-reuses-an-upstream-project-name).
@@ -116,21 +116,21 @@ Diagnostics arrive by `textDocument/publishDiagnostics`.
 
 Commands this plugin relies on, all verified present:
 
-| Command | Use |
-| --- | --- |
+| Command                   | Use                  |
+| ------------------------- | -------------------- |
 | `tinymist.doStartPreview` | Start a preview task |
-| `tinymist.doKillPreview` | End one |
-| `tinymist.scrollPreview` | Source → preview |
-| `tinymist.exportPdf` | Compile to PDF |
+| `tinymist.doKillPreview`  | End one              |
+| `tinymist.scrollPreview`  | Source → preview     |
+| `tinymist.exportPdf`      | Compile to PDF       |
 
 Notifications the plugin subscribes to:
 
-| Notification | Payload | Use |
-| --- | --- | --- |
-| `tinymist/compileStatus` | `{status, path, pageCount}` | Status bar |
-| `tinymist/preview/scrollSource` | `{filepath, start, end}` | Preview → source |
-| `tinymist/preview/dispose` | `{taskId}` | Tear down client state |
-| `tinymist/documentOutline` | outline tree | Not consumed yet |
+| Notification                    | Payload                     | Use                    |
+| ------------------------------- | --------------------------- | ---------------------- |
+| `tinymist/compileStatus`        | `{status, path, pageCount}` | Status bar             |
+| `tinymist/preview/scrollSource` | `{filepath, start, end}`    | Preview → source       |
+| `tinymist/preview/dispose`      | `{taskId}`                  | Tear down client state |
+| `tinymist/documentOutline`      | outline tree                | Not consumed yet       |
 
 ### Diagnostics are published only for documents that have problems
 
@@ -160,7 +160,7 @@ argument to `tinymist.exportPdf` fails with a misleading error:
 output path is relative: "file:/…/test-vault/file:/…/test-vault/basic"
 ```
 
-The URI is being used as the *output* path. VS Code passes `document.uri.fsPath`,
+The URI is being used as the _output_ path. VS Code passes `document.uri.fsPath`,
 a plain filesystem path. The plugin does the same, and a regression test pins the
 URI form as an expected failure.
 
@@ -170,12 +170,12 @@ URI form as an expected failure.
 regardless of the `write` action flag, and additionally returns the bytes as
 base64 when `write` is false:
 
-| Arguments | Result |
-| --- | --- |
-| `[fsPath, {}, {write: true}]` | writes; `data` empty |
+| Arguments                      | Result                                 |
+| ------------------------------ | -------------------------------------- |
+| `[fsPath, {}, {write: true}]`  | writes; `data` empty                   |
 | `[fsPath, {}, {write: false}]` | **writes anyway**; `data` = base64 PDF |
 
-`outputPath` is *global server configuration*, not a per-call argument, so it
+`outputPath` is _global server configuration_, not a per-call argument, so it
 cannot be varied per export without a racy `didChangeConfiguration`. The plugin's
 answer: point `outputPath` at a plugin-owned staging directory once, take the
 returned bytes, and write the real file into the vault through Obsidian's Vault
@@ -201,8 +201,12 @@ Reading the Rust alone would have shipped a preview that never starts.
 `tinymist.doStartPreview` returns:
 
 ```json
-{"dataPlanePort": 51285, "staticServerPort": 51285,
- "staticServerAddr": "127.0.0.1:51285", "isPrimary": true}
+{
+  "dataPlanePort": 51285,
+  "staticServerPort": 51285,
+  "staticServerAddr": "127.0.0.1:51285",
+  "isPrimary": true
+}
 ```
 
 Both planes share one port when `--data-plane-host` and `--host` are both `:0`.
@@ -213,8 +217,8 @@ it:
   offline, which is what makes the plugin's offline-first claim hold.
 - It derives its own websocket address from `window.location`:
   ```js
-  let urlObject = new URL("/", window.location.href);
-  urlObject.protocol = urlObject.protocol.replace("http:", "ws:");
+  let urlObject = new URL('/', window.location.href)
+  urlObject.protocol = urlObject.protocol.replace('http:', 'ws:')
   ```
   So pointing an iframe at the static server wires up both channels with no
   string substitution. (The VS Code extension patches a placeholder instead,
@@ -239,7 +243,7 @@ The `sessionStorage` use is the reason the preview iframe carries **no**
 **Step 2 outranks step 3.** Declaring the vault as the workspace root would
 therefore make every `typst.toml` in the vault inert and collapse every paper
 into a single project — exactly the outcome to avoid. This single fact decides
-the plugin's default: send *no* root and let Tinymist discover per file.
+the plugin's default: send _no_ root and let Tinymist discover per file.
 
 ### Tinymist can panic on paths outside the root
 

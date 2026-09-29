@@ -26,9 +26,9 @@ would rather not be.
 Only the latest release is supported. Fixes ship in a new version rather than
 as patches to older ones.
 
-| Version | Supported |
-| --- | --- |
-| Latest release | ✅ |
+| Version        | Supported          |
+| -------------- | ------------------ |
+| Latest release | ✅                 |
 | Anything older | ❌ — please update |
 
 ## What this plugin can do
@@ -75,7 +75,7 @@ These are documented rather than fixed, and are not news:
   could read a document you are previewing. This matches the upstream editor
   integration's behaviour.
 - **Tinymist runs with your privileges.** It is a compiler you installed, doing
-  what compilers do. A vulnerability *in Tinymist or Typst* belongs
+  what compilers do. A vulnerability _in Tinymist or Typst_ belongs
   [upstream](https://github.com/Myriad-Dreamin/tinymist/security).
 - **Typst packages are fetched by Tinymist.** The first `#import` from a
   package makes Tinymist download it. That is Typst's behaviour, outside this

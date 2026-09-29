@@ -1,16 +1,9 @@
-import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete';
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands';
-import { bracketMatching, foldGutter, foldKeymap, indentOnInput, indentUnit } from '@codemirror/language';
-import { lintGutter, setDiagnostics } from '@codemirror/lint';
-import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search';
-import {
-	Annotation,
-	Compartment,
-	EditorState,
-	type Extension,
-	Transaction,
-	type TransactionSpec,
-} from '@codemirror/state';
+import { autocompletion, closeBrackets, closeBracketsKeymap, completionKeymap } from '@codemirror/autocomplete'
+import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
+import { bracketMatching, foldGutter, foldKeymap, indentOnInput, indentUnit } from '@codemirror/language'
+import { lintGutter, setDiagnostics } from '@codemirror/lint'
+import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search'
+import { Annotation, Compartment, EditorState, type Extension, Transaction, type TransactionSpec } from '@codemirror/state'
 import {
 	EditorView,
 	drawSelection,
@@ -19,24 +12,21 @@ import {
 	highlightSpecialChars,
 	keymap,
 	lineNumbers,
-	rectangularSelection,
-} from '@codemirror/view';
-import { typst_lezer } from 'codemirror-lang-typst/lezer';
-import { TextFileView, type TFile, type WorkspaceLeaf } from 'obsidian';
+	rectangularSelection
+} from '@codemirror/view'
 
-import type { Logger } from '../shared/logging';
-import type { VaultPath } from '../shared/paths';
-import type { Diagnostic } from '../typst/tinymist/protocol';
-import type { TextEdit } from '../typst/tinymist/protocol';
-import { toCodeMirrorDiagnostics } from './diagnostics';
-import {
-	createCompletionSource,
-	createHoverExtension,
-	type LanguageFeatureContext,
-} from './language-features';
-import { offsetToPosition, positionToOffset, rangeToOffsets } from './positions';
+import { typst_lezer } from 'codemirror-lang-typst/lezer'
+import { TextFileView, type TFile, type WorkspaceLeaf } from 'obsidian'
 
-export const TYPST_EDITOR_VIEW_TYPE = 'typst-source';
+import type { Logger } from '../shared/logging'
+import type { VaultPath } from '../shared/paths'
+import type { Diagnostic } from '../typst/tinymist/protocol'
+import type { TextEdit } from '../typst/tinymist/protocol'
+import { toCodeMirrorDiagnostics } from './diagnostics'
+import { createCompletionSource, createHoverExtension, type LanguageFeatureContext } from './language-features'
+import { offsetToPosition, positionToOffset, rangeToOffsets } from './positions'
+
+export const TYPST_EDITOR_VIEW_TYPE = 'typst-source'
 
 /**
  * The `.typ` editor.
@@ -53,18 +43,18 @@ export const TYPST_EDITOR_VIEW_TYPE = 'typst-source';
 
 export interface TypstEditorHost extends LanguageFeatureContext {
 	/** Text changed in the buffer. Debounced upstream before it reaches Tinymist. */
-	onDocumentChanged(vaultPath: VaultPath, text: string): void;
-	onDocumentOpened(vaultPath: VaultPath, text: string): void;
-	onDocumentClosed(vaultPath: VaultPath): void;
+	onDocumentChanged(vaultPath: VaultPath, text: string): void
+	onDocumentOpened(vaultPath: VaultPath, text: string): void
+	onDocumentClosed(vaultPath: VaultPath): void
 	/** The cursor moved; used to drive source-to-preview scrolling. */
-	onCursorMoved(vaultPath: VaultPath, line: number, character: number): void;
+	onCursorMoved(vaultPath: VaultPath, line: number, character: number): void
 	/** The user asked for the preview from the editor's own header. */
-	onTogglePreviewRequested(vaultPath: VaultPath): void;
+	onTogglePreviewRequested(vaultPath: VaultPath): void
 	/** The user asked for the preview to take over this tab. */
-	onShowPreviewHereRequested(vaultPath: VaultPath): void;
+	onShowPreviewHereRequested(vaultPath: VaultPath): void
 	/** Diagnostics currently known for a document. */
-	getDiagnostics(vaultPath: VaultPath): readonly Diagnostic[];
-	readonly logger: Logger;
+	getDiagnostics(vaultPath: VaultPath): readonly Diagnostic[]
+	readonly logger: Logger
 }
 
 /**
@@ -76,72 +66,72 @@ export interface TypstEditorHost extends LanguageFeatureContext {
  * tell "the user moved the caret" apart from "we moved it", which is the only
  * reliable distinction — a timing guard would still misfire on a slow machine.
  */
-export const previewOriginatedSelection = Annotation.define<boolean>();
+export const previewOriginatedSelection = Annotation.define<boolean>()
 
 /**
  * True when a selection change came from {@link TypstEditorView.revealPosition}
  * rather than from the user. Exported so the rule can be tested directly.
  */
-export function isPreviewOriginatedSelection(
-	transactions: readonly Transaction[],
-): boolean {
-	return transactions.some(
-		(transaction) => transaction.annotation(previewOriginatedSelection) === true,
-	);
+export function isPreviewOriginatedSelection(transactions: readonly Transaction[]): boolean {
+	return transactions.some((transaction) => transaction.annotation(previewOriginatedSelection) === true)
 }
 
 /** How long typing settles before the buffer is pushed to Tinymist. */
-const CHANGE_DEBOUNCE_MS = 150;
+const CHANGE_DEBOUNCE_MS = 150
 /** Cursor moves are rate-limited separately; they are cheap but frequent. */
-const CURSOR_DEBOUNCE_MS = 250;
+const CURSOR_DEBOUNCE_MS = 250
 
 /** Reload disk edits without making Undo restore an obsolete document. */
 export function externalReplaceSpec(state: EditorState, next: string): TransactionSpec | null {
-	const previous = state.doc.toString();
-	if (previous === next) return null;
-	let from = 0;
-	const limit = Math.min(previous.length, next.length);
-	while (from < limit && previous[from] === next[from]) from += 1;
-	let suffix = 0;
+	const previous = state.doc.toString()
+	if (previous === next) return null
+	let from = 0
+	const limit = Math.min(previous.length, next.length)
+	while (from < limit && previous[from] === next[from]) from += 1
+	let suffix = 0
 	while (suffix < limit - from && previous[previous.length - suffix - 1] === next[next.length - suffix - 1]) {
-		suffix += 1;
+		suffix += 1
 	}
 	return {
-		changes: { from, to: previous.length - suffix, insert: next.slice(from, next.length - suffix) },
-		annotations: Transaction.addToHistory.of(false),
-	};
+		changes: {
+			from,
+			to: previous.length - suffix,
+			insert: next.slice(from, next.length - suffix)
+		},
+		annotations: Transaction.addToHistory.of(false)
+	}
 }
 
 export class TypstEditorView extends TextFileView {
-	private editor: EditorView | null = null;
-	private readonly diagnosticsCompartment = new Compartment();
-	private changeTimer: number | null = null;
-	private cursorTimer: number | null = null;
+	private editor: EditorView | null = null
+	private readonly diagnosticsCompartment = new Compartment()
+	private changeTimer: number | null = null
+	private cursorTimer: number | null = null
 	/** Disk reloads reach the language server, but must not request another save. */
-	private loading = false;
+	private loading = false
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		private readonly host: TypstEditorHost,
+		private readonly host: TypstEditorHost
 	) {
-		super(leaf);
+		super(leaf)
 	}
 
 	override getViewType(): string {
-		return TYPST_EDITOR_VIEW_TYPE;
+		return TYPST_EDITOR_VIEW_TYPE
 	}
 
 	override getIcon(): string {
-		return 'file-type';
+		return 'file-type'
 	}
 
 	override getDisplayText(): string {
-		return this.file?.basename ?? 'Typst';
+		return this.file?.basename ?? 'Typst'
 	}
 
 	/** The vault path of the open file, or `null` when there is none. */
 	get vaultPath(): VaultPath | null {
-		return this.file?.path ?? null;
+		return this.file?.path ?? null
 	}
 
 	override async onOpen(): Promise<void> {
@@ -153,55 +143,55 @@ export class TypstEditorView extends TextFileView {
 		// split on a wide screen, and this very tab on a narrow one, where a
 		// split leaves neither pane wide enough to read.
 		this.addAction('book-open', 'Toggle Typst preview in a split', () => {
-			const vaultPath = this.vaultPath;
+			const vaultPath = this.vaultPath
 			if (vaultPath) {
-				this.host.onTogglePreviewRequested(vaultPath);
+				this.host.onTogglePreviewRequested(vaultPath)
 			}
-		});
+		})
 
 		this.addAction('eye', 'Show Typst preview in this tab', () => {
-			const vaultPath = this.vaultPath;
+			const vaultPath = this.vaultPath
 			if (vaultPath) {
-				this.host.onShowPreviewHereRequested(vaultPath);
+				this.host.onShowPreviewHereRequested(vaultPath)
 			}
-		});
+		})
 
-		this.contentEl.empty();
-		this.contentEl.addClass('tinymist-editor-container');
+		this.contentEl.empty()
+		this.contentEl.addClass('tinymist-editor-container')
 
-		const parent = this.contentEl.createDiv({ cls: 'tinymist-editor' });
+		const parent = this.contentEl.createDiv({ cls: 'tinymist-editor' })
 
 		this.editor = new EditorView({
 			parent,
 			state: EditorState.create({
 				doc: '',
-				extensions: this.buildExtensions(),
-			}),
-		});
+				extensions: this.buildExtensions()
+			})
+		})
 	}
 
 	override async onClose(): Promise<void> {
-		this.cancelTimers();
-		this.editor?.destroy();
-		this.editor = null;
-		this.contentEl.empty();
+		this.cancelTimers()
+		this.editor?.destroy()
+		this.editor = null
+		this.contentEl.empty()
 	}
 
 	override async onLoadFile(file: TFile): Promise<void> {
-		await super.onLoadFile(file);
-		const text = this.editor?.state.doc.toString() ?? '';
-		this.host.onDocumentOpened(file.path, text);
-		this.refreshDiagnostics();
+		await super.onLoadFile(file)
+		const text = this.editor?.state.doc.toString() ?? ''
+		this.host.onDocumentOpened(file.path, text)
+		this.refreshDiagnostics()
 	}
 
 	override async onUnloadFile(file: TFile): Promise<void> {
-		this.cancelTimers();
-		this.flushPendingChange();
+		this.cancelTimers()
+		this.flushPendingChange()
 		try {
-			await super.onUnloadFile(file);
+			await super.onUnloadFile(file)
 		} finally {
-			this.cancelTimers();
-			this.host.onDocumentClosed(file.path);
+			this.cancelTimers()
+			this.host.onDocumentClosed(file.path)
 		}
 	}
 
@@ -210,39 +200,37 @@ export class TypstEditorView extends TextFileView {
 	/* ---------------------------------------------------------------------- */
 
 	override getViewData(): string {
-		return this.editor?.state.doc.toString() ?? this.data;
+		return this.editor?.state.doc.toString() ?? this.data
 	}
 
 	override setViewData(data: string, clear: boolean): void {
 		// TextFileView already watches vault modifications and merges dirty text.
 		// Retain that contract. Its save path does not provide a filesystem CAS:
 		// simultaneous external writers still need to coordinate their writes.
-		this.data = data;
-		const editor = this.editor;
+		this.data = data
+		const editor = this.editor
 		if (!editor) {
-			return;
+			return
 		}
 
-		this.loading = true;
+		this.loading = true
 		try {
 			if (clear) {
 				// A different file: rebuild the state so undo history and
 				// diagnostics from the previous document do not carry over.
-				editor.setState(
-					EditorState.create({ doc: data, extensions: this.buildExtensions() }),
-				);
+				editor.setState(EditorState.create({ doc: data, extensions: this.buildExtensions() }))
 			} else {
-				const change = externalReplaceSpec(editor.state, data);
-				if (change) editor.dispatch(change);
+				const change = externalReplaceSpec(editor.state, data)
+				if (change) editor.dispatch(change)
 			}
 		} finally {
-			this.loading = false;
+			this.loading = false
 		}
 	}
 
 	override clear(): void {
-		this.data = '';
-		this.editor?.setState(EditorState.create({ doc: '', extensions: this.buildExtensions() }));
+		this.data = ''
+		this.editor?.setState(EditorState.create({ doc: '', extensions: this.buildExtensions() }))
 	}
 
 	/* ---------------------------------------------------------------------- */
@@ -265,32 +253,32 @@ export class TypstEditorView extends TextFileView {
 	 * applied safely, so a bad response is a no-op rather than a corruption.
 	 */
 	applyTextEdits(edits: readonly TextEdit[]): boolean {
-		const editor = this.editor;
+		const editor = this.editor
 		if (!editor || edits.length === 0) {
-			return false;
+			return false
 		}
 
-		const doc = editor.state.doc;
+		const doc = editor.state.doc
 		const changes = edits
 			.map((edit) => {
-				const { from, to } = rangeToOffsets(doc, edit.range);
-				return { from, to, insert: edit.newText };
+				const { from, to } = rangeToOffsets(doc, edit.range)
+				return { from, to, insert: edit.newText }
 			})
-			.sort((a, b) => a.from - b.from || a.to - b.to);
+			.sort((a, b) => a.from - b.from || a.to - b.to)
 
 		// LSP requires edits not to overlap. CodeMirror would throw on an
 		// overlapping set, so it is checked here and the format abandoned.
 		for (let index = 1; index < changes.length; index += 1) {
-			const previous = changes[index - 1];
-			const current = changes[index];
+			const previous = changes[index - 1]
+			const current = changes[index]
 			if (previous && current && current.from < previous.to) {
-				this.host.logger.error('Refusing to apply overlapping format edits');
-				return false;
+				this.host.logger.error('Refusing to apply overlapping format edits')
+				return false
 			}
 		}
 
-		editor.dispatch({ changes, scrollIntoView: false });
-		return true;
+		editor.dispatch({ changes, scrollIntoView: false })
+		return true
 	}
 
 	/**
@@ -301,47 +289,44 @@ export class TypstEditorView extends TextFileView {
 	 * move would be echoed straight back to the preview.
 	 */
 	revealPosition(line: number, character: number): void {
-		const editor = this.editor;
+		const editor = this.editor
 		if (!editor) {
-			return;
+			return
 		}
 
-		this.cancelCursorPush();
+		this.cancelCursorPush()
 
-		const offset = positionToOffset(editor.state.doc, { line, character });
+		const offset = positionToOffset(editor.state.doc, { line, character })
 		editor.dispatch({
 			selection: { anchor: offset },
 			effects: EditorView.scrollIntoView(offset, { y: 'center' }),
-			annotations: previewOriginatedSelection.of(true),
-		});
-		editor.focus();
+			annotations: previewOriginatedSelection.of(true)
+		})
+		editor.focus()
 	}
 
 	/** The cursor's current position, for source-to-preview sync. */
 	getCursorPosition(): { line: number; character: number } | null {
-		const editor = this.editor;
+		const editor = this.editor
 		if (!editor) {
-			return null;
+			return null
 		}
-		return offsetToPosition(editor.state.doc, editor.state.selection.main.head);
+		return offsetToPosition(editor.state.doc, editor.state.selection.main.head)
 	}
 
 	/** Re-reads diagnostics from the host and repaints the gutter. */
 	refreshDiagnostics(): void {
-		const editor = this.editor;
-		const path = this.vaultPath;
+		const editor = this.editor
+		const path = this.vaultPath
 		if (!editor || !path) {
-			return;
+			return
 		}
-		const diagnostics = toCodeMirrorDiagnostics(
-			editor.state.doc,
-			this.host.getDiagnostics(path),
-		);
-		editor.dispatch(setDiagnostics(editor.state, diagnostics));
+		const diagnostics = toCodeMirrorDiagnostics(editor.state.doc, this.host.getDiagnostics(path))
+		editor.dispatch(setDiagnostics(editor.state, diagnostics))
 	}
 
 	focusEditor(): void {
-		this.editor?.focus();
+		this.editor?.focus()
 	}
 
 	/* ---------------------------------------------------------------------- */
@@ -373,7 +358,7 @@ export class TypstEditorView extends TextFileView {
 				// real scope, imports, and package contents.
 				override: [createCompletionSource(this.host)],
 				activateOnTyping: true,
-				closeOnBlur: true,
+				closeOnBlur: true
 			}),
 			createHoverExtension(this.host),
 			keymap.of([
@@ -383,75 +368,75 @@ export class TypstEditorView extends TextFileView {
 				...historyKeymap,
 				...foldKeymap,
 				...completionKeymap,
-				indentWithTab,
+				indentWithTab
 			]),
 			EditorView.lineWrapping,
 			EditorView.updateListener.of((update) => {
 				if (update.docChanged) {
 					if (!this.loading) {
-						this.data = update.state.doc.toString();
+						this.data = update.state.doc.toString()
 						// Tells Obsidian to persist the buffer on its own schedule.
-						this.requestSave();
+						this.requestSave()
 					}
 					// External reloads must also replace Tinymist's in-memory text.
-					this.scheduleChangePush();
+					this.scheduleChangePush()
 				}
 				if (update.selectionSet && !update.docChanged) {
 					// Skip selection changes this plugin made in response to the
 					// preview; reporting them back would loop.
 					if (!isPreviewOriginatedSelection(update.transactions)) {
-						this.scheduleCursorPush();
+						this.scheduleCursorPush()
 					}
 				}
-			}),
-		];
+			})
+		]
 	}
 
 	private scheduleChangePush(): void {
 		if (this.changeTimer !== null) {
-			window.clearTimeout(this.changeTimer);
+			window.clearTimeout(this.changeTimer)
 		}
 		this.changeTimer = window.setTimeout(() => {
-			this.changeTimer = null;
-			this.flushPendingChange();
-		}, CHANGE_DEBOUNCE_MS);
+			this.changeTimer = null
+			this.flushPendingChange()
+		}, CHANGE_DEBOUNCE_MS)
 	}
 
 	private flushPendingChange(): void {
-		const path = this.vaultPath;
-		const editor = this.editor;
+		const path = this.vaultPath
+		const editor = this.editor
 		if (!path || !editor) {
-			return;
+			return
 		}
-		this.host.onDocumentChanged(path, editor.state.doc.toString());
+		this.host.onDocumentChanged(path, editor.state.doc.toString())
 	}
 
 	private scheduleCursorPush(): void {
 		if (this.cursorTimer !== null) {
-			window.clearTimeout(this.cursorTimer);
+			window.clearTimeout(this.cursorTimer)
 		}
 		this.cursorTimer = window.setTimeout(() => {
-			this.cursorTimer = null;
-			const path = this.vaultPath;
-			const position = this.getCursorPosition();
+			this.cursorTimer = null
+			const path = this.vaultPath
+			const position = this.getCursorPosition()
 			if (path && position) {
-				this.host.onCursorMoved(path, position.line, position.character);
+				this.host.onCursorMoved(path, position.line, position.character)
 			}
-		}, CURSOR_DEBOUNCE_MS);
+		}, CURSOR_DEBOUNCE_MS)
 	}
 
 	private cancelCursorPush(): void {
 		if (this.cursorTimer !== null) {
-			window.clearTimeout(this.cursorTimer);
-			this.cursorTimer = null;
+			window.clearTimeout(this.cursorTimer)
+			this.cursorTimer = null
 		}
 	}
 
 	private cancelTimers(): void {
 		if (this.changeTimer !== null) {
-			window.clearTimeout(this.changeTimer);
-			this.changeTimer = null;
+			window.clearTimeout(this.changeTimer)
+			this.changeTimer = null
 		}
-		this.cancelCursorPush();
+		this.cancelCursorPush()
 	}
 }

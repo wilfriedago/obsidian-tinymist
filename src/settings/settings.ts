@@ -1,5 +1,5 @@
-import { isLogLevel, type LogLevel } from '../shared/logging';
-import type { ProjectRootStrategy } from '../typst/tinymist/config';
+import { isLogLevel, type LogLevel } from '../shared/logging'
+import type { ProjectRootStrategy } from '../typst/tinymist/config'
 
 /**
  * Persisted plugin settings, their defaults, and migration from older shapes.
@@ -9,43 +9,43 @@ import type { ProjectRootStrategy } from '../typst/tinymist/config';
  * explicit.
  */
 
-export const SETTINGS_VERSION = 1;
+export const SETTINGS_VERSION = 1
 
-export type PreviewRefreshMode = 'onType' | 'onSave';
-export type PreviewTheme = 'follow-obsidian' | 'light' | 'dark';
+export type PreviewRefreshMode = 'onType' | 'onSave'
+export type PreviewTheme = 'follow-obsidian' | 'light' | 'dark'
 
 export interface TypstSettings {
-	readonly version: number;
+	readonly version: number
 
 	/** Absolute path to the Tinymist executable. Empty means "find on PATH". */
-	tinymistPath: string;
-	logLevel: LogLevel;
+	tinymistPath: string
+	logLevel: LogLevel
 
-	projectRootStrategy: ProjectRootStrategy;
+	projectRootStrategy: ProjectRootStrategy
 	/** Vault-relative folder used when the strategy is `custom`. */
-	customProjectRoot: string;
+	customProjectRoot: string
 
-	previewRefresh: PreviewRefreshMode;
-	previewTheme: PreviewTheme;
+	previewRefresh: PreviewRefreshMode
+	previewTheme: PreviewTheme
 	/** Move the preview when the cursor moves, and the cursor when the preview is clicked. */
-	previewSyncEnabled: boolean;
+	previewSyncEnabled: boolean
 	/** Render only the visible pages of the preview. */
-	previewPartialRendering: boolean;
+	previewPartialRendering: boolean
 	/**
 	 * Whether a new preview re-points itself at whichever document you are
 	 * editing. Each preview can be pinned from its own toolbar, which is what
 	 * this seeds — it is a default, not a master switch.
 	 */
-	previewFollowsActiveDocument: boolean;
+	previewFollowsActiveDocument: boolean
 
-	showDiagnostics: boolean;
-	formatterEnabled: boolean;
-	systemFonts: boolean;
+	showDiagnostics: boolean
+	formatterEnabled: boolean
+	systemFonts: boolean
 
 	/** Vault-relative folder for exported PDFs. Empty means "beside the source". */
-	exportFolder: string;
+	exportFolder: string
 	/** Overwrite an existing PDF instead of writing `name-1.pdf`. */
-	exportOverwrite: boolean;
+	exportOverwrite: boolean
 }
 
 export const DEFAULT_SETTINGS: TypstSettings = {
@@ -63,12 +63,12 @@ export const DEFAULT_SETTINGS: TypstSettings = {
 	formatterEnabled: true,
 	systemFonts: true,
 	exportFolder: '',
-	exportOverwrite: false,
-};
+	exportOverwrite: false
+}
 
-const PROJECT_ROOT_STRATEGIES: readonly ProjectRootStrategy[] = ['auto', 'vault', 'custom'];
-const PREVIEW_REFRESH_MODES: readonly PreviewRefreshMode[] = ['onType', 'onSave'];
-const PREVIEW_THEMES: readonly PreviewTheme[] = ['follow-obsidian', 'light', 'dark'];
+const PROJECT_ROOT_STRATEGIES: readonly ProjectRootStrategy[] = ['auto', 'vault', 'custom']
+const PREVIEW_REFRESH_MODES: readonly PreviewRefreshMode[] = ['onType', 'onSave']
+const PREVIEW_THEMES: readonly PreviewTheme[] = ['follow-obsidian', 'light', 'dark']
 
 /**
  * Turns whatever `loadData()` returned into valid settings.
@@ -78,42 +78,25 @@ const PREVIEW_THEMES: readonly PreviewTheme[] = ['follow-obsidian', 'light', 'da
  * able to send a malformed configuration to Tinymist.
  */
 export function migrateSettings(raw: unknown): TypstSettings {
-	const stored = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>;
+	const stored = (typeof raw === 'object' && raw !== null ? raw : {}) as Record<string, unknown>
 
 	return {
 		version: SETTINGS_VERSION,
 		tinymistPath: asString(stored['tinymistPath'], DEFAULT_SETTINGS.tinymistPath),
 		logLevel: asLogLevel(stored['logLevel'], DEFAULT_SETTINGS.logLevel),
-		projectRootStrategy: asEnum(
-			stored['projectRootStrategy'],
-			PROJECT_ROOT_STRATEGIES,
-			DEFAULT_SETTINGS.projectRootStrategy,
-		),
+		projectRootStrategy: asEnum(stored['projectRootStrategy'], PROJECT_ROOT_STRATEGIES, DEFAULT_SETTINGS.projectRootStrategy),
 		customProjectRoot: asString(stored['customProjectRoot'], DEFAULT_SETTINGS.customProjectRoot),
-		previewRefresh: asEnum(
-			stored['previewRefresh'],
-			PREVIEW_REFRESH_MODES,
-			DEFAULT_SETTINGS.previewRefresh,
-		),
+		previewRefresh: asEnum(stored['previewRefresh'], PREVIEW_REFRESH_MODES, DEFAULT_SETTINGS.previewRefresh),
 		previewTheme: asEnum(stored['previewTheme'], PREVIEW_THEMES, DEFAULT_SETTINGS.previewTheme),
-		previewSyncEnabled: asBoolean(
-			stored['previewSyncEnabled'],
-			DEFAULT_SETTINGS.previewSyncEnabled,
-		),
-		previewPartialRendering: asBoolean(
-			stored['previewPartialRendering'],
-			DEFAULT_SETTINGS.previewPartialRendering,
-		),
-		previewFollowsActiveDocument: asBoolean(
-			stored['previewFollowsActiveDocument'],
-			DEFAULT_SETTINGS.previewFollowsActiveDocument,
-		),
+		previewSyncEnabled: asBoolean(stored['previewSyncEnabled'], DEFAULT_SETTINGS.previewSyncEnabled),
+		previewPartialRendering: asBoolean(stored['previewPartialRendering'], DEFAULT_SETTINGS.previewPartialRendering),
+		previewFollowsActiveDocument: asBoolean(stored['previewFollowsActiveDocument'], DEFAULT_SETTINGS.previewFollowsActiveDocument),
 		showDiagnostics: asBoolean(stored['showDiagnostics'], DEFAULT_SETTINGS.showDiagnostics),
 		formatterEnabled: asBoolean(stored['formatterEnabled'], DEFAULT_SETTINGS.formatterEnabled),
 		systemFonts: asBoolean(stored['systemFonts'], DEFAULT_SETTINGS.systemFonts),
 		exportFolder: asString(stored['exportFolder'], DEFAULT_SETTINGS.exportFolder),
-		exportOverwrite: asBoolean(stored['exportOverwrite'], DEFAULT_SETTINGS.exportOverwrite),
-	};
+		exportOverwrite: asBoolean(stored['exportOverwrite'], DEFAULT_SETTINGS.exportOverwrite)
+	}
 }
 
 /**
@@ -126,23 +109,21 @@ export function migrateSettings(raw: unknown): TypstSettings {
  * drift out of step with the interface.
  */
 export function isSettingKey(key: string): key is keyof TypstSettings {
-	return Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key);
+	return Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key)
 }
 
 function asString(value: unknown, fallback: string): string {
-	return typeof value === 'string' ? value : fallback;
+	return typeof value === 'string' ? value : fallback
 }
 
 function asBoolean(value: unknown, fallback: boolean): boolean {
-	return typeof value === 'boolean' ? value : fallback;
+	return typeof value === 'boolean' ? value : fallback
 }
 
 function asLogLevel(value: unknown, fallback: LogLevel): LogLevel {
-	return isLogLevel(value) ? value : fallback;
+	return isLogLevel(value) ? value : fallback
 }
 
 function asEnum<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
-	return typeof value === 'string' && (allowed as readonly string[]).includes(value)
-		? (value as T)
-		: fallback;
+	return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : fallback
 }

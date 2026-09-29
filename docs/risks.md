@@ -11,12 +11,12 @@ settle each one. Ordered roughly by how much they could cost.
 
 **Update, 2026-09-18:** the plugin is published as `tinymist`. The `id` is now
 permanent — the directory keys installs on it — so the cheap window for a
-rename has closed. What remains possible is changing the *display name* while
+rename has closed. What remains possible is changing the _display name_ while
 keeping the id, if the Tinymist maintainers ever object. The README and
 `THIRD_PARTY_NOTICES.md` state the plugin is unofficial and unaffiliated.
 
 The plugin is named `tinymist` / "Tinymist", which is the name of the upstream
-project it drives. Obsidian's trademark rule concerns the *Obsidian* mark, which
+project it drives. Obsidian's trademark rule concerns the _Obsidian_ mark, which
 this does not touch, and the `id` is free in the community directory. But:
 
 - A reviewer may read the name as implying an official relationship.
@@ -41,7 +41,7 @@ both verified free.
 The plugin depends on `tinymist.doStartPreview`, `tinymist.doKillPreview`,
 `tinymist.scrollPreview`, `tinymist.exportPdf`, and the
 `tinymist/preview/scrollSource` notification. Upstream marks several of these as
-*internal* commands, intended for its own VS Code extension. Nothing promises
+_internal_ commands, intended for its own VS Code extension. Nothing promises
 their names, arguments, or return shapes across versions.
 
 Two flags have already been observed to differ from what the source suggested:
@@ -116,7 +116,7 @@ The preview runs untrusted rendered content in an iframe pointed at
 `sessionStorage` use.
 
 That is a real boundary — the frame cannot reach Obsidian's DOM, APIs, or vault.
-But it is a *single* boundary, and Electron's handling of loopback origins is
+But it is a _single_ boundary, and Electron's handling of loopback origins is
 worth confirming rather than assuming.
 
 **Also unverified:** the preview server binds `127.0.0.1` on an ephemeral port
@@ -159,13 +159,13 @@ place, because it is the more durable problem.
 and none by the test suite**, which stood at 174 tests when the first of them
 shipped:
 
-| Defect | Why no test caught it |
-| --- | --- |
-| Tinymist not detected | Tests run from a terminal, which has the full `PATH`. A desktop launch does not. |
-| Preview clicks did nothing | The wiring was right; the server needed a configuration flag to use that channel at all. |
-| Source and preview looped | Both directions were tested separately. Nothing exercised them together. |
-| Formatting deleted the file header | The formatter's edit range was assumed rather than observed. |
-| Selection unreadable in dark mode | Styling, which nothing asserts. |
+| Defect                             | Why no test caught it                                                                    |
+| ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| Tinymist not detected              | Tests run from a terminal, which has the full `PATH`. A desktop launch does not.         |
+| Preview clicks did nothing         | The wiring was right; the server needed a configuration flag to use that channel at all. |
+| Source and preview looped          | Both directions were tested separately. Nothing exercised them together.                 |
+| Formatting deleted the file header | The formatter's edit range was assumed rather than observed.                             |
+| Selection unreadable in dark mode  | Styling, which nothing asserts.                                                          |
 
 Each now has a regression test, and the first four are covered against a real
 Tinymist. The pattern behind them is the risk: anything that only manifests
@@ -209,7 +209,7 @@ cannot reach into a cross-origin frame to silence its console.
 
 The one technique that would work — fetching the preview HTML, patching out the
 logging, and serving it from a blob or `srcdoc` — would place the frame in
-Obsidian's *own* origin and destroy that isolation. Quieter logs are not worth
+Obsidian's _own_ origin and destroy that isolation. Quieter logs are not worth
 the trade.
 
 **Settled by:** an upstream change. Filter the console on `[tinymist:` in the
@@ -225,7 +225,7 @@ again. It is visible, and on a large document it is slow.
 
 Colour inversion is fixed when a preview task starts — it is the
 `--invert-colors` CLI argument — and Tinymist's `ControlPlaneMessage` enum has
-no message for changing it afterwards. The frontend *can* toggle it live, but
+no message for changing it afterwards. The frontend _can_ toggle it live, but
 only through its own `t` keypress handler, which a parent page cannot reach
 across the origin boundary.
 
@@ -261,7 +261,7 @@ arriving mid-flight cannot make the edits land in the wrong place.
 
 **The lesson worth keeping:** the original severity came from reasoning about
 what the formatter "should" return instead of asking it. The integration suite
-now asserts the range is *not* whole-document, so if that ever changes the test
+now asserts the range is _not_ whole-document, so if that ever changes the test
 says so.
 
 ---
@@ -276,13 +276,13 @@ Tinymist, it is not where the time goes.
 
 A 316-page document (66 KB of source, 6,003 lines):
 
-| Stage | Cost | Already incremental? |
-| --- | --- | --- |
-| Typst compile, cold | 854 ms | — |
-| Typst compile, per edit | 0–25 ms | **yes**, Typst memoizes |
-| Preview transport, per edit | ~9 KB | **yes**, `diff-v1` deltas |
-| Initial preview payload | **1.1 MB** | **no** — fixed by partial rendering |
-| `didChange` | full text | no |
+| Stage                       | Cost       | Already incremental?                |
+| --------------------------- | ---------- | ----------------------------------- |
+| Typst compile, cold         | 854 ms     | —                                   |
+| Typst compile, per edit     | 0–25 ms    | **yes**, Typst memoizes             |
+| Preview transport, per edit | ~9 KB      | **yes**, `diff-v1` deltas           |
+| Initial preview payload     | **1.1 MB** | **no** — fixed by partial rendering |
+| `didChange`                 | full text  | no                                  |
 
 Typst's incremental compilation makes an edit cost tens of milliseconds even on
 316 pages, and the preview protocol already sends deltas. Sending the full text

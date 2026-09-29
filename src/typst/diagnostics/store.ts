@@ -1,5 +1,5 @@
-import type { VaultPath } from '../../shared/paths';
-import { DIAGNOSTIC_SEVERITY, type Diagnostic } from '../tinymist/protocol';
+import type { VaultPath } from '../../shared/paths'
+import { DIAGNOSTIC_SEVERITY, type Diagnostic } from '../tinymist/protocol'
 
 /**
  * Diagnostics, keyed by vault-relative path.
@@ -11,73 +11,73 @@ import { DIAGNOSTIC_SEVERITY, type Diagnostic } from '../tinymist/protocol';
  */
 
 export interface DiagnosticsSnapshot {
-	readonly errors: number;
-	readonly warnings: number;
-	readonly total: number;
+	readonly errors: number
+	readonly warnings: number
+	readonly total: number
 }
 
-export type DiagnosticsListener = (vaultPath: VaultPath, diagnostics: readonly Diagnostic[]) => void;
+export type DiagnosticsListener = (vaultPath: VaultPath, diagnostics: readonly Diagnostic[]) => void
 
 export class DiagnosticsStore {
-	private readonly byDocument = new Map<VaultPath, readonly Diagnostic[]>();
-	private readonly listeners = new Set<DiagnosticsListener>();
+	private readonly byDocument = new Map<VaultPath, readonly Diagnostic[]>()
+	private readonly listeners = new Set<DiagnosticsListener>()
 
 	set(vaultPath: VaultPath, diagnostics: readonly Diagnostic[]): void {
 		if (diagnostics.length === 0) {
 			if (!this.byDocument.delete(vaultPath)) {
-				return;
+				return
 			}
 		} else {
-			this.byDocument.set(vaultPath, diagnostics);
+			this.byDocument.set(vaultPath, diagnostics)
 		}
-		this.emit(vaultPath, diagnostics);
+		this.emit(vaultPath, diagnostics)
 	}
 
 	get(vaultPath: VaultPath): readonly Diagnostic[] {
-		return this.byDocument.get(vaultPath) ?? [];
+		return this.byDocument.get(vaultPath) ?? []
 	}
 
 	clear(vaultPath: VaultPath): void {
-		this.set(vaultPath, []);
+		this.set(vaultPath, [])
 	}
 
 	clearAll(): void {
-		const paths = [...this.byDocument.keys()];
-		this.byDocument.clear();
+		const paths = [...this.byDocument.keys()]
+		this.byDocument.clear()
 		for (const path of paths) {
-			this.emit(path, []);
+			this.emit(path, [])
 		}
 	}
 
 	summarize(vaultPath: VaultPath): DiagnosticsSnapshot {
-		return summarizeDiagnostics(this.get(vaultPath));
+		return summarizeDiagnostics(this.get(vaultPath))
 	}
 
 	onChange(listener: DiagnosticsListener): () => void {
-		this.listeners.add(listener);
+		this.listeners.add(listener)
 		return () => {
-			this.listeners.delete(listener);
-		};
+			this.listeners.delete(listener)
+		}
 	}
 
 	private emit(vaultPath: VaultPath, diagnostics: readonly Diagnostic[]): void {
 		for (const listener of this.listeners) {
-			listener(vaultPath, diagnostics);
+			listener(vaultPath, diagnostics)
 		}
 	}
 }
 
 export function summarizeDiagnostics(diagnostics: readonly Diagnostic[]): DiagnosticsSnapshot {
-	let errors = 0;
-	let warnings = 0;
+	let errors = 0
+	let warnings = 0
 	for (const diagnostic of diagnostics) {
 		// LSP leaves severity optional; Tinymist omits it for plain errors.
-		const severity = diagnostic.severity ?? DIAGNOSTIC_SEVERITY.error;
+		const severity = diagnostic.severity ?? DIAGNOSTIC_SEVERITY.error
 		if (severity === DIAGNOSTIC_SEVERITY.error) {
-			errors += 1;
+			errors += 1
 		} else if (severity === DIAGNOSTIC_SEVERITY.warning) {
-			warnings += 1;
+			warnings += 1
 		}
 	}
-	return { errors, warnings, total: diagnostics.length };
+	return { errors, warnings, total: diagnostics.length }
 }

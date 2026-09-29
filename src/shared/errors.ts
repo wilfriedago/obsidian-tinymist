@@ -16,7 +16,7 @@ export type TypstErrorCode =
 	| 'preview-unavailable'
 	| 'project-invalid'
 	| 'document-sync-failed'
-	| 'platform-unsupported';
+	| 'platform-unsupported'
 
 /** Headline shown to the user, per category. Sentence case, no trailing period. */
 const HEADLINES: Record<TypstErrorCode, string> = {
@@ -32,8 +32,8 @@ const HEADLINES: Record<TypstErrorCode, string> = {
 	'preview-unavailable': 'The Typst preview is unavailable',
 	'project-invalid': 'The Typst project configuration is invalid',
 	'document-sync-failed': 'The document could not be synchronized with Tinymist',
-	'platform-unsupported': 'This feature requires Obsidian on desktop',
-};
+	'platform-unsupported': 'This feature requires Obsidian on desktop'
+}
 
 /** Recovery hint shown under the reason. Empty string means "no hint". */
 const HINTS: Record<TypstErrorCode, string> = {
@@ -49,41 +49,37 @@ const HINTS: Record<TypstErrorCode, string> = {
 	'preview-unavailable': 'Run the "Restart Tinymist" command, then reopen the preview.',
 	'project-invalid': 'Check the project root setting and any typst.toml in the project.',
 	'document-sync-failed': 'Run the "Restart Tinymist" command to resynchronize.',
-	'platform-unsupported': '',
-};
+	'platform-unsupported': ''
+}
 
 /**
  * A categorized, user-presentable error. `cause` keeps the original failure for
  * the log without leaking it into the UI.
  */
 export class TypstError extends Error {
-	readonly code: TypstErrorCode;
+	readonly code: TypstErrorCode
 	/** Extra key/value context shown in the detail block, e.g. the executable path. */
-	readonly context: Readonly<Record<string, string>>;
+	readonly context: Readonly<Record<string, string>>
 
 	/** The original failure, kept for the log and never shown to the user. */
-	readonly cause: unknown;
+	readonly cause: unknown
 
-	constructor(
-		code: TypstErrorCode,
-		reason: string,
-		options: { context?: Record<string, string>; cause?: unknown } = {},
-	) {
+	constructor(code: TypstErrorCode, reason: string, options: { context?: Record<string, string>; cause?: unknown } = {}) {
 		// `Error`'s `cause` option is ES2022; the build targets ES2021, so the
 		// original failure is carried on an own field instead.
-		super(reason);
-		this.cause = options.cause;
-		this.name = 'TypstError';
-		this.code = code;
-		this.context = Object.freeze({ ...options.context });
+		super(reason)
+		this.cause = options.cause
+		this.name = 'TypstError'
+		this.code = code
+		this.context = Object.freeze({ ...options.context })
 	}
 
 	get headline(): string {
-		return HEADLINES[this.code];
+		return HEADLINES[this.code]
 	}
 
 	get hint(): string {
-		return HINTS[this.code];
+		return HINTS[this.code]
 	}
 
 	/**
@@ -91,40 +87,39 @@ export class TypstError extends Error {
 	 * and free of stack traces.
 	 */
 	toUserMessage(): string {
-		const lines = [this.headline, ''];
+		const lines = [this.headline, '']
 		for (const [key, value] of Object.entries(this.context)) {
-			lines.push(`${key}: ${value}`);
+			lines.push(`${key}: ${value}`)
 		}
 		if (Object.keys(this.context).length > 0) {
-			lines.push('');
+			lines.push('')
 		}
-		lines.push(this.message);
+		lines.push(this.message)
 		if (this.hint) {
-			lines.push('', this.hint);
+			lines.push('', this.hint)
 		}
-		return lines.join('\n');
+		return lines.join('\n')
 	}
 }
 
 /** Narrows an unknown thrown value to a readable one-line reason. */
 export function describeUnknownError(error: unknown): string {
 	if (error instanceof Error) {
-		return error.message;
+		return error.message
 	}
 	if (typeof error === 'string') {
-		return error;
+		return error
 	}
-	return 'Unknown error.';
+	return 'Unknown error.'
 }
 
 /** Wraps any thrown value as a `TypstError` without losing the original. */
-export function asTypstError(
-	error: unknown,
-	code: TypstErrorCode,
-	context?: Record<string, string>,
-): TypstError {
+export function asTypstError(error: unknown, code: TypstErrorCode, context?: Record<string, string>): TypstError {
 	if (error instanceof TypstError) {
-		return error;
+		return error
 	}
-	return new TypstError(code, describeUnknownError(error), { context: context ?? {}, cause: error });
+	return new TypstError(code, describeUnknownError(error), {
+		context: context ?? {},
+		cause: error
+	})
 }

@@ -10,5 +10,5 @@
  * This is a shim for the *test host*, not a polyfill shipped to users.
  */
 if (typeof globalThis.window === 'undefined') {
-	(globalThis as { window?: unknown }).window = globalThis;
+	;(globalThis as { window?: unknown }).window = globalThis
 }

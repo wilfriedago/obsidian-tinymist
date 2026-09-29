@@ -1,7 +1,7 @@
-import { Notice, type Plugin } from 'obsidian';
+import { Notice, type Plugin } from 'obsidian'
 
-import { TypstEditorView } from '../editor/typst-editor-view';
-import type { TypstRuntime } from './runtime';
+import { TypstEditorView } from '../editor/typst-editor-view'
+import type { TypstRuntime } from './runtime'
 
 /**
  * User-facing commands.
@@ -15,62 +15,59 @@ import type { TypstRuntime } from './runtime';
  * hidden in the palette rather than failing when the document is not there.
  */
 export function registerCommands(plugin: Plugin, runtime: TypstRuntime): void {
-	const withActiveDocument = (
-		run: (view: TypstEditorView, vaultPath: string) => void | Promise<void>,
-	) =>
+	const withActiveDocument =
+		(run: (view: TypstEditorView, vaultPath: string) => void | Promise<void>) =>
 		(checking: boolean): boolean => {
-			const view = runtime.activeEditor();
-			const vaultPath = view?.vaultPath;
+			const view = runtime.activeEditor()
+			const vaultPath = view?.vaultPath
 			if (!view || !vaultPath) {
-				return false;
+				return false
 			}
 			if (!checking) {
-				void run(view, vaultPath);
+				void run(view, vaultPath)
 			}
-			return true;
-		};
+			return true
+		}
 
 	plugin.addCommand({
 		id: 'open-preview',
 		name: 'Open preview',
-		checkCallback: withActiveDocument((_view, vaultPath) => runtime.openPreview(vaultPath)),
-	});
+		checkCallback: withActiveDocument((_view, vaultPath) => runtime.openPreview(vaultPath))
+	})
 
 	plugin.addCommand({
 		id: 'toggle-preview',
 		name: 'Toggle preview',
-		checkCallback: withActiveDocument((_view, vaultPath) => runtime.togglePreview(vaultPath)),
-	});
+		checkCallback: withActiveDocument((_view, vaultPath) => runtime.togglePreview(vaultPath))
+	})
 
 	// The preview replaces the editor in its own tab rather than splitting it,
 	// which is the only way it fits on a narrow window.
 	plugin.addCommand({
 		id: 'open-preview-here',
 		name: 'Open preview in this tab',
-		checkCallback: withActiveDocument((_view, vaultPath) =>
-			runtime.openPreview(vaultPath, 'here'),
-		),
-	});
+		checkCallback: withActiveDocument((_view, vaultPath) => runtime.openPreview(vaultPath, 'here'))
+	})
 
 	plugin.addCommand({
 		id: 'export-pdf',
 		name: 'Export PDF',
-		checkCallback: withActiveDocument((_view, vaultPath) => runtime.exportPdf(vaultPath)),
-	});
+		checkCallback: withActiveDocument((_view, vaultPath) => runtime.exportPdf(vaultPath))
+	})
 
 	plugin.addCommand({
 		id: 'format-document',
 		name: 'Format document',
-		checkCallback: withActiveDocument((view) => runtime.formatDocument(view)),
-	});
+		checkCallback: withActiveDocument((view) => runtime.formatDocument(view))
+	})
 
 	plugin.addCommand({
 		id: 'show-project',
 		name: 'Show project root',
 		checkCallback: withActiveDocument((_view, vaultPath) => {
-			new Notice(`Project root: ${runtime.describeProjectFor(vaultPath)}`);
-		}),
-	});
+			new Notice(`Project root: ${runtime.describeProjectFor(vaultPath)}`)
+		})
+	})
 
 	// Deliberately unconditional: the point of this command is to make a Typst
 	// file when there is not one open yet.
@@ -78,15 +75,15 @@ export function registerCommands(plugin: Plugin, runtime: TypstRuntime): void {
 		id: 'create-file',
 		name: 'Create new Typst file',
 		callback: () => {
-			void runtime.createFileInDefaultFolder();
-		},
-	});
+			void runtime.createFileInDefaultFolder()
+		}
+	})
 
 	plugin.addCommand({
 		id: 'restart-server',
 		name: 'Restart language server',
 		callback: () => {
-			void runtime.restartServer();
-		},
-	});
+			void runtime.restartServer()
+		}
+	})
 }

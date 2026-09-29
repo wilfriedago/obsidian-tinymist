@@ -35,10 +35,10 @@ setting `core.hooksPath`. If you already set a hooks path yourself, it is left
 alone, and the install says how to opt in. The hooks run the same
 commit-subject check as CI (see [Pull requests](#pull-requests)):
 
-| Hook | Checks |
-| --- | --- |
+| Hook         | Checks                                                                                                                               |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `commit-msg` | The subject of each commit, as it is written. `fixup!`, `squash!` and merge subjects pass, since they never reach `main` as they are |
-| `pre-push` | Every subject about to land on `main`, including commits made before the hooks were enabled |
+| `pre-push`   | Every subject about to land on `main`, including commits made before the hooks were enabled                                          |
 
 `--no-verify` skips either one once; `git config --unset core.hooksPath` turns
 them off.
@@ -60,7 +60,7 @@ things a live reload needs, each of which fails silently when it is missing:
 - symlinks `test-vault/.obsidian/plugins/tinymist` → `dist/`, which is the
   complete plugin folder the build produces. It replaces the empty directory a
   fresh clone has there — worth knowing, because `ln -s dist …` against an
-  existing directory puts the link *inside* it and nothing appears to be wrong.
+  existing directory puts the link _inside_ it and nothing appears to be wrong.
 - writes `dist/.hotreload`, the marker [Hot Reload](https://github.com/pjeby/hot-reload)
   looks for to decide a plugin is under development.
 - seeds `dist/data.json` with `logLevel: debug`, so the console is worth
@@ -120,16 +120,16 @@ rather than on code, and the answer may change the shape of the work.
 ## Where things live
 
 Read [docs/architecture/overview.md](docs/architecture/overview.md) first — it
-explains the layering and, more usefully, *why* each boundary is where it is.
+explains the layering and, more usefully, _why_ each boundary is where it is.
 
-| To change | Start in |
-| --- | --- |
-| A command | `src/plugin/commands.ts` |
-| A setting | `src/settings/settings.ts`, then `settings-tab.ts` |
-| An editor feature | `src/editor/` |
-| The preview | `src/preview/` |
-| Anything Tinymist-specific | `src/typst/tinymist/` |
-| Anything touching Node | `src/platform/desktop.ts`, and nowhere else |
+| To change                  | Start in                                           |
+| -------------------------- | -------------------------------------------------- |
+| A command                  | `src/plugin/commands.ts`                           |
+| A setting                  | `src/settings/settings.ts`, then `settings-tab.ts` |
+| An editor feature          | `src/editor/`                                      |
+| The preview                | `src/preview/`                                     |
+| Anything Tinymist-specific | `src/typst/tinymist/`                              |
+| Anything touching Node     | `src/platform/desktop.ts`, and nowhere else        |
 
 Two rules worth stating outright:
 
@@ -156,7 +156,7 @@ pass.
 These exist because reading Tinymist's source repeatedly proved insufficient.
 Its CLI takes kebab-case enum values where the Rust source suggests camelCase;
 its export command needs a filesystem path, not a URI; its formatter returns an
-edit whose range is *not* the whole document. Each of those was a real bug
+edit whose range is _not_ the whole document. Each of those was a real bug
 found by asking the binary instead of the source.
 
 **If you fix a bug, add the test that would have caught it.** Ideally one that
@@ -200,7 +200,7 @@ does not.
   change. Pull requests are squash-merged, so the title becomes the commit on
   `main`, and releases are worked out from those commits. The
   **Conventional Commits** check says whether a title will be understood.
-- Add a `CHANGELOG.md` entry under an *Unreleased* heading for anything
+- Add a `CHANGELOG.md` entry under an _Unreleased_ heading for anything
   user-visible, written for users rather than reviewers. It becomes the release
   notes. Without one, the release lists pull request titles instead.
 
@@ -208,11 +208,11 @@ does not.
 
 `main` is protected by a ruleset:
 
-| Rule | Effect |
-| --- | --- |
-| No force pushes | History on `main` cannot be rewritten |
-| No deletion | The branch cannot be deleted |
-| Pull request required | Contributors merge through a pull request; no approvals are required, since this is a single-maintainer project |
+| Rule                   | Effect                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| No force pushes        | History on `main` cannot be rewritten                                                                                     |
+| No deletion            | The branch cannot be deleted                                                                                              |
+| Pull request required  | Contributors merge through a pull request; no approvals are required, since this is a single-maintainer project           |
 | Status checks required | `ci` must pass before a merge. It is the one check that always reports, and it fails if any matrix or integration job did |
 
 Repository admins bypass the pull-request and status-check rules, so a
@@ -229,16 +229,16 @@ Releases are automated by [release-please](https://github.com/googleapis/release
 and `.github/workflows/release.yml`, and follow from the commit subjects on
 `main`:
 
-| Subjects since the last release | Next version |
-| --- | --- |
-| Any `feat:` | minor, `0.4.0` → `0.5.0` |
+| Subjects since the last release            | Next version             |
+| ------------------------------------------ | ------------------------ |
+| Any `feat:`                                | minor, `0.4.0` → `0.5.0` |
 | Otherwise any `fix:`, `perf:` or `revert:` | patch, `0.4.0` → `0.4.1` |
-| A `!`, or a `BREAKING CHANGE:` footer | minor while below 1.0 |
-| Only `docs:`, `test:`, `ci:`, `chore:` … | no release |
+| A `!`, or a `BREAKING CHANGE:` footer      | minor while below 1.0    |
+| Only `docs:`, `test:`, `ci:`, `chore:` …   | no release               |
 
 1. After every push to `main`, the workflow keeps one pull request open, titled
    `chore: release x.y.z`. It bumps `package.json`, `manifest.json` and
-   `versions.json`, and turns *Unreleased* in `CHANGELOG.md` into the new
+   `versions.json`, and turns _Unreleased_ in `CHANGELOG.md` into the new
    version's section.
 2. CI runs on it like on any other pull request. The workflow starts that run
    itself, since GitHub does not run workflows for a pull request the workflow
@@ -247,7 +247,7 @@ and `.github/workflows/release.yml`, and follow from the commit subjects on
    builds, attests, attaches `main.js`, `manifest.json` and `styles.css`, and
    publishes, with that changelog section as the notes.
 
-To change the notes, edit *Unreleased* on `main`. The release branch is
+To change the notes, edit _Unreleased_ on `main`. The release branch is
 regenerated every time `main` moves, so edits made there do not last. To cut
 1.0, add `Release-As: 1.0.0` as a footer on a commit to `main`.
 

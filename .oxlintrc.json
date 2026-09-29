@@ -1,12 +1,6 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": [
-    "typescript",
-    "unicorn",
-    "oxc",
-    "promise",
-    "import"
-  ],
+  "plugins": ["typescript", "unicorn", "oxc", "promise", "import"],
   "categories": {
     "correctness": "error",
     "suspicious": "error",
@@ -19,11 +13,7 @@
     "es2021": true,
     "node": true
   },
-  "ignorePatterns": [
-    "node_modules",
-    "test-vault",
-    "dist"
-  ],
+  "ignorePatterns": ["node_modules", "test-vault", "dist"],
   "rules": {
     "eqeqeq": [
       "error",
@@ -72,9 +62,7 @@
   },
   "overrides": [
     {
-      "files": [
-        "src/**/*.ts"
-      ],
+      "files": ["src/**/*.ts"],
       "rules": {
         "no-console": "error",
         "no-alert": "error",
@@ -88,20 +76,13 @@
       }
     },
     {
-      "files": [
-        "src/shared/logging.ts"
-      ],
+      "files": ["src/shared/logging.ts"],
       "rules": {
         "no-console": "off"
       }
     },
     {
-      "files": [
-        "tests/**/*.ts",
-        "scripts/**/*.mjs",
-        "*.mjs",
-        "*.mts"
-      ],
+      "files": ["tests/**/*.ts", "scripts/**/*.mjs", "*.mjs", "*.mts"],
       "rules": {
         "no-console": "off",
         "typescript/no-non-null-assertion": "off",
@@ -109,9 +90,7 @@
       }
     },
     {
-      "files": [
-        "tests/**/*.ts"
-      ],
+      "files": ["tests/**/*.ts"],
       "rules": {
         "unicorn/consistent-function-scoping": "off",
         "typescript/no-extraneous-class": "off",
@@ -119,12 +98,7 @@
       }
     },
     {
-      "files": [
-        "tests/**/*.ts",
-        "scripts/**/*.mjs",
-        "*.mjs",
-        "*.mts"
-      ],
+      "files": ["tests/**/*.ts", "scripts/**/*.mjs", "*.mjs", "*.mts"],
       "rules": {
         "obsidianmd/commands/no-command-in-command-id": "off",
         "obsidianmd/commands/no-command-in-command-name": "off",
@@ -152,7 +126,5 @@
       }
     }
   ],
-  "jsPlugins": [
-    "eslint-plugin-obsidianmd"
-  ]
+  "jsPlugins": ["eslint-plugin-obsidianmd"]
 }

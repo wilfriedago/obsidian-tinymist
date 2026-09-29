@@ -1,7 +1,7 @@
-import type { Vault } from 'obsidian';
+import type { Vault } from 'obsidian'
 
-import { parentVaultPath, type VaultPath } from '../../shared/paths';
-import type { ProjectRootStrategy } from '../tinymist/config';
+import { parentVaultPath, type VaultPath } from '../../shared/paths'
+import type { ProjectRootStrategy } from '../tinymist/config'
 
 /**
  * Working out which directory a `.typ` file belongs to.
@@ -24,37 +24,33 @@ import type { ProjectRootStrategy } from '../tinymist/config';
  * `typst.toml` in the vault inert and collapse every paper into one project.
  */
 
-export const TYPST_MANIFEST_NAME = 'typst.toml';
+export const TYPST_MANIFEST_NAME = 'typst.toml'
 
-export type ProjectRootOrigin =
-	| 'configured'
-	| 'vault'
-	| 'manifest'
-	| 'parent-directory';
+export type ProjectRootOrigin = 'configured' | 'vault' | 'manifest' | 'parent-directory'
 
 export interface TypstProject {
 	/** Vault-relative folder path. `''` is the vault root. */
-	readonly root: VaultPath;
-	readonly origin: ProjectRootOrigin;
+	readonly root: VaultPath
+	readonly origin: ProjectRootOrigin
 	/** Vault-relative path of the `typst.toml` that decided it, when one did. */
-	readonly manifestPath: VaultPath | null;
+	readonly manifestPath: VaultPath | null
 }
 
 export interface ProjectResolutionOptions {
-	readonly strategy: ProjectRootStrategy;
+	readonly strategy: ProjectRootStrategy
 	/** Vault-relative folder used when the strategy is `custom`. */
-	readonly customRoot: string;
+	readonly customRoot: string
 }
 
 /** Just enough of `Vault` to resolve a project, so tests need no real vault. */
 export interface ProjectFileSystem {
-	exists(vaultPath: VaultPath): boolean;
+	exists(vaultPath: VaultPath): boolean
 }
 
 export function vaultFileSystem(vault: Vault): ProjectFileSystem {
 	return {
-		exists: (vaultPath) => vault.getAbstractFileByPath(vaultPath) !== null,
-	};
+		exists: (vaultPath) => vault.getAbstractFileByPath(vaultPath) !== null
+	}
 }
 
 /**
@@ -64,30 +60,26 @@ export function vaultFileSystem(vault: Vault): ProjectFileSystem {
  * the vault root, checking for a manifest at each step, and never looks outside
  * the vault.
  */
-export function resolveProject(
-	fs: ProjectFileSystem,
-	documentVaultPath: VaultPath,
-	options: ProjectResolutionOptions,
-): TypstProject {
+export function resolveProject(fs: ProjectFileSystem, documentVaultPath: VaultPath, options: ProjectResolutionOptions): TypstProject {
 	if (options.strategy === 'custom') {
-		const configured = trimSlashes(options.customRoot);
-		return { root: configured, origin: 'configured', manifestPath: null };
+		const configured = trimSlashes(options.customRoot)
+		return { root: configured, origin: 'configured', manifestPath: null }
 	}
 
 	if (options.strategy === 'vault') {
-		return { root: '', origin: 'vault', manifestPath: null };
+		return { root: '', origin: 'vault', manifestPath: null }
 	}
 
 	// `auto`: mirror Tinymist's manifest walk, then fall back to the parent.
-	const startDirectory = parentVaultPath(documentVaultPath);
+	const startDirectory = parentVaultPath(documentVaultPath)
 	for (const directory of ancestorsInclusive(startDirectory)) {
-		const manifestPath = directory.length > 0 ? `${directory}/${TYPST_MANIFEST_NAME}` : TYPST_MANIFEST_NAME;
+		const manifestPath = directory.length > 0 ? `${directory}/${TYPST_MANIFEST_NAME}` : TYPST_MANIFEST_NAME
 		if (fs.exists(manifestPath)) {
-			return { root: directory, origin: 'manifest', manifestPath };
+			return { root: directory, origin: 'manifest', manifestPath }
 		}
 	}
 
-	return { root: startDirectory, origin: 'parent-directory', manifestPath: null };
+	return { root: startDirectory, origin: 'parent-directory', manifestPath: null }
 }
 
 /**
@@ -95,35 +87,35 @@ export function resolveProject(
  * `'a/b'` yields `['a/b', 'a', '']`.
  */
 export function ancestorsInclusive(directory: VaultPath): VaultPath[] {
-	const trimmed = trimSlashes(directory);
+	const trimmed = trimSlashes(directory)
 	if (trimmed.length === 0) {
-		return [''];
+		return ['']
 	}
 
-	const segments = trimmed.split('/');
-	const result: VaultPath[] = [];
+	const segments = trimmed.split('/')
+	const result: VaultPath[] = []
 	for (let length = segments.length; length > 0; length -= 1) {
-		result.push(segments.slice(0, length).join('/'));
+		result.push(segments.slice(0, length).join('/'))
 	}
-	result.push('');
-	return result;
+	result.push('')
+	return result
 }
 
 /** A short label for the status bar and settings, e.g. `papers/thesis`. */
 export function describeProject(project: TypstProject): string {
-	const location = project.root.length === 0 ? 'vault root' : project.root;
+	const location = project.root.length === 0 ? 'vault root' : project.root
 	switch (project.origin) {
 		case 'configured':
-			return `${location} (configured)`;
+			return `${location} (configured)`
 		case 'vault':
-			return `${location} (whole vault)`;
+			return `${location} (whole vault)`
 		case 'manifest':
-			return `${location} (${TYPST_MANIFEST_NAME})`;
+			return `${location} (${TYPST_MANIFEST_NAME})`
 		case 'parent-directory':
-			return `${location} (file's folder)`;
+			return `${location} (file's folder)`
 	}
 }
 
 function trimSlashes(value: string): string {
-	return value.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '');
+	return value.replace(/\\/g, '/').replace(/^\/+|\/+$/g, '')
 }

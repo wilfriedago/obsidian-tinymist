@@ -1,10 +1,10 @@
-import { ItemView, Notice, setIcon, type ViewStateResult, type WorkspaceLeaf } from 'obsidian';
+import { ItemView, Notice, setIcon, type ViewStateResult, type WorkspaceLeaf } from 'obsidian'
 
-import { TypstError } from '../shared/errors';
-import type { Logger } from '../shared/logging';
-import type { VaultPath } from '../shared/paths';
+import { TypstError } from '../shared/errors'
+import type { Logger } from '../shared/logging'
+import type { VaultPath } from '../shared/paths'
 
-export const TYPST_PREVIEW_VIEW_TYPE = 'typst-preview';
+export const TYPST_PREVIEW_VIEW_TYPE = 'typst-preview'
 
 /**
  * The Typst preview, as an ordinary Obsidian workspace leaf.
@@ -26,13 +26,13 @@ export const TYPST_PREVIEW_VIEW_TYPE = 'typst-preview';
  * A per-preview theme choice. `null` means "use the plugin setting", which is
  * the default and follows Obsidian's own light/dark mode.
  */
-export type PreviewThemeOverride = 'light' | 'dark' | null;
+export type PreviewThemeOverride = 'light' | 'dark' | null
 
 export type PreviewViewState = {
 	/** Vault-relative path of the previewed `.typ` document. */
-	vaultPath: VaultPath | null;
+	vaultPath: VaultPath | null
 	/** Per-leaf theme choice, persisted with the workspace. */
-	themeOverride?: PreviewThemeOverride;
+	themeOverride?: PreviewThemeOverride
 	/**
 	 * Hold this preview on its document instead of following the editor.
 	 *
@@ -41,8 +41,8 @@ export type PreviewViewState = {
 	 * `undefined` means "not decided yet", which resolves to the plugin
 	 * setting — that is what carries a workspace saved before pinning existed.
 	 */
-	pinned?: boolean;
-};
+	pinned?: boolean
+}
 
 /**
  * Whether a preview leaf should be re-pointed at the document being edited.
@@ -51,74 +51,70 @@ export type PreviewViewState = {
  * Obsidian workspace, and so the runtime can apply it to a leaf whose view has
  * been deferred and is not constructed yet.
  */
-export function shouldRetargetPreview(
-	state: PreviewViewState | undefined,
-	activePath: VaultPath,
-	pinnedByDefault: boolean,
-): boolean {
+export function shouldRetargetPreview(state: PreviewViewState | undefined, activePath: VaultPath, pinnedByDefault: boolean): boolean {
 	if ((state?.pinned ?? pinnedByDefault) === true) {
-		return false;
+		return false
 	}
-	return (state?.vaultPath ?? null) !== activePath;
+	return (state?.vaultPath ?? null) !== activePath
 }
 
 export interface TypstPreviewHost {
 	/** Resolves a preview URL, starting a task if needed. */
-	resolvePreviewUrl(vaultPath: VaultPath, themeOverride: PreviewThemeOverride): Promise<string>;
+	resolvePreviewUrl(vaultPath: VaultPath, themeOverride: PreviewThemeOverride): Promise<string>
 	/**
 	 * This view is done with the document; release its task unless another
 	 * preview is still showing it.
 	 */
-	releasePreview(vaultPath: VaultPath, requester: TypstPreviewView): void;
+	releasePreview(vaultPath: VaultPath, requester: TypstPreviewView): void
 	/** Whether a preview with no stored choice starts pinned. */
-	previewStartsPinned(): boolean;
+	previewStartsPinned(): boolean
 	/** Opens the source document beside this preview. */
-	openSource(vaultPath: VaultPath): Promise<void>;
-	readonly logger: Logger;
+	openSource(vaultPath: VaultPath): Promise<void>
+	readonly logger: Logger
 }
 
 export class TypstPreviewView extends ItemView {
-	private vaultPath: VaultPath | null = null;
-	private themeOverride: PreviewThemeOverride = null;
+	private vaultPath: VaultPath | null = null
+	private themeOverride: PreviewThemeOverride = null
 	/** Resolved from the setting until the leaf has a choice of its own. */
-	private pinned = false;
-	private frame: HTMLIFrameElement | null = null;
-	private statusEl: HTMLElement | null = null;
-	private bodyEl: HTMLElement | null = null;
-	private themeButton: HTMLElement | null = null;
-	private pinButton: HTMLElement | null = null;
+	private pinned = false
+	private frame: HTMLIFrameElement | null = null
+	private statusEl: HTMLElement | null = null
+	private bodyEl: HTMLElement | null = null
+	private themeButton: HTMLElement | null = null
+	private pinButton: HTMLElement | null = null
 	/** URL the current frame is showing, so an identical render is a no-op. */
-	private frameUrl: string | null = null;
+	private frameUrl: string | null = null
 	/** Serializes renders; two concurrent ones would build two frames. */
-	private rendering: Promise<void> = Promise.resolve();
+	private rendering: Promise<void> = Promise.resolve()
 
 	constructor(
 		leaf: WorkspaceLeaf,
-		private readonly host: TypstPreviewHost,
+		private readonly host: TypstPreviewHost
 	) {
-		super(leaf);
+		super(leaf)
 		// A preview follows its document rather than being navigated to.
-		this.navigation = false;
+		this.navigation = false
 		// The setting decides until the leaf's own stored choice arrives in
 		// `setState` — which is not guaranteed to happen before `onOpen` builds
 		// the toolbar, so the button would otherwise start out lying.
-		this.pinned = host.previewStartsPinned();
+		this.pinned = host.previewStartsPinned()
 	}
 
 	override getViewType(): string {
-		return TYPST_PREVIEW_VIEW_TYPE;
+		return TYPST_PREVIEW_VIEW_TYPE
 	}
 
 	override getIcon(): string {
-		return 'book-open';
+		return 'book-open'
 	}
 
 	override getDisplayText(): string {
 		if (!this.vaultPath) {
-			return 'Typst preview';
+			return 'Typst preview'
 		}
-		const name = this.vaultPath.slice(this.vaultPath.lastIndexOf('/') + 1);
-		return `Preview: ${name}`;
+		const name = this.vaultPath.slice(this.vaultPath.lastIndexOf('/') + 1)
+		return `Preview: ${name}`
 	}
 
 	/* ---------------------------------------------------------------------- */
@@ -131,8 +127,8 @@ export class TypstPreviewView extends ItemView {
 			...super.getState(),
 			vaultPath: this.vaultPath,
 			themeOverride: this.themeOverride,
-			pinned: this.pinned,
-		};
+			pinned: this.pinned
+		}
 	}
 
 	/**
@@ -143,91 +139,90 @@ export class TypstPreviewView extends ItemView {
 	 * the header off a state change, and there is no public API to ask it to.
 	 */
 	override async setState(state: unknown, result: ViewStateResult): Promise<void> {
-		const requested = state as PreviewViewState | undefined;
-		const requestedPath = requested?.vaultPath ?? null;
-		const requestedTheme = requested?.themeOverride ?? null;
+		const requested = state as PreviewViewState | undefined
+		const requestedPath = requested?.vaultPath ?? null
+		const requestedTheme = requested?.themeOverride ?? null
 		// A leaf restored from a workspace saved before pinning existed has no
 		// stored choice, so the setting decides for it.
-		const requestedPin = requested?.pinned ?? this.host.previewStartsPinned();
-		await super.setState(state, result);
+		const requestedPin = requested?.pinned ?? this.host.previewStartsPinned()
+		await super.setState(state, result)
 
-		const previousPath = this.vaultPath;
-		const needsRender =
-			requestedPath !== previousPath || requestedTheme !== this.themeOverride;
+		const previousPath = this.vaultPath
+		const needsRender = requestedPath !== previousPath || requestedTheme !== this.themeOverride
 
-		this.vaultPath = requestedPath;
-		this.themeOverride = requestedTheme;
-		this.pinned = requestedPin;
-		this.updatePinButton();
+		this.vaultPath = requestedPath
+		this.themeOverride = requestedTheme
+		this.pinned = requestedPin
+		this.updatePinButton()
 
 		// Following the editor would otherwise leave a preview server running
 		// for every document visited.
 		if (previousPath !== null && previousPath !== requestedPath) {
-			this.host.releasePreview(previousPath, this);
+			this.host.releasePreview(previousPath, this)
 		}
 
 		if (needsRender) {
-			await this.render();
+			await this.render()
 		}
 	}
 
 	override async onOpen(): Promise<void> {
-		this.contentEl.empty();
-		this.contentEl.addClass('tinymist-preview-container');
+		this.contentEl.empty()
+		this.contentEl.addClass('tinymist-preview-container')
 
 		// The body is created first so the toolbar, which floats above it, is
 		// painted on top without needing a stacking-context workaround.
-		this.bodyEl = this.contentEl.createDiv({ cls: 'tinymist-preview-body' });
-		const toolbar = this.contentEl.createDiv({ cls: 'tinymist-preview-toolbar' });
+		this.bodyEl = this.contentEl.createDiv({ cls: 'tinymist-preview-body' })
+		const toolbar = this.contentEl.createDiv({ cls: 'tinymist-preview-toolbar' })
 
 		const reload = toolbar.createEl('button', {
 			cls: 'tinymist-preview-button',
-			attr: { 'aria-label': 'Refresh preview' },
-		});
-		setIcon(reload, 'refresh-cw');
+			attr: { 'aria-label': 'Refresh preview' }
+		})
+		setIcon(reload, 'refresh-cw')
 		this.registerDomEvent(reload, 'click', () => {
-			this.report('Refreshing the preview failed', this.render());
-		});
+			this.report('Refreshing the preview failed', this.render())
+		})
 
 		const openSource = toolbar.createEl('button', {
 			cls: 'tinymist-preview-button',
-			attr: { 'aria-label': 'Open source' },
-		});
-		setIcon(openSource, 'file-code');
+			attr: { 'aria-label': 'Open source' }
+		})
+		setIcon(openSource, 'file-code')
 		this.registerDomEvent(openSource, 'click', () => {
 			if (this.vaultPath) {
-				void this.host.openSource(this.vaultPath);
+				void this.host.openSource(this.vaultPath)
 			}
-		});
+		})
 
-		const pin = toolbar.createEl('button', { cls: 'tinymist-preview-button' });
-		this.pinButton = pin;
-		setIcon(pin, 'pin');
+		const pin = toolbar.createEl('button', { cls: 'tinymist-preview-button' })
+		this.pinButton = pin
+		setIcon(pin, 'pin')
 		this.registerDomEvent(pin, 'click', () => {
-			this.report('Saving the preview pin failed', this.togglePin());
-		});
-		this.updatePinButton();
+			this.report('Saving the preview pin failed', this.togglePin())
+		})
+		this.updatePinButton()
 
-		const theme = toolbar.createEl('button', { cls: 'tinymist-preview-button' });
-		this.themeButton = theme;
+		const theme = toolbar.createEl('button', { cls: 'tinymist-preview-button' })
+		this.themeButton = theme
 		this.registerDomEvent(theme, 'click', () => {
-			this.report('Changing the preview theme failed', this.cycleTheme());
-		});
-		this.updateThemeButton();
+			this.report('Changing the preview theme failed', this.cycleTheme())
+		})
+		this.updateThemeButton()
 
-		this.statusEl = toolbar.createDiv({ cls: 'tinymist-preview-status' });
+		this.statusEl = toolbar.createDiv({ cls: 'tinymist-preview-status' })
 
-		await this.render();
+		await this.render()
 	}
 
 	override async onClose(): Promise<void> {
 		// Releasing here, rather than in the plugin's unload, is what keeps a
 		// closed tab from leaving a preview server running.
 		if (this.vaultPath) {
-			this.host.releasePreview(this.vaultPath, this);
+			this.host.releasePreview(this.vaultPath, this)
 		}
-		this.teardownFrame();
-		this.contentEl.empty();
+		this.teardownFrame()
+		this.contentEl.empty()
 	}
 
 	/* ---------------------------------------------------------------------- */
@@ -244,46 +239,45 @@ export class TypstPreviewView extends ItemView {
 	 * nothing.
 	 */
 	async render(): Promise<void> {
-		const run = this.rendering.then(() => this.renderOnce());
+		const run = this.rendering.then(() => this.renderOnce())
 		// Keep the chain alive even when one render rejects.
-		this.rendering = run.catch(() => undefined);
-		await run;
+		this.rendering = run.catch(() => undefined)
+		await run
 	}
 
 	private async renderOnce(): Promise<void> {
-		const body = this.bodyEl;
+		const body = this.bodyEl
 		if (!body) {
 			// `setState` can arrive before `onOpen` has built the DOM. The
 			// render that follows `onOpen` will do the work.
-			return;
+			return
 		}
 
 		// Captured, because starting a task is slow enough for the document to
 		// change underneath it.
-		const path = this.vaultPath;
+		const path = this.vaultPath
 
 		if (!path) {
-			this.teardownFrame();
-			body.empty();
-			this.showMessage('Open a Typst document, then run "Open preview".');
-			this.setStatus('');
-			return;
+			this.teardownFrame()
+			body.empty()
+			this.showMessage('Open a Typst document, then run "Open preview".')
+			this.setStatus('')
+			return
 		}
 
-		this.setStatus(this.frame ? 'Reloading…' : 'Starting…');
+		this.setStatus(this.frame ? 'Reloading…' : 'Starting…')
 
-		let url: string;
+		let url: string
 		try {
-			url = await this.host.resolvePreviewUrl(path, this.themeOverride);
+			url = await this.host.resolvePreviewUrl(path, this.themeOverride)
 		} catch (error) {
-			this.teardownFrame();
-			body.empty();
-			const message =
-				error instanceof TypstError ? error.toUserMessage() : 'The preview could not start.';
-			this.host.logger.error('Preview failed to start', error);
-			this.showMessage(message);
-			this.setStatus('Unavailable');
-			return;
+			this.teardownFrame()
+			body.empty()
+			const message = error instanceof TypstError ? error.toUserMessage() : 'The preview could not start.'
+			this.host.logger.error('Preview failed to start', error)
+			this.showMessage(message)
+			this.setStatus('Unavailable')
+			return
 		}
 
 		// The document moved on while the task was starting. `setState` already
@@ -291,49 +285,49 @@ export class TypstPreviewView extends ItemView {
 		// created, so the controller had nothing under that path to stop yet.
 		// Without this the server stays up with no view showing it.
 		if (this.vaultPath !== path) {
-			this.host.releasePreview(path, this);
-			return;
+			this.host.releasePreview(path, this)
+			return
 		}
 
 		// Nothing changed, so leave the frame alone. Reloading it would throw
 		// away the rendered document and the reader's scroll position.
 		if (this.frame && this.frameUrl === url) {
-			this.setStatus('Live');
-			return;
+			this.setStatus('Live')
+			return
 		}
 
-		this.teardownFrame();
-		body.empty();
+		this.teardownFrame()
+		body.empty()
 
-		const frame = body.createEl('iframe', { cls: 'tinymist-preview-frame' });
-		frame.setAttribute('src', url);
-		frame.setAttribute('title', this.getDisplayText());
+		const frame = body.createEl('iframe', { cls: 'tinymist-preview-frame' })
+		frame.setAttribute('src', url)
+		frame.setAttribute('title', this.getDisplayText())
 		// The frame is a separate origin already; referrer and feature access
 		// are trimmed anyway so it cannot learn about or use the host.
-		frame.setAttribute('referrerpolicy', 'no-referrer');
-		frame.setAttribute('allow', '');
-		this.frame = frame;
-		this.frameUrl = url;
+		frame.setAttribute('referrerpolicy', 'no-referrer')
+		frame.setAttribute('allow', '')
+		this.frame = frame
+		this.frameUrl = url
 
-		this.setStatus('Live');
+		this.setStatus('Live')
 	}
 
 	/** Shows a plain-text message in place of the frame. */
 	private showMessage(message: string): void {
-		const body = this.bodyEl;
+		const body = this.bodyEl
 		if (!body) {
-			return;
+			return
 		}
-		const panel = body.createDiv({ cls: 'tinymist-preview-message' });
+		const panel = body.createDiv({ cls: 'tinymist-preview-message' })
 		for (const line of message.split('\n')) {
 			// textContent only: the message can carry a compiler string.
-			panel.createDiv({ cls: 'tinymist-preview-message-line' }).textContent = line;
+			panel.createDiv({ cls: 'tinymist-preview-message-line' }).textContent = line
 		}
 	}
 
 	private setStatus(text: string): void {
 		if (this.statusEl) {
-			this.statusEl.textContent = text;
+			this.statusEl.textContent = text
 		}
 	}
 
@@ -341,15 +335,15 @@ export class TypstPreviewView extends ItemView {
 		if (this.frame) {
 			// Navigating away first stops the frame's websocket immediately
 			// rather than at the next GC.
-			this.frame.setAttribute('src', 'about:blank');
-			this.frame.remove();
-			this.frame = null;
+			this.frame.setAttribute('src', 'about:blank')
+			this.frame.remove()
+			this.frame = null
 		}
-		this.frameUrl = null;
+		this.frameUrl = null
 	}
 
 	getPreviewedPath(): VaultPath | null {
-		return this.vaultPath;
+		return this.vaultPath
 	}
 
 	/**
@@ -360,24 +354,22 @@ export class TypstPreviewView extends ItemView {
 	 * still looking at.
 	 */
 	private async togglePin(): Promise<void> {
-		this.pinned = !this.pinned;
-		this.updatePinButton();
-		await this.persistState();
+		this.pinned = !this.pinned
+		this.updatePinButton()
+		await this.persistState()
 	}
 
 	private updatePinButton(): void {
-		const button = this.pinButton;
+		const button = this.pinButton
 		if (!button) {
-			return;
+			return
 		}
-		button.toggleClass('is-active', this.pinned);
+		button.toggleClass('is-active', this.pinned)
 		button.setAttribute(
 			'aria-label',
-			this.pinned
-				? 'Pinned to this document. Select to follow the editor.'
-				: 'Following the editor. Select to pin this document.',
-		);
-		button.setAttribute('aria-pressed', String(this.pinned));
+			this.pinned ? 'Pinned to this document. Select to follow the editor.' : 'Following the editor. Select to pin this document.'
+		)
+		button.setAttribute('aria-pressed', String(this.pinned))
 	}
 
 	/**
@@ -387,7 +379,7 @@ export class TypstPreviewView extends ItemView {
 	 * choice made just before a quit is lost.
 	 */
 	private async persistState(): Promise<void> {
-		this.app.workspace.requestSaveLayout();
+		this.app.workspace.requestSaveLayout()
 	}
 
 	/**
@@ -398,27 +390,30 @@ export class TypstPreviewView extends ItemView {
 	 * deliberate button press rather than something tied to scrolling.
 	 */
 	private async cycleTheme(): Promise<void> {
-		const next: PreviewThemeOverride = this.themeOverride === null ? 'light' : this.themeOverride === 'light' ? 'dark' : null;
-		this.themeOverride = next;
-		this.updateThemeButton();
-		await this.render();
-		await this.persistState();
+		const next: PreviewThemeOverride = this.themeOverride === null ? 'light' : this.themeOverride === 'light' ? 'dark' : null
+		this.themeOverride = next
+		this.updateThemeButton()
+		await this.render()
+		await this.persistState()
 	}
 
 	private updateThemeButton(): void {
-		const button = this.themeButton;
+		const button = this.themeButton
 		if (!button) {
-			return;
+			return
 		}
 		const { icon, label } =
 			this.themeOverride === 'light'
 				? { icon: 'sun', label: 'Preview theme: light. Select for dark.' }
 				: this.themeOverride === 'dark'
 					? { icon: 'moon', label: 'Preview theme: dark. Select to follow the app.' }
-					: { icon: 'monitor', label: 'Preview theme: follows the app. Select for light.' };
+					: {
+							icon: 'monitor',
+							label: 'Preview theme: follows the app. Select for light.'
+						}
 
-		setIcon(button, icon);
-		button.setAttribute('aria-label', label);
+		setIcon(button, icon)
+		button.setAttribute('aria-label', label)
 	}
 
 	/**
@@ -432,12 +427,12 @@ export class TypstPreviewView extends ItemView {
 	 */
 	private report(what: string, action: Promise<void>): void {
 		void action.catch((error: unknown) => {
-			this.host.logger.error(what, error);
-		});
+			this.host.logger.error(what, error)
+		})
 	}
 
 	/** Reports a problem without stealing focus from the editor. */
 	notifyFailure(message: string): void {
-		new Notice(message);
+		new Notice(message)
 	}
 }

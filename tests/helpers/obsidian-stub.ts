@@ -8,19 +8,19 @@
  */
 
 export class Notice {
-	static readonly shown: string[] = [];
+	static readonly shown: string[] = []
 	constructor(public message: string) {
-		Notice.shown.push(message);
+		Notice.shown.push(message)
 	}
 	hide(): void {}
 	setMessage(message: string): this {
-		this.message = message;
-		return this;
+		this.message = message
+		return this
 	}
 }
 
 export function setIcon(element: { textContent: string | null }, icon: string): void {
-	element.textContent = `[${icon}]`;
+	element.textContent = `[${icon}]`
 }
 
 export function normalizePath(path: string): string {
@@ -29,21 +29,21 @@ export function normalizePath(path: string): string {
 		.replace(/\/{2,}/g, '/')
 		.replace(/^\/+|\/+$/g, '')
 		.replace(/ /g, ' ')
-		.normalize();
+		.normalize()
 }
 
 export class TAbstractFile {
-	path = '';
-	name = '';
+	path = ''
+	name = ''
 }
 
 export class TFile extends TAbstractFile {
-	basename = '';
-	extension = '';
+	basename = ''
+	extension = ''
 }
 
 export class TFolder extends TAbstractFile {
-	children: TAbstractFile[] = [];
+	children: TAbstractFile[] = []
 }
 
 export class Component {
@@ -67,8 +67,8 @@ export class Setting {}
 export class Modal {}
 export class FileSystemAdapter {}
 
-export const Platform = { isDesktopApp: true, isMobile: false };
+export const Platform = { isDesktopApp: true, isMobile: false }
 
 export function requireApiVersion(): boolean {
-	return true;
+	return true
 }

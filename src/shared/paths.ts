@@ -11,13 +11,13 @@
  */
 
 /** Documents are identified by vault-relative path, never by basename. */
-export type VaultPath = string;
+export type VaultPath = string
 
-const WINDOWS_DRIVE = /^[a-zA-Z]:$/;
+const WINDOWS_DRIVE = /^[a-zA-Z]:$/
 
 /** True when the absolute path looks like a Windows path (`C:\...` or `C:/...`). */
 export function isWindowsAbsolutePath(absolutePath: string): boolean {
-	return /^[a-zA-Z]:[\\/]/.test(absolutePath);
+	return /^[a-zA-Z]:[\\/]/.test(absolutePath)
 }
 
 /**
@@ -25,26 +25,26 @@ export function isWindowsAbsolutePath(absolutePath: string): boolean {
  * filesystem. Keeps a leading `/` or a `C:` drive prefix.
  */
 export function normalizeAbsolutePath(absolutePath: string): string {
-	const windows = isWindowsAbsolutePath(absolutePath);
-	const unified = absolutePath.replace(/\\/g, '/');
+	const windows = isWindowsAbsolutePath(absolutePath)
+	const unified = absolutePath.replace(/\\/g, '/')
 
-	const firstSlash = unified.indexOf('/');
-	const prefix = windows ? unified.slice(0, firstSlash) : '';
-	const body = windows ? unified.slice(firstSlash) : unified;
+	const firstSlash = unified.indexOf('/')
+	const prefix = windows ? unified.slice(0, firstSlash) : ''
+	const body = windows ? unified.slice(firstSlash) : unified
 
-	const segments: string[] = [];
+	const segments: string[] = []
 	for (const segment of body.split('/')) {
 		if (segment === '' || segment === '.') {
-			continue;
+			continue
 		}
 		if (segment === '..') {
-			segments.pop();
-			continue;
+			segments.pop()
+			continue
 		}
-		segments.push(segment);
+		segments.push(segment)
 	}
 
-	return `${prefix}/${segments.join('/')}`.replace(/\/$/, prefix ? '/' : '') || '/';
+	return `${prefix}/${segments.join('/')}`.replace(/\/$/, prefix ? '/' : '') || '/'
 }
 
 /**
@@ -52,10 +52,10 @@ export function normalizeAbsolutePath(absolutePath: string): string {
  * The vault path is normalized first, so `..` cannot escape the vault.
  */
 export function vaultPathToAbsolute(vaultBasePath: string, vaultPath: VaultPath): string {
-	const contained = containVaultPath(vaultPath);
-	const base = normalizeAbsolutePath(vaultBasePath);
-	const separator = base.endsWith('/') ? '' : '/';
-	return contained === '' ? base : normalizeAbsolutePath(`${base}${separator}${contained}`);
+	const contained = containVaultPath(vaultPath)
+	const base = normalizeAbsolutePath(vaultBasePath)
+	const separator = base.endsWith('/') ? '' : '/'
+	return contained === '' ? base : normalizeAbsolutePath(`${base}${separator}${contained}`)
 }
 
 /**
@@ -63,18 +63,18 @@ export function vaultPathToAbsolute(vaultBasePath: string, vaultPath: VaultPath)
  * above the vault root. A caller cannot use `../../etc/passwd` to escape.
  */
 export function containVaultPath(vaultPath: VaultPath): string {
-	const segments: string[] = [];
+	const segments: string[] = []
 	for (const segment of vaultPath.replace(/\\/g, '/').split('/')) {
 		if (segment === '' || segment === '.') {
-			continue;
+			continue
 		}
 		if (segment === '..') {
-			segments.pop();
-			continue;
+			segments.pop()
+			continue
 		}
-		segments.push(segment);
+		segments.push(segment)
 	}
-	return segments.join('/');
+	return segments.join('/')
 }
 
 /**
@@ -83,22 +83,22 @@ export function containVaultPath(vaultPath: VaultPath): string {
  * the plugin has no business touching.
  */
 export function absoluteToVaultPath(vaultBasePath: string, absolutePath: string): VaultPath | null {
-	const base = normalizeAbsolutePath(vaultBasePath);
-	const target = normalizeAbsolutePath(absolutePath);
+	const base = normalizeAbsolutePath(vaultBasePath)
+	const target = normalizeAbsolutePath(absolutePath)
 
-	const comparableBase = comparablePath(base);
-	const comparableTarget = comparablePath(target);
+	const comparableBase = comparablePath(base)
+	const comparableTarget = comparablePath(target)
 
 	if (comparableTarget === comparableBase) {
-		return '';
+		return ''
 	}
 
-	const prefix = comparableBase.endsWith('/') ? comparableBase : `${comparableBase}/`;
+	const prefix = comparableBase.endsWith('/') ? comparableBase : `${comparableBase}/`
 	if (!comparableTarget.startsWith(prefix)) {
-		return null;
+		return null
 	}
 
-	return target.slice(prefix.length);
+	return target.slice(prefix.length)
 }
 
 /**
@@ -106,17 +106,17 @@ export function absoluteToVaultPath(vaultBasePath: string, absolutePath: string)
  * Used only for containment and identity comparisons, never for display.
  */
 function comparablePath(path: string): string {
-	return isWindowsAbsolutePath(path) ? path.toLowerCase() : path;
+	return isWindowsAbsolutePath(path) ? path.toLowerCase() : path
 }
 
 /** True when `absolutePath` is the vault directory or lives inside it. */
 export function isInsideVault(vaultBasePath: string, absolutePath: string): boolean {
-	return absoluteToVaultPath(vaultBasePath, absolutePath) !== null;
+	return absoluteToVaultPath(vaultBasePath, absolutePath) !== null
 }
 
 /** Percent-encodes a single path segment for a `file:` URI. */
 function encodeSegment(segment: string): string {
-	return encodeURIComponent(segment).replace(/%2F/gi, '/');
+	return encodeURIComponent(segment).replace(/%2F/gi, '/')
 }
 
 /**
@@ -124,19 +124,19 @@ function encodeSegment(segment: string): string {
  * upper-cased and prefixed with the extra `/` the scheme requires.
  */
 export function absolutePathToFileUri(absolutePath: string): string {
-	const normalized = normalizeAbsolutePath(absolutePath);
-	const windows = isWindowsAbsolutePath(normalized);
+	const normalized = normalizeAbsolutePath(absolutePath)
+	const windows = isWindowsAbsolutePath(normalized)
 
 	if (windows) {
-		const firstSlash = normalized.indexOf('/');
-		const drive = normalized.slice(0, firstSlash).toUpperCase();
-		const rest = normalized.slice(firstSlash + 1);
-		const encoded = rest.split('/').map(encodeSegment).join('/');
-		return `file:///${drive}/${encoded}`;
+		const firstSlash = normalized.indexOf('/')
+		const drive = normalized.slice(0, firstSlash).toUpperCase()
+		const rest = normalized.slice(firstSlash + 1)
+		const encoded = rest.split('/').map(encodeSegment).join('/')
+		return `file:///${drive}/${encoded}`
 	}
 
-	const encoded = normalized.slice(1).split('/').map(encodeSegment).join('/');
-	return `file:///${encoded}`;
+	const encoded = normalized.slice(1).split('/').map(encodeSegment).join('/')
+	return `file:///${encoded}`
 }
 
 /**
@@ -145,48 +145,48 @@ export function absolutePathToFileUri(absolutePath: string): string {
  */
 export function fileUriToAbsolutePath(uri: string): string | null {
 	if (!uri.startsWith('file://')) {
-		return null;
+		return null
 	}
 
-	const withoutScheme = uri.slice('file://'.length);
+	const withoutScheme = uri.slice('file://'.length)
 	// A non-empty authority means a UNC or remote host; we do not handle those.
-	const pathStart = withoutScheme.indexOf('/');
+	const pathStart = withoutScheme.indexOf('/')
 	if (pathStart !== 0) {
-		return null;
+		return null
 	}
 
-	let decoded: string;
+	let decoded: string
 	try {
-		decoded = decodeURIComponent(withoutScheme);
+		decoded = decodeURIComponent(withoutScheme)
 	} catch {
-		return null;
+		return null
 	}
 
-	const candidate = decoded.slice(1);
-	const firstSegment = candidate.split('/')[0] ?? '';
+	const candidate = decoded.slice(1)
+	const firstSegment = candidate.split('/')[0] ?? ''
 	if (WINDOWS_DRIVE.test(firstSegment)) {
-		return normalizeAbsolutePath(candidate);
+		return normalizeAbsolutePath(candidate)
 	}
 
-	return normalizeAbsolutePath(decoded);
+	return normalizeAbsolutePath(decoded)
 }
 
 /** Lower-cased extension without the dot, or `''` when there is none. */
 export function extensionOf(path: string): string {
-	const base = path.slice(path.replace(/\\/g, '/').lastIndexOf('/') + 1);
-	const dot = base.lastIndexOf('.');
-	return dot <= 0 ? '' : base.slice(dot + 1).toLowerCase();
+	const base = path.slice(path.replace(/\\/g, '/').lastIndexOf('/') + 1)
+	const dot = base.lastIndexOf('.')
+	return dot <= 0 ? '' : base.slice(dot + 1).toLowerCase()
 }
 
 /** Replaces a path's extension, e.g. `main.typ` -> `main.pdf`. */
 export function withExtension(path: string, extension: string): string {
-	const current = extensionOf(path);
-	return current === '' ? `${path}.${extension}` : `${path.slice(0, -current.length)}${extension}`;
+	const current = extensionOf(path)
+	return current === '' ? `${path}.${extension}` : `${path.slice(0, -current.length)}${extension}`
 }
 
 /** The parent directory of a vault path, or `''` for a top-level file. */
 export function parentVaultPath(vaultPath: VaultPath): VaultPath {
-	const contained = containVaultPath(vaultPath);
-	const slash = contained.lastIndexOf('/');
-	return slash === -1 ? '' : contained.slice(0, slash);
+	const contained = containVaultPath(vaultPath)
+	const slash = contained.lastIndexOf('/')
+	return slash === -1 ? '' : contained.slice(0, slash)
 }

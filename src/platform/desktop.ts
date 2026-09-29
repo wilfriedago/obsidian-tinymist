@@ -1,7 +1,8 @@
-import { FileSystemAdapter, Platform, type App } from 'obsidian';
-import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process';
+import { spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
 
-import { TypstError } from '../shared/errors';
+import { FileSystemAdapter, Platform, type App } from 'obsidian'
+
+import { TypstError } from '../shared/errors'
 
 /**
  * The single place where this plugin touches Node and Electron APIs.
@@ -52,14 +53,14 @@ const UNIX_EXTRA_PATH_DIRS = [
 	'$HOME/.local/bin', // pipx, and manual installs
 	'/home/linuxbrew/.linuxbrew/bin', // Homebrew on Linux
 	'/snap/bin', // Linux snap
-	'/var/lib/flatpak/exports/bin', // Linux flatpak
-] as const;
+	'/var/lib/flatpak/exports/bin' // Linux flatpak
+] as const
 
 const WINDOWS_EXTRA_PATH_DIRS = [
 	'$USERPROFILE\\scoop\\shims', // scoop
 	'$LOCALAPPDATA\\Microsoft\\WinGet\\Links', // winget
-	'$USERPROFILE\\.cargo\\bin', // cargo
-] as const;
+	'$USERPROFILE\\.cargo\\bin' // cargo
+] as const
 
 /**
  * Builds the `PATH` used when spawning, by appending the well-known install
@@ -70,68 +71,62 @@ const WINDOWS_EXTRA_PATH_DIRS = [
  * be found at all. Pure, so the behaviour is testable without a real
  * environment.
  */
-export function buildSearchPath(
-	env: Record<string, string | undefined>,
-	platform: NodeJS.Platform = process.platform,
-): string {
-	const separator = platform === 'win32' ? ';' : ':';
-	const existing = (env['PATH'] ?? env['Path'] ?? '').split(separator).filter(Boolean);
+export function buildSearchPath(env: Record<string, string | undefined>, platform: NodeJS.Platform = process.platform): string {
+	const separator = platform === 'win32' ? ';' : ':'
+	const existing = (env['PATH'] ?? env['Path'] ?? '').split(separator).filter(Boolean)
 
-	const seen = new Set(existing);
-	const candidates = platform === 'win32' ? WINDOWS_EXTRA_PATH_DIRS : UNIX_EXTRA_PATH_DIRS;
+	const seen = new Set(existing)
+	const candidates = platform === 'win32' ? WINDOWS_EXTRA_PATH_DIRS : UNIX_EXTRA_PATH_DIRS
 
-	const extras: string[] = [];
+	const extras: string[] = []
 	for (const candidate of candidates) {
-		const expanded = expandEnvironmentRefs(candidate, env);
+		const expanded = expandEnvironmentRefs(candidate, env)
 		// An unresolved `$HOME` means the variable is not set; skip rather than
 		// adding a literal path with a dollar sign in it.
 		if (expanded === null || seen.has(expanded)) {
-			continue;
+			continue
 		}
-		seen.add(expanded);
-		extras.push(expanded);
+		seen.add(expanded)
+		extras.push(expanded)
 	}
 
-	return [...existing, ...extras].join(separator);
+	return [...existing, ...extras].join(separator)
 }
 
 /** Substitutes `$VAR` references, or returns `null` if any is unset. */
-function expandEnvironmentRefs(
-	template: string,
-	env: Record<string, string | undefined>,
-): string | null {
-	let unresolved = false;
+function expandEnvironmentRefs(template: string, env: Record<string, string | undefined>): string | null {
+	let unresolved = false
 	const expanded = template.replace(/\$([A-Z_]+)/g, (_match, name: string) => {
-		const value = env[name];
+		const value = env[name]
 		if (!value) {
-			unresolved = true;
-			return '';
+			unresolved = true
+			return ''
 		}
-		return value;
-	});
-	return unresolved ? null : expanded;
+		return value
+	})
+	return unresolved ? null : expanded
 }
 
 /** A spawned child process, narrowed to what the plugin actually uses. */
 export interface SpawnedProcess {
-	readonly pid?: number | undefined;
-	readonly stdin: NodeJS.WritableStream;
-	readonly stdout: NodeJS.ReadableStream;
-	readonly stderr: NodeJS.ReadableStream;
-	kill(signal?: NodeJS.Signals): boolean;
-	on(event: 'exit', listener: (code: number | null, signal: NodeJS.Signals | null) => void): void;
-	on(event: 'error', listener: (error: Error) => void): void;
+	readonly pid?: number | undefined
+	readonly stdin: NodeJS.WritableStream
+	readonly stdout: NodeJS.ReadableStream
+	readonly stderr: NodeJS.ReadableStream
+	kill(signal?: NodeJS.Signals): boolean
+	on(event: 'exit', listener: (code: number | null, signal: NodeJS.Signals | null) => void): void
+	on(event: 'error', listener: (error: Error) => void): void
 }
 
 export interface SpawnOptions {
-	readonly cwd?: string;
-	readonly env?: Record<string, string>;
+	readonly cwd?: string
+	readonly env?: Record<string, string>
 }
 
 /** Desktop capabilities the rest of the plugin depends on. */
 export interface DesktopHost {
 	/** Absolute path of the vault directory. */
-	readonly vaultBasePath: string;
+	readonly vaultBasePath: string
 	/**
 	 * Spawns a program directly, without a shell.
 	 *
@@ -139,23 +134,23 @@ export interface DesktopHost {
 	 * system resolves through `PATH`. Arguments are passed as an array, so no
 	 * part of a `.typ` path can be interpreted as shell syntax.
 	 */
-	spawn(command: string, args: readonly string[], options?: SpawnOptions): SpawnedProcess;
+	spawn(command: string, args: readonly string[], options?: SpawnOptions): SpawnedProcess
 }
 
 /** The reason a spawn failed, as far as the plugin needs to distinguish. */
-export type SpawnFailure = 'not-found' | 'not-executable' | 'unknown';
+export type SpawnFailure = 'not-found' | 'not-executable' | 'unknown'
 
 /** Classifies a spawn error so the UI can say something useful about it. */
 export function classifySpawnError(error: unknown): SpawnFailure {
-	const code = (error as { code?: string } | undefined)?.code;
+	const code = (error as { code?: string } | undefined)?.code
 	switch (code) {
 		case 'ENOENT':
-			return 'not-found';
+			return 'not-found'
 		case 'EACCES':
 		case 'EPERM':
-			return 'not-executable';
+			return 'not-executable'
 		default:
-			return 'unknown';
+			return 'unknown'
 	}
 }
 
@@ -165,28 +160,22 @@ export function classifySpawnError(error: unknown): SpawnFailure {
  */
 export function resolveDesktopHost(app: App): DesktopHost {
 	if (!Platform.isDesktopApp) {
-		throw new TypstError(
-			'platform-unsupported',
-			'Tinymist runs as a native executable, which Obsidian mobile cannot launch.',
-		);
+		throw new TypstError('platform-unsupported', 'Tinymist runs as a native executable, which Obsidian mobile cannot launch.')
 	}
 
-	const adapter = app.vault.adapter;
+	const adapter = app.vault.adapter
 	if (!(adapter instanceof FileSystemAdapter)) {
-		throw new TypstError(
-			'platform-unsupported',
-			'This vault is not stored on the filesystem, so Tinymist cannot read its files.',
-		);
+		throw new TypstError('platform-unsupported', 'This vault is not stored on the filesystem, so Tinymist cannot read its files.')
 	}
 
-	return new NodeDesktopHost(adapter.getBasePath());
+	return new NodeDesktopHost(adapter.getBasePath())
 }
 
 class NodeDesktopHost implements DesktopHost {
 	constructor(readonly vaultBasePath: string) {}
 
 	spawn(command: string, args: readonly string[], options: SpawnOptions = {}): SpawnedProcess {
-		const env = options.env ?? { ...process.env };
+		const env = options.env ?? { ...process.env }
 
 		// `shell` stays false: arguments reach the program verbatim, so a file
 		// named `a; rm -rf ~.typ` is just an odd filename and not a command.
@@ -195,8 +184,8 @@ class NodeDesktopHost implements DesktopHost {
 			env: { ...env, PATH: buildSearchPath(env) },
 			shell: false,
 			windowsHide: true,
-			stdio: ['pipe', 'pipe', 'pipe'],
-		});
-		return child;
+			stdio: ['pipe', 'pipe', 'pipe']
+		})
+		return child
 	}
 }

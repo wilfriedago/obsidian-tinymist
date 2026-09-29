@@ -1,7 +1,7 @@
-import type { DesktopHost, SpawnedProcess } from '../../platform/desktop';
-import { TypstError, describeUnknownError } from '../../shared/errors';
-import type { Logger } from '../../shared/logging';
-import { MessageDecoder, encodeMessage, type IncomingMessage } from './protocol';
+import type { DesktopHost, SpawnedProcess } from '../../platform/desktop'
+import { TypstError, describeUnknownError } from '../../shared/errors'
+import type { Logger } from '../../shared/logging'
+import { MessageDecoder, encodeMessage, type IncomingMessage } from './protocol'
 
 /**
  * Owns one `tinymist lsp` child process and its stdio framing.
@@ -11,54 +11,52 @@ import { MessageDecoder, encodeMessage, type IncomingMessage } from './protocol'
  * nothing about LSP semantics — that is {@link TinymistClient}'s job.
  */
 
-export type ProcessExitReason =
-	| { kind: 'requested' }
-	| { kind: 'crashed'; code: number | null; signal: NodeJS.Signals | null };
+export type ProcessExitReason = { kind: 'requested' } | { kind: 'crashed'; code: number | null; signal: NodeJS.Signals | null }
 
 export interface TinymistProcessHandlers {
-	onMessage(message: IncomingMessage): void;
-	onExit(reason: ProcessExitReason): void;
+	onMessage(message: IncomingMessage): void
+	onExit(reason: ProcessExitReason): void
 }
 
 export interface TinymistProcessOptions {
-	readonly executablePath: string;
-	readonly cwd: string;
+	readonly executablePath: string
+	readonly cwd: string
 	/** Extra arguments appended after `lsp`. Empty in normal operation. */
-	readonly extraArgs?: readonly string[];
+	readonly extraArgs?: readonly string[]
 }
 
 /** How long a graceful stop is given before the process is killed. */
-export const GRACEFUL_SHUTDOWN_TIMEOUT_MS = 3_000;
+export const GRACEFUL_SHUTDOWN_TIMEOUT_MS = 3_000
 /** How long `SIGTERM` is given before `SIGKILL`. */
-export const SIGTERM_TIMEOUT_MS = 2_000;
+export const SIGTERM_TIMEOUT_MS = 2_000
 /** How many stderr bytes to retain for diagnosing a failed start. */
-const STDERR_RETAIN_BYTES = 8_192;
+const STDERR_RETAIN_BYTES = 8_192
 
 export class TinymistProcess {
-	private child: SpawnedProcess | null = null;
-	private readonly decoder = new MessageDecoder();
-	private stderrTail = '';
-	private exited = false;
-	private stopRequested = false;
+	private child: SpawnedProcess | null = null
+	private readonly decoder = new MessageDecoder()
+	private stderrTail = ''
+	private exited = false
+	private stopRequested = false
 
 	constructor(
 		private readonly host: DesktopHost,
 		private readonly logger: Logger,
 		private readonly options: TinymistProcessOptions,
-		private readonly handlers: TinymistProcessHandlers,
+		private readonly handlers: TinymistProcessHandlers
 	) {}
 
 	get pid(): number | undefined {
-		return this.child?.pid;
+		return this.child?.pid
 	}
 
 	get isRunning(): boolean {
-		return this.child !== null && !this.exited;
+		return this.child !== null && !this.exited
 	}
 
 	/** Most recent stderr output, for error reporting. Never contains document text. */
 	get recentStderr(): string {
-		return this.stderrTail.trim();
+		return this.stderrTail.trim()
 	}
 
 	/**
@@ -67,67 +65,65 @@ export class TinymistProcess {
 	 */
 	start(): void {
 		if (this.child) {
-			throw new TypstError('tinymist-start-failed', 'The Tinymist process is already running.');
+			throw new TypstError('tinymist-start-failed', 'The Tinymist process is already running.')
 		}
 
-		const args = ['lsp', ...(this.options.extraArgs ?? [])];
-		this.logger.info('Starting Tinymist', `args=${JSON.stringify(args)}`);
+		const args = ['lsp', ...(this.options.extraArgs ?? [])]
+		this.logger.info('Starting Tinymist', `args=${JSON.stringify(args)}`)
 
-		let child: SpawnedProcess;
+		let child: SpawnedProcess
 		try {
 			child = this.host.spawn(this.options.executablePath, args, {
 				cwd: this.options.cwd,
 				// `RUST_BACKTRACE=1` makes a panic report a location without
 				// requiring the debug build the user does not have.
-				env: { ...process.env, RUST_BACKTRACE: '1' },
-			});
+				env: { ...process.env, RUST_BACKTRACE: '1' }
+			})
 		} catch (error) {
 			throw new TypstError('tinymist-start-failed', describeUnknownError(error), {
 				context: { Executable: this.options.executablePath },
-				cause: error,
-			});
+				cause: error
+			})
 		}
 
-		this.child = child;
-		this.exited = false;
-		this.stopRequested = false;
-		this.decoder.reset();
-		this.stderrTail = '';
+		this.child = child
+		this.exited = false
+		this.stopRequested = false
+		this.decoder.reset()
+		this.stderrTail = ''
 
 		child.stdout.on('data', (chunk: Buffer) => {
 			for (const message of this.decoder.append(chunk)) {
 				try {
-					this.handlers.onMessage(message);
+					this.handlers.onMessage(message)
 				} catch (error) {
-					this.logger.error('Message handler threw', error);
+					this.logger.error('Message handler threw', error)
 				}
 			}
-		});
+		})
 
 		child.stderr.on('data', (chunk: Buffer) => {
-			this.retainStderr(chunk.toString('utf8'));
-		});
+			this.retainStderr(chunk.toString('utf8'))
+		})
 
 		child.on('error', (error: Error) => {
-			this.logger.error('Tinymist process error', error);
-			this.finish({ kind: 'crashed', code: null, signal: null });
-		});
+			this.logger.error('Tinymist process error', error)
+			this.finish({ kind: 'crashed', code: null, signal: null })
+		})
 
 		child.on('exit', (code, signal) => {
-			this.logger.info('Tinymist exited', `code=${code} signal=${signal}`);
-			this.finish(
-				this.stopRequested ? { kind: 'requested' } : { kind: 'crashed', code, signal },
-			);
-		});
+			this.logger.info('Tinymist exited', `code=${code} signal=${signal}`)
+			this.finish(this.stopRequested ? { kind: 'requested' } : { kind: 'crashed', code, signal })
+		})
 	}
 
 	/** Writes a framed message to the process's stdin. */
 	send(message: Parameters<typeof encodeMessage>[0]): void {
-		const child = this.child;
+		const child = this.child
 		if (!child || this.exited) {
-			throw new TypstError('lsp-request-failed', 'Tinymist is not running.');
+			throw new TypstError('lsp-request-failed', 'Tinymist is not running.')
 		}
-		child.stdin.write(encodeMessage(message));
+		child.stdin.write(encodeMessage(message))
 	}
 
 	/**
@@ -137,38 +133,38 @@ export class TinymistProcess {
 	 * `SIGTERM` it is killed. This ordering is what keeps orphans impossible.
 	 */
 	async stop(beforeSignal?: () => Promise<void>): Promise<void> {
-		const child = this.child;
+		const child = this.child
 		if (!child || this.exited) {
-			this.child = null;
-			return;
+			this.child = null
+			return
 		}
 
-		this.stopRequested = true;
+		this.stopRequested = true
 
 		if (beforeSignal) {
 			try {
-				await withTimeout(beforeSignal(), GRACEFUL_SHUTDOWN_TIMEOUT_MS);
+				await withTimeout(beforeSignal(), GRACEFUL_SHUTDOWN_TIMEOUT_MS)
 			} catch (error) {
-				this.logger.warn('Graceful shutdown handshake failed', error);
+				this.logger.warn('Graceful shutdown handshake failed', error)
 			}
 		}
 
 		if (this.exited) {
-			this.child = null;
-			return;
+			this.child = null
+			return
 		}
 
-		this.logger.debug('Sending SIGTERM to Tinymist', `pid=${child.pid}`);
-		child.kill('SIGTERM');
+		this.logger.debug('Sending SIGTERM to Tinymist', `pid=${child.pid}`)
+		child.kill('SIGTERM')
 
-		const terminated = await this.waitForExit(SIGTERM_TIMEOUT_MS);
+		const terminated = await this.waitForExit(SIGTERM_TIMEOUT_MS)
 		if (!terminated) {
-			this.logger.warn('Tinymist ignored SIGTERM; sending SIGKILL', `pid=${child.pid}`);
-			child.kill('SIGKILL');
-			await this.waitForExit(SIGTERM_TIMEOUT_MS);
+			this.logger.warn('Tinymist ignored SIGTERM; sending SIGKILL', `pid=${child.pid}`)
+			child.kill('SIGKILL')
+			await this.waitForExit(SIGTERM_TIMEOUT_MS)
 		}
 
-		this.child = null;
+		this.child = null
 	}
 
 	/**
@@ -176,53 +172,50 @@ export class TinymistProcess {
 	 * does not wait for us and a lingering process would outlive the app.
 	 */
 	killNow(): void {
-		const child = this.child;
+		const child = this.child
 		if (!child || this.exited) {
-			return;
+			return
 		}
-		this.stopRequested = true;
+		this.stopRequested = true
 		try {
-			child.kill('SIGKILL');
+			child.kill('SIGKILL')
 		} catch (error) {
-			this.logger.error('Failed to kill Tinymist', error);
+			this.logger.error('Failed to kill Tinymist', error)
 		}
-		this.child = null;
+		this.child = null
 	}
 
 	private finish(reason: ProcessExitReason): void {
 		if (this.exited) {
-			return;
+			return
 		}
-		this.exited = true;
-		this.handlers.onExit(reason);
+		this.exited = true
+		this.handlers.onExit(reason)
 	}
 
 	private waitForExit(timeoutMs: number): Promise<boolean> {
 		if (this.exited) {
-			return Promise.resolve(true);
+			return Promise.resolve(true)
 		}
 		return new Promise((resolve) => {
-			const timer = window.setTimeout(() => resolve(this.exited), timeoutMs);
+			const timer = window.setTimeout(() => resolve(this.exited), timeoutMs)
 			const poll = window.setInterval(() => {
 				if (this.exited) {
-					window.clearInterval(poll);
-					window.clearTimeout(timer);
-					resolve(true);
+					window.clearInterval(poll)
+					window.clearTimeout(timer)
+					resolve(true)
 				}
-			}, 25);
+			}, 25)
 			// Both handles are cleared on whichever path resolves first.
-			window.setTimeout(() => window.clearInterval(poll), timeoutMs + 50);
-		});
+			window.setTimeout(() => window.clearInterval(poll), timeoutMs + 50)
+		})
 	}
 
 	private retainStderr(text: string): void {
-		this.stderrTail = (this.stderrTail + text).slice(-STDERR_RETAIN_BYTES);
+		this.stderrTail = (this.stderrTail + text).slice(-STDERR_RETAIN_BYTES)
 	}
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T | undefined> {
-	return Promise.race([
-		promise,
-		new Promise<undefined>((resolve) => window.setTimeout(() => resolve(undefined), timeoutMs)),
-	]);
+	return Promise.race([promise, new Promise<undefined>((resolve) => window.setTimeout(() => resolve(undefined), timeoutMs))])
 }

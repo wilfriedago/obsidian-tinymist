@@ -4,7 +4,7 @@ All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
-form Obsidian requires. Entries are written by hand under *Unreleased*; each
+form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
 ## [0.4.0] - 2026-09-22
@@ -41,7 +41,7 @@ release turns them into its section and its GitHub release notes.
 - **The preview follows the document you are editing.** Switching to another
   `.typ` file re-points an open preview at it, instead of leaving it showing
   the file it was opened with. Turn it off under **Preview → Follow the active
-  document**, which sets what a *new* preview does.
+  document**, which sets what a _new_ preview does.
 - **A pin, per preview.** The pin in a preview's toolbar holds it on one
   document while you edit others — the counterpart to following, for people
   who keep one main file on screen. The choice is remembered per leaf and
@@ -120,7 +120,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
   `customizedShowDocument`; otherwise it sends a standard
   `window/showDocument` request instead. The plugin set neither, so it handled
   a notification that was never sent and answered the request with "method not
-  found". It now sets the option *and* handles the standard request, so the
+  found". It now sets the option _and_ handles the standard request, so the
   jump works either way.
 - **Source and preview no longer echo each other.** Answering a preview click
   moved the cursor, the cursor move was reported back to the preview, and the
@@ -164,7 +164,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
   program really is Tinymist. This also fixes executable lookup on Windows,
   where the old code had to special-case `PATHEXT`.
 - **Runtime base64 calls.** `atob` is replaced by `Buffer.from(base64,
-  'base64')`, which decodes in one pass instead of a per-character loop.
+'base64')`, which decodes in one pass instead of a per-character loop.
 
 ### Changed
 
@@ -177,7 +177,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
 
 - Settings keys arriving from Obsidian's settings framework are now narrowed
   with a type guard instead of an assertion. An unrecognized key is refused
-  rather than written into `data.json`, and because the guard checks *own*
+  rather than written into `data.json`, and because the guard checks _own_
   properties it is not fooled by `toString`, `constructor`, or `__proto__`.
 - Settings writes are normalized through the same validation that guards
   `loadData`, so a bad value cannot reach storage at all rather than being

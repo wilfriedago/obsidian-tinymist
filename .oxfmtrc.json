@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "arrowParens": "always",
+  "printWidth": 140,
+  "sortPackageJson": true,
+  "semi": false,
+  "sortImports": {
+    "customGroups": [{ "elementNamePattern": ["@codemirror/**"], "groupName": "codemirror" }],
+    "groups": [
+      "side_effect",
+      "type-import",
+      "value-builtin",
+      "codemirror",
+      ["type-external", "value-external"],
+      ["type-internal", "value-internal"],
+      ["value-parent", "value-sibling", "value-index", "type-parent", "type-sibling", "type-index"],
+      "unknown"
+    ]
+  },
+  "singleQuote": true,
+  "trailingComma": "none"
+}

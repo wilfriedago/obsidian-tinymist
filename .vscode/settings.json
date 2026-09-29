@@ -1,0 +1,9 @@
+{
+  "editor.codeActionsOnSave": {
+    "source.format.oxc": "always", // run formatter first
+    "source.fixAll.oxc": "always" // run lint fixes after
+  },
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "editor.formatOnSave": false,
+  "cSpell.words": ["buymeacoffee", "tinymist", "Typst", "Wilfried"]
+}

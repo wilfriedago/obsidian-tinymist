@@ -16,19 +16,19 @@ Need nothing installed. `obsidian` ships type declarations only, so a small
 stand-in in `tests/helpers/obsidian-stub.ts` is aliased in for the units that
 touch the app.
 
-| File | Covers |
-| --- | --- |
-| `paths.test.ts` | Vault ↔ absolute ↔ `file:` URI conversion, Windows drive letters, non-ASCII and spaces, and that `..` cannot escape the vault |
-| `protocol.test.ts` | `Content-Length` framing: split chunks, several messages per chunk, a cut inside a multi-byte character, malformed headers and bodies |
-| `tinymist-config.test.ts` | Executable resolution order, initialization options, and preview argument construction |
-| `project.test.ts` | Project root detection across all three strategies, nested manifests, and sibling projects |
-| `settings.test.ts` | Migration, type validation, and rejection of out-of-range values |
-| `client.test.ts` | Request/response correlation, out-of-order replies, timeouts, server-to-client requests, capability reporting, disposal |
-| `process.test.ts` | Spawn failure, stream reassembly, crash vs. requested exit, SIGTERM → SIGKILL escalation, kill-without-handshake |
-| `version.test.ts` | Version parsing including the empty-version build, and the minimum-version check |
-| `diagnostics.test.ts` | LSP → CodeMirror position mapping, clamping stale positions, severity mapping, the diagnostics store |
-| `session.test.ts` | Document identity, version counters, rename, and replay after a restart |
-| `preview-and-status.test.ts` | Task ids, preview lifecycle, status-bar wording, snippet and hover conversion |
+| File                         | Covers                                                                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `paths.test.ts`              | Vault ↔ absolute ↔ `file:` URI conversion, Windows drive letters, non-ASCII and spaces, and that `..` cannot escape the vault         |
+| `protocol.test.ts`           | `Content-Length` framing: split chunks, several messages per chunk, a cut inside a multi-byte character, malformed headers and bodies |
+| `tinymist-config.test.ts`    | Executable resolution order, initialization options, and preview argument construction                                                |
+| `project.test.ts`            | Project root detection across all three strategies, nested manifests, and sibling projects                                            |
+| `settings.test.ts`           | Migration, type validation, and rejection of out-of-range values                                                                      |
+| `client.test.ts`             | Request/response correlation, out-of-order replies, timeouts, server-to-client requests, capability reporting, disposal               |
+| `process.test.ts`            | Spawn failure, stream reassembly, crash vs. requested exit, SIGTERM → SIGKILL escalation, kill-without-handshake                      |
+| `version.test.ts`            | Version parsing including the empty-version build, and the minimum-version check                                                      |
+| `diagnostics.test.ts`        | LSP → CodeMirror position mapping, clamping stale positions, severity mapping, the diagnostics store                                  |
+| `session.test.ts`            | Document identity, version counters, rename, and replay after a restart                                                               |
+| `preview-and-status.test.ts` | Task ids, preview lifecycle, status-bar wording, snippet and hover conversion                                                         |
 
 ### Integration tests — `tests/integration`
 
@@ -58,14 +58,14 @@ the plugin's assumptions were wrong until a real binary corrected them (see
 
 A throwaway vault. Never point the plugin at a real one during development.
 
-| Path | Covers |
-| --- | --- |
-| `basic.typ` | Valid document; the happy path |
-| `errors.typ` | Semantic errors; diagnostics must appear |
-| `syntax-error.typ` | A parse error, which Typst reports alone |
-| `imports.typ`, `imports/shared.typ` | Multi-file resolution with no `typst.toml` |
-| `project/` | `typst.toml`, template, bibliography, image asset — per-project root detection |
-| `pdf/existing.pdf` | A PDF predating the plugin; must open in Obsidian's own viewer |
+| Path                                | Covers                                                                         |
+| ----------------------------------- | ------------------------------------------------------------------------------ |
+| `basic.typ`                         | Valid document; the happy path                                                 |
+| `errors.typ`                        | Semantic errors; diagnostics must appear                                       |
+| `syntax-error.typ`                  | A parse error, which Typst reports alone                                       |
+| `imports.typ`, `imports/shared.typ` | Multi-file resolution with no `typst.toml`                                     |
+| `project/`                          | `typst.toml`, template, bibliography, image asset — per-project root detection |
+| `pdf/existing.pdf`                  | A PDF predating the plugin; must open in Obsidian's own viewer                 |
 
 Each fixture's behaviour was confirmed with the real compiler.
 
@@ -153,10 +153,10 @@ _Following the active document_
 - [ ] The **pin** button holds the preview on its document while you switch files, and is coloured while pinned.
 - [ ] Unpinning does not retarget on its own; the next document switch does.
 - [ ] A pinned preview survives closing and reopening the vault.
-- [ ] Turning **Follow the active document** off makes the *next* preview start pinned, and leaves open ones as they are.
+- [ ] Turning **Follow the active document** off makes the _next_ preview start pinned, and leaves open ones as they are.
 - [ ] Pin one preview and let another follow, both on the same document: moving the follower off it leaves the pinned one rendering (`pgrep -f "tinymist"` still shows its server).
 - [ ] Switching documents ten times leaves one preview server behind, not ten.
-- [ ] Switching away *while a preview is still starting* also leaves one: flip between two documents as fast as the status line will let you, then count with `pgrep -f "tinymist"`.
+- [ ] Switching away _while a preview is still starting_ also leaves one: flip between two documents as fast as the status line will let you, then count with `pgrep -f "tinymist"`.
 
 **Projects**
 

@@ -10,11 +10,11 @@
  */
 
 export interface TinymistVersion {
-	readonly major: number;
-	readonly minor: number;
-	readonly patch: number;
+	readonly major: number
+	readonly minor: number
+	readonly patch: number
 	/** The version as printed, e.g. `0.15.8`. */
-	readonly raw: string;
+	readonly raw: string
 }
 
 /**
@@ -26,10 +26,10 @@ export const MINIMUM_TINYMIST_VERSION: TinymistVersion = Object.freeze({
 	major: 0,
 	minor: 13,
 	patch: 0,
-	raw: '0.13.0',
-});
+	raw: '0.13.0'
+})
 
-const SHORT_VERSION = /^\s*tinymist\s+v?(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.-]+)?\s*$/;
+const SHORT_VERSION = /^\s*tinymist\s+v?(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.-]+)?\s*$/
 
 /**
  * Parses the output of `tinymist -V`. Returns `null` when the output does not
@@ -38,40 +38,37 @@ const SHORT_VERSION = /^\s*tinymist\s+v?(\d+)\.(\d+)\.(\d+)(?:[-+][0-9A-Za-z.-]+
  */
 export function parseVersionOutput(output: string): TinymistVersion | null {
 	for (const line of output.split(/\r?\n/)) {
-		const match = SHORT_VERSION.exec(line);
+		const match = SHORT_VERSION.exec(line)
 		if (!match) {
-			continue;
+			continue
 		}
-		const [, major, minor, patch] = match;
+		const [, major, minor, patch] = match
 		return {
 			major: Number(major),
 			minor: Number(minor),
 			patch: Number(patch),
-			raw: `${major}.${minor}.${patch}`,
-		};
+			raw: `${major}.${minor}.${patch}`
+		}
 	}
-	return null;
+	return null
 }
 
 /** Extracts `Typst Version: 0.15.1` from the `--version` banner, if present. */
 export function parseTypstVersionFromBanner(output: string): string | null {
-	const match = /^\s*Typst Version:\s*(\S+)\s*$/m.exec(output);
-	return match?.[1] ?? null;
+	const match = /^\s*Typst Version:\s*(\S+)\s*$/m.exec(output)
+	return match?.[1] ?? null
 }
 
 /** Negative when `a < b`, zero when equal, positive when `a > b`. */
 export function compareVersions(a: TinymistVersion, b: TinymistVersion): number {
-	return a.major - b.major || a.minor - b.minor || a.patch - b.patch;
+	return a.major - b.major || a.minor - b.minor || a.patch - b.patch
 }
 
 /** True when `version` is at least `minimum`. */
-export function satisfiesMinimum(
-	version: TinymistVersion,
-	minimum: TinymistVersion = MINIMUM_TINYMIST_VERSION,
-): boolean {
-	return compareVersions(version, minimum) >= 0;
+export function satisfiesMinimum(version: TinymistVersion, minimum: TinymistVersion = MINIMUM_TINYMIST_VERSION): boolean {
+	return compareVersions(version, minimum) >= 0
 }
 
 export function formatVersion(version: TinymistVersion | null): string {
-	return version?.raw ?? 'unknown';
+	return version?.raw ?? 'unknown'
 }

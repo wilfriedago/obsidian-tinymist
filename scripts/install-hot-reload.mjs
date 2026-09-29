@@ -12,45 +12,45 @@
  *
  * https://github.com/pjeby/hot-reload
  */
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const RELEASE = 'https://github.com/pjeby/hot-reload/releases/latest/download';
-const FILES = ['main.js', 'manifest.json'];
+const RELEASE = 'https://github.com/pjeby/hot-reload/releases/latest/download'
+const FILES = ['main.js', 'manifest.json']
 
 // Not `import.meta.dirname`: see the note in dev-vault.mjs.
-const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
-const target = resolve(root, 'test-vault/.obsidian/plugins/hot-reload');
+const root = resolve(fileURLToPath(new URL('.', import.meta.url)), '..')
+const target = resolve(root, 'test-vault/.obsidian/plugins/hot-reload')
 
-mkdirSync(target, { recursive: true });
+mkdirSync(target, { recursive: true })
 
-const downloaded = new Map();
+const downloaded = new Map()
 
 for (const file of FILES) {
-	const url = `${RELEASE}/${file}`;
-	process.stdout.write(`${url} … `);
+	const url = `${RELEASE}/${file}`
+	process.stdout.write(`${url} … `)
 
-	const response = await fetch(url);
+	const response = await fetch(url)
 	if (!response.ok) {
-		console.log('failed');
-		console.error(`\n${url} returned ${response.status} ${response.statusText}.`);
-		console.error('Download main.js and manifest.json by hand into:');
-		console.error(`  ${target}`);
-		process.exit(1);
+		console.log('failed')
+		console.error(`\n${url} returned ${response.status} ${response.statusText}.`)
+		console.error('Download main.js and manifest.json by hand into:')
+		console.error(`  ${target}`)
+		process.exit(1)
 	}
 
-	downloaded.set(file, Buffer.from(await response.arrayBuffer()));
-	console.log('ok');
+	downloaded.set(file, Buffer.from(await response.arrayBuffer()))
+	console.log('ok')
 }
 
 // Written only once both have arrived. A plugin folder holding main.js without
 // its manifest fails to load, and the failure reads as a broken plugin rather
 // than as the interrupted download it is.
 for (const [file, bytes] of downloaded) {
-	writeFileSync(resolve(target, file), bytes);
+	writeFileSync(resolve(target, file), bytes)
 }
 
-console.log('');
-console.log('Installed into test-vault/.obsidian/plugins/hot-reload.');
-console.log('Enable "Hot Reload" under Settings → Community plugins, then restart Obsidian once.');
+console.log('')
+console.log('Installed into test-vault/.obsidian/plugins/hot-reload.')
+console.log('Enable "Hot Reload" under Settings → Community plugins, then restart Obsidian once.')

@@ -1,4 +1,4 @@
-import type { LogLevel } from '../../shared/logging';
+import type { LogLevel } from '../../shared/logging'
 
 /**
  * Where the Tinymist executable comes from, and what configuration it is
@@ -9,14 +9,14 @@ import type { LogLevel } from '../../shared/logging';
  * always something the user put on their machine.
  */
 
-export const TINYMIST_EXECUTABLE_NAME = 'tinymist';
+export const TINYMIST_EXECUTABLE_NAME = 'tinymist'
 
 /** How the executable in use was arrived at. Surfaced in settings. */
-export type ExecutableSource = 'configured' | 'path';
+export type ExecutableSource = 'configured' | 'path'
 
 export interface ResolvedExecutable {
-	readonly path: string;
-	readonly source: ExecutableSource;
+	readonly path: string
+	readonly source: ExecutableSource
 }
 
 /**
@@ -34,33 +34,31 @@ export interface ResolvedExecutable {
  * There is deliberately no step that fetches anything.
  */
 export function resolveExecutable(configuredPath: string): ResolvedExecutable {
-	const configured = configuredPath.trim();
-	return configured.length > 0
-		? { path: configured, source: 'configured' }
-		: { path: TINYMIST_EXECUTABLE_NAME, source: 'path' };
+	const configured = configuredPath.trim()
+	return configured.length > 0 ? { path: configured, source: 'configured' } : { path: TINYMIST_EXECUTABLE_NAME, source: 'path' }
 }
 
 /** How the plugin resolves the Typst project root for a document. */
-export type ProjectRootStrategy = 'auto' | 'vault' | 'custom';
+export type ProjectRootStrategy = 'auto' | 'vault' | 'custom'
 
 export interface TinymistInitOptions {
 	/** Explicit executable path from settings; empty means "look on PATH". */
-	readonly executablePath: string;
-	readonly projectRootStrategy: ProjectRootStrategy;
+	readonly executablePath: string
+	readonly projectRootStrategy: ProjectRootStrategy
 	/** Used only when the strategy is `custom`; a vault-relative folder path. */
-	readonly customProjectRoot: string;
-	readonly vaultBasePath: string;
-	readonly formatterEnabled: boolean;
-	readonly logLevel: LogLevel;
-	readonly systemFonts: boolean;
+	readonly customProjectRoot: string
+	readonly vaultBasePath: string
+	readonly formatterEnabled: boolean
+	readonly logLevel: LogLevel
+	readonly systemFonts: boolean
 	/** Absolute paths to extra font directories. Empty by default. */
-	readonly fontPaths: readonly string[];
+	readonly fontPaths: readonly string[]
 	/**
 	 * Absolute path of a plugin-owned temporary directory. Every Tinymist
 	 * export is routed here; the plugin then writes the result into the vault
 	 * itself. See {@link buildInitializationOptions} for why.
 	 */
-	readonly exportStagingDirectory: string;
+	readonly exportStagingDirectory: string
 }
 
 /**
@@ -80,17 +78,17 @@ export interface TinymistInitOptions {
 export function resolveWorkspaceRoot(options: TinymistInitOptions): string | null {
 	switch (options.projectRootStrategy) {
 		case 'vault':
-			return options.vaultBasePath;
+			return options.vaultBasePath
 		case 'custom': {
-			const relative = options.customProjectRoot.trim().replace(/^\/+|\/+$/g, '');
+			const relative = options.customProjectRoot.trim().replace(/^\/+|\/+$/g, '')
 			if (relative.length === 0) {
-				return options.vaultBasePath;
+				return options.vaultBasePath
 			}
-			return `${options.vaultBasePath.replace(/\/+$/, '')}/${relative}`;
+			return `${options.vaultBasePath.replace(/\/+$/, '')}/${relative}`
 		}
 		case 'auto':
 		default:
-			return null;
+			return null
 	}
 }
 
@@ -101,10 +99,8 @@ export function resolveWorkspaceRoot(options: TinymistInitOptions): string | nul
  * `CONFIG_ITEMS` in `crates/tinymist/src/config.rs` at 0.15.8. Anything not
  * listed there is ignored by the server, so we send only known keys.
  */
-export function buildInitializationOptions(
-	options: TinymistInitOptions,
-): Record<string, unknown> {
-	const root = resolveWorkspaceRoot(options);
+export function buildInitializationOptions(options: TinymistInitOptions): Record<string, unknown> {
+	const root = resolveWorkspaceRoot(options)
 
 	const config: Record<string, unknown> = {
 		// `onSave`/`onType` would make Tinymist write PDFs on its own. Export in
@@ -134,37 +130,37 @@ export function buildInitializationOptions(
 		// (see `EditorScrollTo` in its preview tool), and clicking the preview
 		// does nothing unless the client answers that instead. Both paths are
 		// handled here, but this is the one the reference client uses.
-		customizedShowDocument: true,
-	};
+		customizedShowDocument: true
+	}
 
 	if (root !== null) {
-		config['rootPath'] = root;
+		config['rootPath'] = root
 	}
 	if (options.fontPaths.length > 0) {
-		config['fontPaths'] = [...options.fontPaths];
+		config['fontPaths'] = [...options.fontPaths]
 	}
 
-	return config;
+	return config
 }
 
 /** The colour-inversion strategies Tinymist's preview accepts. */
-export type InvertColorsStrategy = 'never' | 'auto' | 'always';
+export type InvertColorsStrategy = 'never' | 'auto' | 'always'
 
 /** Arguments for `tinymist.doStartPreview`, in the CLI form the command expects. */
 export interface PreviewArgsOptions {
-	readonly taskId: string;
+	readonly taskId: string
 	/** Absolute path of the entry file. Tinymist rejects relative paths here. */
-	readonly entryAbsolutePath: string;
+	readonly entryAbsolutePath: string
 	/** `true` for every preview after the first, per Tinymist's primary-instance model. */
-	readonly notPrimary: boolean;
+	readonly notPrimary: boolean
 	/**
 	 * How Tinymist should invert the rendered page's colours.
 	 * `never` is a light page, `always` a dark one, `auto` defers to the
 	 * viewer. These are the accepted values, verified against the preview
 	 * frontend's own `INVERT_COLORS_STRATEGY`.
 	 */
-	readonly invertColors: InvertColorsStrategy;
-	readonly refreshOnType: boolean;
+	readonly invertColors: InvertColorsStrategy
+	readonly refreshOnType: boolean
 	/**
 	 * Render only the visible part of the document.
 	 *
@@ -172,7 +168,7 @@ export interface PreviewArgsOptions {
 	 * and rendering every page up front and receiving only what is on screen.
 	 * Measured on a 316-page document: 1.1 MB of initial payload without it.
 	 */
-	readonly partialRendering: boolean;
+	readonly partialRendering: boolean
 }
 
 export function buildPreviewArgs(options: PreviewArgsOptions): string[] {
@@ -196,13 +192,13 @@ export function buildPreviewArgs(options: PreviewArgsOptions): string[] {
 		String(options.partialRendering),
 		// The preview is shown inside Obsidian; opening a browser too would be
 		// a surprise, and the flag defaults to on for the CLI.
-		'--no-open',
-	];
+		'--no-open'
+	]
 
 	if (options.notPrimary) {
-		args.push('--not-primary');
+		args.push('--not-primary')
 	}
 
-	args.push(options.entryAbsolutePath);
-	return args;
+	args.push(options.entryAbsolutePath)
+	return args
 }

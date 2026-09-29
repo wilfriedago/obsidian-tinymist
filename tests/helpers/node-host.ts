@@ -1,14 +1,9 @@
-import { spawn } from 'node:child_process';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { spawn } from 'node:child_process'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 
-import {
-	buildSearchPath,
-	type DesktopHost,
-	type SpawnOptions,
-	type SpawnedProcess,
-} from '../../src/platform/desktop';
+import { buildSearchPath, type DesktopHost, type SpawnOptions, type SpawnedProcess } from '../../src/platform/desktop'
 
 /**
  * A `DesktopHost` backed by real Node APIs, for integration tests.
@@ -20,7 +15,7 @@ export class NodeTestHost implements DesktopHost {
 	constructor(readonly vaultBasePath: string) {}
 
 	spawn(command: string, args: readonly string[], options: SpawnOptions = {}): SpawnedProcess {
-		const env = options.env ?? { ...process.env };
+		const env = options.env ?? { ...process.env }
 		// Mirrors NodeDesktopHost exactly, including the PATH augmentation that
 		// makes a GUI-launched Obsidian able to find Tinymist at all. A test
 		// host that skipped it would pass while production failed.
@@ -29,8 +24,8 @@ export class NodeTestHost implements DesktopHost {
 			env: { ...env, PATH: buildSearchPath(env) },
 			shell: false,
 			windowsHide: true,
-			stdio: ['pipe', 'pipe', 'pipe'],
-		});
+			stdio: ['pipe', 'pipe', 'pipe']
+		})
 	}
 
 	/**
@@ -41,10 +36,10 @@ export class NodeTestHost implements DesktopHost {
 	 * guarantees it cannot acquire one by accident.
 	 */
 	async createTempDirectory(prefix: string): Promise<string> {
-		return await mkdtemp(join(tmpdir(), prefix));
+		return await mkdtemp(join(tmpdir(), prefix))
 	}
 
 	async removeDirectory(path: string): Promise<void> {
-		await rm(path, { recursive: true, force: true });
+		await rm(path, { recursive: true, force: true })
 	}
 }

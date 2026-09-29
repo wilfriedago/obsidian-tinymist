@@ -21,14 +21,14 @@
  * `version` defaults to the one in package.json. Both work on CHANGELOG.md in
  * the current directory.
  */
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs'
 
-const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 /** The span of the `## …` section starting at `start`, up to the next `## `. */
 function sectionEnd(content, start) {
-	const next = content.slice(start + 1).search(/^## /m);
-	return next === -1 ? content.length : start + 1 + next;
+	const next = content.slice(start + 1).search(/^## /m)
+	return next === -1 ? content.length : start + 1 + next
 }
 
 /** Drops commit-hash links; the pull-request link is the one worth keeping. */
@@ -37,66 +37,68 @@ function restyleGenerated(body) {
 		.replace(/^\* /gm, '- ')
 		.replace(/ \(\[[0-9a-f]{7,40}\]\([^)]*\/commit\/[0-9a-f]{7,40}\)\)/g, '')
 		.replace(/\n{3,}/g, '\n\n')
-		.trim();
+		.trim()
 }
 
 function foldRelease(content, version) {
-	const v = escape(version);
-	const generated = new RegExp(`^## \\[${v}\\](?:\\([^)]*\\))? \\((\\d{4}-\\d{2}-\\d{2})\\)[ \\t]*$`, 'm');
-	const folded = new RegExp(`^## \\[${v}\\] - \\d{4}-\\d{2}-\\d{2}[ \\t]*$`, 'm');
+	const v = escape(version)
+	const generated = new RegExp(`^## \\[${v}\\](?:\\([^)]*\\))? \\((\\d{4}-\\d{2}-\\d{2})\\)[ \\t]*$`, 'm')
+	const folded = new RegExp(`^## \\[${v}\\] - \\d{4}-\\d{2}-\\d{2}[ \\t]*$`, 'm')
 
-	const match = generated.exec(content);
+	const match = generated.exec(content)
 	if (!match) {
 		if (folded.test(content)) {
-			return content;
+			return content
 		}
-		throw new Error(`CHANGELOG.md has no section for ${version}.`);
+		throw new Error(`CHANGELOG.md has no section for ${version}.`)
 	}
-	const date = match[1];
+	const date = match[1]
 
-	let unreleasedBody = '';
-	const unreleased = /^## \[?Unreleased\]?[ \t]*$/im.exec(content);
+	let unreleasedBody = ''
+	const unreleased = /^## \[?Unreleased\]?[ \t]*$/im.exec(content)
 	if (unreleased) {
-		const end = sectionEnd(content, unreleased.index);
-		unreleasedBody = content.slice(unreleased.index + unreleased[0].length, end).trim();
-		content = content.slice(0, unreleased.index) + content.slice(end);
+		const end = sectionEnd(content, unreleased.index)
+		unreleasedBody = content.slice(unreleased.index + unreleased[0].length, end).trim()
+		content = content.slice(0, unreleased.index) + content.slice(end)
 	}
 
 	// Located again: removing Unreleased may have moved it.
-	const start = generated.exec(content).index;
-	const end = sectionEnd(content, start);
-	const generatedBody = content.slice(start, end).replace(generated, '');
-	const body = unreleasedBody || restyleGenerated(generatedBody);
+	const start = generated.exec(content).index
+	const end = sectionEnd(content, start)
+	const generatedBody = content.slice(start, end).replace(generated, '')
+	const body = unreleasedBody || restyleGenerated(generatedBody)
 
-	return `${content.slice(0, start)}## [${version}] - ${date}\n\n${body}\n\n${content.slice(end)}`
-		.replace(/\n{3,}(?=## )/g, '\n\n')
-		.trimEnd() + '\n';
+	return (
+		`${content.slice(0, start)}## [${version}] - ${date}\n\n${body}\n\n${content.slice(end)}`
+			.replace(/\n{3,}(?=## )/g, '\n\n')
+			.trimEnd() + '\n'
+	)
 }
 
 function releaseNotes(content, version) {
-	const heading = new RegExp(`^## \\[${escape(version)}\\].*$`, 'm');
-	const match = heading.exec(content);
+	const heading = new RegExp(`^## \\[${escape(version)}\\].*$`, 'm')
+	const match = heading.exec(content)
 	if (!match) {
-		throw new Error(`CHANGELOG.md has no section for ${version}.`);
+		throw new Error(`CHANGELOG.md has no section for ${version}.`)
 	}
-	return content.slice(match.index + match[0].length, sectionEnd(content, match.index)).trim() + '\n';
+	return content.slice(match.index + match[0].length, sectionEnd(content, match.index)).trim() + '\n'
 }
 
-const [command, argument] = process.argv.slice(2);
-const version = argument ?? JSON.parse(readFileSync('package.json', 'utf8')).version;
-const changelog = readFileSync('CHANGELOG.md', 'utf8');
+const [command, argument] = process.argv.slice(2)
+const version = argument ?? JSON.parse(readFileSync('package.json', 'utf8')).version
+const changelog = readFileSync('CHANGELOG.md', 'utf8')
 
 if (command === 'fold') {
-	const next = foldRelease(changelog, version);
+	const next = foldRelease(changelog, version)
 	if (next !== changelog) {
-		writeFileSync('CHANGELOG.md', next);
-		console.log(`Folded the ${version} section into the project's changelog style.`);
+		writeFileSync('CHANGELOG.md', next)
+		console.log(`Folded the ${version} section into the project's changelog style.`)
 	} else {
-		console.log(`The ${version} section is already folded.`);
+		console.log(`The ${version} section is already folded.`)
 	}
 } else if (command === 'notes') {
-	process.stdout.write(releaseNotes(changelog, version));
+	process.stdout.write(releaseNotes(changelog, version))
 } else {
-	console.error('Usage: release-changelog.mjs fold [version] | notes <version>');
-	process.exit(2);
+	console.error('Usage: release-changelog.mjs fold [version] | notes <version>')
+	process.exit(2)
 }

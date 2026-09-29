@@ -1,7 +1,7 @@
-import { TypstError } from '../../shared/errors';
-import type { Logger } from '../../shared/logging';
-import { absolutePathToFileUri, vaultPathToAbsolute, type VaultPath } from '../../shared/paths';
-import type { TinymistClient } from '../tinymist/client';
+import { TypstError } from '../../shared/errors'
+import type { Logger } from '../../shared/logging'
+import { absolutePathToFileUri, vaultPathToAbsolute, type VaultPath } from '../../shared/paths'
+import type { TinymistClient } from '../tinymist/client'
 
 /**
  * Tracks which documents Tinymist has been told about.
@@ -16,20 +16,20 @@ import type { TinymistClient } from '../tinymist/client';
  */
 
 interface TrackedDocument {
-	readonly vaultPath: VaultPath;
-	readonly uri: string;
-	version: number;
+	readonly vaultPath: VaultPath
+	readonly uri: string
+	version: number
 	/** Latest text handed to Tinymist. Kept for re-announcing after a restart. */
-	text: string;
+	text: string
 }
 
 export class DocumentSession {
-	private readonly documents = new Map<VaultPath, TrackedDocument>();
-	private client: TinymistClient | null = null;
+	private readonly documents = new Map<VaultPath, TrackedDocument>()
+	private client: TinymistClient | null = null
 
 	constructor(
 		private readonly vaultBasePath: string,
-		private readonly logger: Logger,
+		private readonly logger: Logger
 	) {}
 
 	/**
@@ -37,53 +37,53 @@ export class DocumentSession {
 	 * it. Called on first start and after every restart.
 	 */
 	attach(client: TinymistClient): void {
-		this.client = client;
+		this.client = client
 		for (const document of this.documents.values()) {
-			document.version += 1;
-			this.sendDidOpen(document);
+			document.version += 1
+			this.sendDidOpen(document)
 		}
 		if (this.documents.size > 0) {
-			this.logger.info('Re-announced open documents', `count=${this.documents.size}`);
+			this.logger.info('Re-announced open documents', `count=${this.documents.size}`)
 		}
 	}
 
 	/** Unbinds the client without forgetting the documents. */
 	detach(): void {
-		this.client = null;
+		this.client = null
 	}
 
 	get openCount(): number {
-		return this.documents.size;
+		return this.documents.size
 	}
 
 	uriFor(vaultPath: VaultPath): string {
-		return absolutePathToFileUri(this.absolutePathFor(vaultPath));
+		return absolutePathToFileUri(this.absolutePathFor(vaultPath))
 	}
 
 	absolutePathFor(vaultPath: VaultPath): string {
-		return vaultPathToAbsolute(this.vaultBasePath, vaultPath);
+		return vaultPathToAbsolute(this.vaultBasePath, vaultPath)
 	}
 
 	isOpen(vaultPath: VaultPath): boolean {
-		return this.documents.has(vaultPath);
+		return this.documents.has(vaultPath)
 	}
 
 	/** Announces a document. Opening one that is already open re-syncs its text. */
 	open(vaultPath: VaultPath, text: string): void {
-		const existing = this.documents.get(vaultPath);
+		const existing = this.documents.get(vaultPath)
 		if (existing) {
-			this.change(vaultPath, text);
-			return;
+			this.change(vaultPath, text)
+			return
 		}
 
 		const document: TrackedDocument = {
 			vaultPath,
 			uri: this.uriFor(vaultPath),
 			version: 1,
-			text,
-		};
-		this.documents.set(vaultPath, document);
-		this.sendDidOpen(document);
+			text
+		}
+		this.documents.set(vaultPath, document)
+		this.sendDidOpen(document)
 	}
 
 	/**
@@ -92,44 +92,44 @@ export class DocumentSession {
 	 * step with the buffer — which matters more here than the saved bytes.
 	 */
 	change(vaultPath: VaultPath, text: string): void {
-		const document = this.documents.get(vaultPath);
+		const document = this.documents.get(vaultPath)
 		if (!document) {
-			this.open(vaultPath, text);
-			return;
+			this.open(vaultPath, text)
+			return
 		}
 		if (document.text === text) {
-			return;
+			return
 		}
 
-		document.text = text;
-		document.version += 1;
+		document.text = text
+		document.version += 1
 
 		this.client?.notify('textDocument/didChange', {
 			textDocument: { uri: document.uri, version: document.version },
-			contentChanges: [{ text }],
-		});
+			contentChanges: [{ text }]
+		})
 	}
 
 	/** Tells Tinymist the file was saved, so on-save tasks can run. */
 	save(vaultPath: VaultPath): void {
-		const document = this.documents.get(vaultPath);
+		const document = this.documents.get(vaultPath)
 		if (!document) {
-			return;
+			return
 		}
 		this.client?.notify('textDocument/didSave', {
-			textDocument: { uri: document.uri },
-		});
+			textDocument: { uri: document.uri }
+		})
 	}
 
 	close(vaultPath: VaultPath): void {
-		const document = this.documents.get(vaultPath);
+		const document = this.documents.get(vaultPath)
 		if (!document) {
-			return;
+			return
 		}
-		this.documents.delete(vaultPath);
+		this.documents.delete(vaultPath)
 		this.client?.notify('textDocument/didClose', {
-			textDocument: { uri: document.uri },
-		});
+			textDocument: { uri: document.uri }
+		})
 	}
 
 	/** Closes everything. Used when the plugin unloads. */
@@ -138,27 +138,27 @@ export class DocumentSession {
 		// iterating a live `Map` while removing from it skips entries.
 		// oxlint-disable-next-line unicorn/no-useless-spread
 		for (const vaultPath of [...this.documents.keys()]) {
-			this.close(vaultPath);
+			this.close(vaultPath)
 		}
 	}
 
 	/** Renames in place, so a moved file keeps its identity with the server. */
 	rename(oldVaultPath: VaultPath, newVaultPath: VaultPath): void {
-		const document = this.documents.get(oldVaultPath);
+		const document = this.documents.get(oldVaultPath)
 		if (!document) {
-			return;
+			return
 		}
-		const text = document.text;
-		this.close(oldVaultPath);
-		this.open(newVaultPath, text);
+		const text = document.text
+		this.close(oldVaultPath)
+		this.open(newVaultPath, text)
 	}
 
 	/** The client, or a categorized error when Tinymist is not available. */
 	requireClient(): TinymistClient {
 		if (!this.client) {
-			throw new TypstError('document-sync-failed', 'Tinymist is not running.');
+			throw new TypstError('document-sync-failed', 'Tinymist is not running.')
 		}
-		return this.client;
+		return this.client
 	}
 
 	private sendDidOpen(document: TrackedDocument): void {
@@ -167,8 +167,8 @@ export class DocumentSession {
 				uri: document.uri,
 				languageId: 'typst',
 				version: document.version,
-				text: document.text,
-			},
-		});
+				text: document.text
+			}
+		})
 	}
 }

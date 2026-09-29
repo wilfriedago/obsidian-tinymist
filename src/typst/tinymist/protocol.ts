@@ -7,48 +7,48 @@
  * registration (`crates/tinymist/src/server.rs`), not guessed.
  */
 
-export const JSONRPC_VERSION = '2.0';
+export const JSONRPC_VERSION = '2.0'
 
-export type RequestId = number | string;
+export type RequestId = number | string
 
 export interface RequestMessage {
-	jsonrpc: typeof JSONRPC_VERSION;
-	id: RequestId;
-	method: string;
-	params?: unknown;
+	jsonrpc: typeof JSONRPC_VERSION
+	id: RequestId
+	method: string
+	params?: unknown
 }
 
 export interface NotificationMessage {
-	jsonrpc: typeof JSONRPC_VERSION;
-	method: string;
-	params?: unknown;
+	jsonrpc: typeof JSONRPC_VERSION
+	method: string
+	params?: unknown
 }
 
 export interface ResponseError {
-	code: number;
-	message: string;
-	data?: unknown;
+	code: number
+	message: string
+	data?: unknown
 }
 
 export interface ResponseMessage {
-	jsonrpc: typeof JSONRPC_VERSION;
-	id: RequestId | null;
-	result?: unknown;
-	error?: ResponseError;
+	jsonrpc: typeof JSONRPC_VERSION
+	id: RequestId | null
+	result?: unknown
+	error?: ResponseError
 }
 
-export type IncomingMessage = ResponseMessage | NotificationMessage | RequestMessage;
+export type IncomingMessage = ResponseMessage | NotificationMessage | RequestMessage
 
 export function isResponse(message: IncomingMessage): message is ResponseMessage {
-	return 'id' in message && !('method' in message);
+	return 'id' in message && !('method' in message)
 }
 
 export function isRequest(message: IncomingMessage): message is RequestMessage {
-	return 'id' in message && 'method' in message;
+	return 'id' in message && 'method' in message
 }
 
 export function isNotification(message: IncomingMessage): message is NotificationMessage {
-	return !('id' in message) && 'method' in message;
+	return !('id' in message) && 'method' in message
 }
 
 /* -------------------------------------------------------------------------- */
@@ -57,9 +57,9 @@ export function isNotification(message: IncomingMessage): message is Notificatio
 
 /** Serializes a message with the `Content-Length` header LSP requires. */
 export function encodeMessage(message: RequestMessage | NotificationMessage | ResponseMessage): Buffer {
-	const body = Buffer.from(JSON.stringify(message), 'utf8');
-	const header = Buffer.from(`Content-Length: ${body.byteLength}\r\n\r\n`, 'ascii');
-	return Buffer.concat([header, body]);
+	const body = Buffer.from(JSON.stringify(message), 'utf8')
+	const header = Buffer.from(`Content-Length: ${body.byteLength}\r\n\r\n`, 'ascii')
+	return Buffer.concat([header, body])
 }
 
 /**
@@ -70,70 +70,70 @@ export function encodeMessage(message: RequestMessage | NotificationMessage | Re
  * buffer across `append` calls and yields only whole messages.
  */
 export class MessageDecoder {
-	private buffer: Buffer = Buffer.alloc(0);
+	private buffer: Buffer = Buffer.alloc(0)
 
 	/** Feeds a chunk in and returns every message that is now complete. */
 	append(chunk: Buffer): IncomingMessage[] {
-		this.buffer = this.buffer.byteLength === 0 ? chunk : Buffer.concat([this.buffer, chunk]);
+		this.buffer = this.buffer.byteLength === 0 ? chunk : Buffer.concat([this.buffer, chunk])
 
-		const messages: IncomingMessage[] = [];
+		const messages: IncomingMessage[] = []
 		for (;;) {
-			const headerEnd = this.buffer.indexOf('\r\n\r\n', 0, 'ascii');
+			const headerEnd = this.buffer.indexOf('\r\n\r\n', 0, 'ascii')
 			if (headerEnd === -1) {
-				break;
+				break
 			}
 
-			const header = this.buffer.subarray(0, headerEnd).toString('ascii');
-			const contentLength = parseContentLength(header);
+			const header = this.buffer.subarray(0, headerEnd).toString('ascii')
+			const contentLength = parseContentLength(header)
 			if (contentLength === null) {
 				// Unrecoverable: we cannot know where this message ends, so drop
 				// the bad header and resynchronize on the next one.
-				this.buffer = this.buffer.subarray(headerEnd + 4);
-				continue;
+				this.buffer = this.buffer.subarray(headerEnd + 4)
+				continue
 			}
 
-			const bodyStart = headerEnd + 4;
-			const bodyEnd = bodyStart + contentLength;
+			const bodyStart = headerEnd + 4
+			const bodyEnd = bodyStart + contentLength
 			if (this.buffer.byteLength < bodyEnd) {
-				break;
+				break
 			}
 
-			const body = this.buffer.subarray(bodyStart, bodyEnd).toString('utf8');
-			this.buffer = this.buffer.subarray(bodyEnd);
+			const body = this.buffer.subarray(bodyStart, bodyEnd).toString('utf8')
+			this.buffer = this.buffer.subarray(bodyEnd)
 
 			try {
-				messages.push(JSON.parse(body) as IncomingMessage);
+				messages.push(JSON.parse(body) as IncomingMessage)
 			} catch {
 				// A malformed body is skipped rather than killing the stream.
 			}
 		}
 
-		return messages;
+		return messages
 	}
 
 	reset(): void {
-		this.buffer = Buffer.alloc(0);
+		this.buffer = Buffer.alloc(0)
 	}
 
 	/** Bytes held pending a complete message. Used by tests and diagnostics. */
 	get pendingBytes(): number {
-		return this.buffer.byteLength;
+		return this.buffer.byteLength
 	}
 }
 
 function parseContentLength(header: string): number | null {
 	for (const line of header.split('\r\n')) {
-		const separator = line.indexOf(':');
+		const separator = line.indexOf(':')
 		if (separator === -1) {
-			continue;
+			continue
 		}
 		if (line.slice(0, separator).trim().toLowerCase() !== 'content-length') {
-			continue;
+			continue
 		}
-		const value = Number.parseInt(line.slice(separator + 1).trim(), 10);
-		return Number.isFinite(value) && value >= 0 ? value : null;
+		const value = Number.parseInt(line.slice(separator + 1).trim(), 10)
+		return Number.isFinite(value) && value >= 0 ? value : null
 	}
-	return null;
+	return null
 }
 
 /* -------------------------------------------------------------------------- */
@@ -141,77 +141,77 @@ function parseContentLength(header: string): number | null {
 /* -------------------------------------------------------------------------- */
 
 export interface Position {
-	line: number;
-	character: number;
+	line: number
+	character: number
 }
 
 export interface Range {
-	start: Position;
-	end: Position;
+	start: Position
+	end: Position
 }
 
 export interface Location {
-	uri: string;
-	range: Range;
+	uri: string
+	range: Range
 }
 
 export interface TextEdit {
-	range: Range;
-	newText: string;
+	range: Range
+	newText: string
 }
 
 export const DIAGNOSTIC_SEVERITY = {
 	error: 1,
 	warning: 2,
 	information: 3,
-	hint: 4,
-} as const;
+	hint: 4
+} as const
 
-export type DiagnosticSeverity = (typeof DIAGNOSTIC_SEVERITY)[keyof typeof DIAGNOSTIC_SEVERITY];
+export type DiagnosticSeverity = (typeof DIAGNOSTIC_SEVERITY)[keyof typeof DIAGNOSTIC_SEVERITY]
 
 export interface Diagnostic {
-	range: Range;
-	severity?: DiagnosticSeverity;
-	code?: string | number;
-	source?: string;
-	message: string;
+	range: Range
+	severity?: DiagnosticSeverity
+	code?: string | number
+	source?: string
+	message: string
 }
 
 export interface PublishDiagnosticsParams {
-	uri: string;
-	version?: number;
-	diagnostics: Diagnostic[];
+	uri: string
+	version?: number
+	diagnostics: Diagnostic[]
 }
 
 export interface CompletionItem {
-	label: string;
-	kind?: number;
-	detail?: string;
-	documentation?: string | { kind: string; value: string };
-	sortText?: string;
-	filterText?: string;
-	insertText?: string;
-	insertTextFormat?: 1 | 2;
-	textEdit?: { range: Range; newText: string };
+	label: string
+	kind?: number
+	detail?: string
+	documentation?: string | { kind: string; value: string }
+	sortText?: string
+	filterText?: string
+	insertText?: string
+	insertTextFormat?: 1 | 2
+	textEdit?: { range: Range; newText: string }
 }
 
 export interface CompletionList {
-	isIncomplete: boolean;
-	items: CompletionItem[];
+	isIncomplete: boolean
+	items: CompletionItem[]
 }
 
 export interface Hover {
-	contents: string | { kind: string; value: string } | (string | { kind: string; value: string })[];
-	range?: Range;
+	contents: string | { kind: string; value: string } | (string | { kind: string; value: string })[]
+	range?: Range
 }
 
 export interface DocumentSymbol {
-	name: string;
-	detail?: string;
-	kind: number;
-	range: Range;
-	selectionRange: Range;
-	children?: DocumentSymbol[];
+	name: string
+	detail?: string
+	kind: number
+	range: Range
+	selectionRange: Range
+	children?: DocumentSymbol[]
 }
 
 /* -------------------------------------------------------------------------- */
@@ -231,8 +231,8 @@ export const TINYMIST_NOTIFICATION = {
 	/** A preview task has ended and its client state should be torn down. */
 	previewDispose: 'tinymist/preview/dispose',
 	/** Document outline updates for the active preview. */
-	documentOutline: 'tinymist/documentOutline',
-} as const;
+	documentOutline: 'tinymist/documentOutline'
+} as const
 
 /** Commands invoked through `workspace/executeCommand`. */
 export const TINYMIST_COMMAND = {
@@ -243,37 +243,37 @@ export const TINYMIST_COMMAND = {
 	getServerInfo: 'tinymist.getServerInfo',
 	getResources: 'tinymist.getResources',
 	pinMain: 'tinymist.pinMain',
-	focusMain: 'tinymist.focusMain',
-} as const;
+	focusMain: 'tinymist.focusMain'
+} as const
 
 export interface CompileStatusParams {
-	status: 'compiling' | 'compileSuccess' | 'compileError';
-	path: string;
-	pageCount?: number;
+	status: 'compiling' | 'compileSuccess' | 'compileError'
+	path: string
+	pageCount?: number
 }
 
 /** Payload of `tinymist/preview/scrollSource`: where to put the cursor. */
 export interface PreviewJumpInfo {
-	filepath: string;
+	filepath: string
 	/** `[line, character]`, both zero-based. `null` when unknown. */
-	start: [number, number] | null;
-	end: [number, number] | null;
+	start: [number, number] | null
+	end: [number, number] | null
 }
 
 /** Result of `tinymist.doStartPreview`. */
 export interface StartPreviewResult {
-	staticServerPort?: number;
-	staticServerAddr?: string;
-	dataPlanePort?: number;
-	isPrimary?: boolean;
+	staticServerPort?: number
+	staticServerAddr?: string
+	dataPlanePort?: number
+	isPrimary?: boolean
 }
 
 /** Argument to `tinymist.scrollPreview` (source -> preview). */
 export interface PreviewScrollRequest {
-	event: 'panelScrollTo' | 'changeCursorPosition';
-	filepath: string;
-	line: number;
-	character: number;
+	event: 'panelScrollTo' | 'changeCursorPosition'
+	filepath: string
+	line: number
+	character: number
 }
 
 /**
@@ -281,14 +281,14 @@ export interface PreviewScrollRequest {
  * for a preview-to-source jump when `customizedShowDocument` is off.
  */
 export interface ShowDocumentParams {
-	uri: string;
-	external?: boolean;
-	takeFocus?: boolean;
-	selection?: Range;
+	uri: string
+	external?: boolean
+	takeFocus?: boolean
+	selection?: Range
 }
 
 /** Single-document result shape of the `tinymist.export*` commands. */
 export interface ExportResult {
-	path: string | null;
-	data: string | null;
+	path: string | null
+	data: string | null
 }

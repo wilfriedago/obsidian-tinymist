@@ -1,12 +1,7 @@
-import {
-	PluginSettingTab,
-	type App,
-	type Plugin,
-	type SettingDefinitionItem,
-} from 'obsidian';
+import { PluginSettingTab, type App, type Plugin, type SettingDefinitionItem } from 'obsidian'
 
-import { LOG_LEVELS } from '../shared/logging';
-import { isSettingKey, type TypstSettings } from './settings';
+import { LOG_LEVELS } from '../shared/logging'
+import { isSettingKey, type TypstSettings } from './settings'
 
 /**
  * The settings screen, defined declaratively.
@@ -26,26 +21,26 @@ import { isSettingKey, type TypstSettings } from './settings';
  */
 
 export interface SettingsTabHost {
-	getSettings(): TypstSettings;
-	updateSettings(patch: Partial<TypstSettings>): Promise<void>;
+	getSettings(): TypstSettings
+	updateSettings(patch: Partial<TypstSettings>): Promise<void>
 	/** Restarts Tinymist and resolves once it is ready or has failed. */
-	restartServer(): Promise<void>;
+	restartServer(): Promise<void>
 	/** Human-readable server state for the status line. */
-	describeServerState(): string;
+	describeServerState(): string
 	/** Detected Tinymist version, or `null` when it is not running. */
-	getDetectedVersion(): string | null;
-	getDetectedTypstVersion(): string | null;
+	getDetectedVersion(): string | null
+	getDetectedTypstVersion(): string | null
 	/** Where the executable was found, for the status line. */
-	describeExecutable(): string;
+	describeExecutable(): string
 }
 
 export class TypstSettingTab extends PluginSettingTab {
 	constructor(
 		app: App,
 		plugin: Plugin,
-		private readonly host: SettingsTabHost,
+		private readonly host: SettingsTabHost
 	) {
-		super(app, plugin);
+		super(app, plugin)
 	}
 
 	/**
@@ -56,7 +51,7 @@ export class TypstSettingTab extends PluginSettingTab {
 	 * to its `defaultValue`.
 	 */
 	override getControlValue(key: string): unknown {
-		return isSettingKey(key) ? this.host.getSettings()[key] : undefined;
+		return isSettingKey(key) ? this.host.getSettings()[key] : undefined
 	}
 
 	/** Writes through the runtime, so a change still triggers its side effects. */
@@ -64,12 +59,12 @@ export class TypstSettingTab extends PluginSettingTab {
 		if (!isSettingKey(key)) {
 			// Nothing this plugin owns; refuse rather than write an unknown key
 			// into `data.json`.
-			return;
+			return
 		}
 
-		await this.host.updateSettings({ [key]: value });
+		await this.host.updateSettings({ [key]: value })
 		// Several settings change what other rows should show or say.
-		this.update();
+		this.update()
 	}
 
 	override getSettingDefinitions(): SettingDefinitionItem[] {
@@ -79,8 +74,8 @@ export class TypstSettingTab extends PluginSettingTab {
 			this.previewGroup(),
 			this.editorGroup(),
 			this.exportGroup(),
-			this.advancedGroup(),
-		];
+			this.advancedGroup()
+		]
 	}
 
 	/* ---------------------------------------------------------------------- */
@@ -97,8 +92,8 @@ export class TypstSettingTab extends PluginSettingTab {
 				control: {
 					type: 'text',
 					key: 'tinymistPath',
-					placeholder: '/opt/homebrew/bin/tinymist',
-				},
+					placeholder: '/opt/homebrew/bin/tinymist'
+				}
 			},
 			{
 				name: 'Language server',
@@ -106,15 +101,15 @@ export class TypstSettingTab extends PluginSettingTab {
 				aliases: ['restart', 'reload', 'version'],
 				action: (_el, _index) => {
 					void this.host.restartServer().finally(() => {
-						this.update();
-					});
-				},
-			},
-		];
+						this.update()
+					})
+				}
+			}
+		]
 	}
 
 	private projectGroup(): SettingDefinitionItem {
-		const isCustom = this.host.getSettings().projectRootStrategy === 'custom';
+		const isCustom = this.host.getSettings().projectRootStrategy === 'custom'
 
 		return {
 			type: 'group',
@@ -130,9 +125,9 @@ export class TypstSettingTab extends PluginSettingTab {
 						options: {
 							auto: 'Automatic',
 							vault: 'Always the vault root',
-							custom: 'A folder I choose',
-						},
-					},
+							custom: 'A folder I choose'
+						}
+					}
 				},
 				{
 					name: 'Project folder',
@@ -144,11 +139,11 @@ export class TypstSettingTab extends PluginSettingTab {
 					control: {
 						type: 'folder',
 						key: 'customProjectRoot',
-						placeholder: 'papers/thesis',
-					},
-				},
-			],
-		};
+						placeholder: 'papers/thesis'
+					}
+				}
+			]
+		}
 	}
 
 	private previewGroup(): SettingDefinitionItem {
@@ -162,8 +157,8 @@ export class TypstSettingTab extends PluginSettingTab {
 					control: {
 						type: 'dropdown',
 						key: 'previewRefresh',
-						options: { onType: 'As you type', onSave: 'On save' },
-					},
+						options: { onType: 'As you type', onSave: 'On save' }
+					}
 				},
 				{
 					name: 'Theme',
@@ -175,30 +170,30 @@ export class TypstSettingTab extends PluginSettingTab {
 						options: {
 							'follow-obsidian': 'Follow the app',
 							light: 'Light',
-							dark: 'Dark',
-						},
-					},
+							dark: 'Dark'
+						}
+					}
 				},
 				{
 					name: 'Follow the active document',
 					desc: 'A new preview re-points itself at whichever Typst document you switch to. Pin a preview from its own toolbar to hold it on one document.',
 					aliases: ['switch', 'pin', 'active', 'track'],
-					control: { type: 'toggle', key: 'previewFollowsActiveDocument' },
+					control: { type: 'toggle', key: 'previewFollowsActiveDocument' }
 				},
 				{
 					name: 'Render only visible pages',
 					desc: 'Send and draw the pages on screen rather than the whole document. Much faster on a long document; turn it off if the preview ever renders incorrectly.',
 					aliases: ['performance', 'partial', 'speed', 'large'],
-					control: { type: 'toggle', key: 'previewPartialRendering' },
+					control: { type: 'toggle', key: 'previewPartialRendering' }
 				},
 				{
 					name: 'Sync with the editor',
 					desc: 'Scroll the preview to the cursor, and move the cursor when you select rendered content.',
 					aliases: ['scroll', 'jump', 'navigate'],
-					control: { type: 'toggle', key: 'previewSyncEnabled' },
-				},
-			],
-		};
+					control: { type: 'toggle', key: 'previewSyncEnabled' }
+				}
+			]
+		}
 	}
 
 	private editorGroup(): SettingDefinitionItem {
@@ -210,16 +205,16 @@ export class TypstSettingTab extends PluginSettingTab {
 					name: 'Show diagnostics',
 					desc: 'Underline compiler errors and warnings while you edit.',
 					aliases: ['errors', 'warnings', 'lint'],
-					control: { type: 'toggle', key: 'showDiagnostics' },
+					control: { type: 'toggle', key: 'showDiagnostics' }
 				},
 				{
 					name: 'Enable the formatter',
 					desc: 'Allow the "Format document" command to reformat Typst source.',
 					aliases: ['format', 'typstyle'],
-					control: { type: 'toggle', key: 'formatterEnabled' },
-				},
-			],
-		};
+					control: { type: 'toggle', key: 'formatterEnabled' }
+				}
+			]
+		}
 	}
 
 	private exportGroup(): SettingDefinitionItem {
@@ -234,17 +229,17 @@ export class TypstSettingTab extends PluginSettingTab {
 					control: {
 						type: 'folder',
 						key: 'exportFolder',
-						placeholder: 'Beside the document',
-					},
+						placeholder: 'Beside the document'
+					}
 				},
 				{
 					name: 'Replace existing PDFs',
 					desc: 'When off, exporting writes a numbered copy instead of overwriting a PDF that is already there.',
 					aliases: ['overwrite', 'clobber'],
-					control: { type: 'toggle', key: 'exportOverwrite' },
-				},
-			],
-		};
+					control: { type: 'toggle', key: 'exportOverwrite' }
+				}
+			]
+		}
 	}
 
 	private advancedGroup(): SettingDefinitionItem {
@@ -256,7 +251,7 @@ export class TypstSettingTab extends PluginSettingTab {
 					name: 'Use system fonts',
 					desc: 'Let Typst use the fonts installed on this computer.',
 					aliases: ['fonts', 'typeface'],
-					control: { type: 'toggle', key: 'systemFonts' },
+					control: { type: 'toggle', key: 'systemFonts' }
 				},
 				{
 					name: 'Logging',
@@ -265,37 +260,32 @@ export class TypstSettingTab extends PluginSettingTab {
 					control: {
 						type: 'dropdown',
 						key: 'logLevel',
-						options: Object.fromEntries(
-							LOG_LEVELS.map((level) => [
-								level,
-								level === 'silent' ? 'Off' : capitalize(level),
-							]),
-						),
-					},
-				},
-			],
-		};
+						options: Object.fromEntries(LOG_LEVELS.map((level) => [level, level === 'silent' ? 'Off' : capitalize(level)]))
+					}
+				}
+			]
+		}
 	}
 
 	/** The server's state and detected versions, shown under the restart row. */
 	private statusText(): string {
-		const parts = [this.host.describeServerState()];
+		const parts = [this.host.describeServerState()]
 
-		const version = this.host.getDetectedVersion();
+		const version = this.host.getDetectedVersion()
 		if (version) {
-			parts.push(`Tinymist ${version}`);
+			parts.push(`Tinymist ${version}`)
 		}
 
-		const typst = this.host.getDetectedTypstVersion();
+		const typst = this.host.getDetectedTypstVersion()
 		if (typst) {
-			parts.push(`Typst ${typst}`);
+			parts.push(`Typst ${typst}`)
 		}
 
-		parts.push(this.host.describeExecutable());
-		return parts.join(' · ');
+		parts.push(this.host.describeExecutable())
+		return parts.join(' · ')
 	}
 }
 
 function capitalize(value: string): string {
-	return value.charAt(0).toUpperCase() + value.slice(1);
+	return value.charAt(0).toUpperCase() + value.slice(1)
 }

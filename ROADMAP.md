@@ -6,15 +6,15 @@ commitment. Items move when someone does the work.
 
 **How to read this**
 
-| | |
-| --- | --- |
-| **Next** | Decided, and the design is clear enough to start |
+|                 |                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------- |
+| **Next**        | Decided, and the design is clear enough to start                                        |
 | **Considering** | Wanted, but a question needs answering first — usually "does Tinymist already do this?" |
-| **Not planned** | Deliberately out of scope, with the reason |
+| **Not planned** | Deliberately out of scope, with the reason                                              |
 
 Where an entry says **verified**, the mechanism was exercised against a real
 Tinymist and the observed output is quoted. That distinction matters: several
-items below look like features to build and are really features to *surface*.
+items below look like features to build and are really features to _surface_.
 
 The guiding rule is the one the plugin was built on: **Tinymist owns Typst, the
 plugin owns Obsidian.** Anything the language server can already do should be
@@ -32,7 +32,7 @@ actually hit moves faster than what looks good on a list.
 ### Multi-file projects
 
 The largest gap between what the plugin does and how people actually write long
-documents. Open `chapter-3.typ` today and Tinymist compiles *that file alone*:
+documents. Open `chapter-3.typ` today and Tinymist compiles _that file alone_:
 the preview shows a fragment, and diagnostics complain about every definition
 that lives in `main.typ`. A thesis is the shape of document this plugin exists
 for, and it is the shape that works least well.
@@ -74,7 +74,7 @@ it to the `tinymist/compileStatus` notification the status bar already
 consumes. **Verified**, for `basic.typ`:
 
 ```json
-{"chars": 407, "cjkChars": 0, "spaces": 60, "words": 61}
+{ "chars": 407, "cjkChars": 0, "spaces": 60, "words": 61 }
 ```
 
 People writing to a length care about this more than almost anything else the
@@ -168,7 +168,7 @@ The strategically largest item here, and the least certain.
 not appear in the graph, and they have no backlinks. The plugin's claim is that
 Typst becomes a first-class document type in Obsidian, and this is the part of
 that claim which is not yet true. Everything else on this roadmap makes the
-editor better; this is what would make the *vault* whole.
+editor better; this is what would make the _vault_ whole.
 
 It is listed here rather than under Next because feasibility is genuinely
 unknown. Obsidian's link resolution, backlink index, and graph are built around
@@ -277,7 +277,7 @@ useful. Covered in [the architecture notes](docs/architecture/overview.md).
 
 Rendering Typst in a Markdown code block is a genuinely different product, and
 [Typst Renderer](https://github.com/fenjalien/obsidian-typst) already does it.
-This plugin is for documents that *are* Typst.
+This plugin is for documents that _are_ Typst.
 
 ### Semantic tokens
 

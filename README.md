@@ -33,15 +33,15 @@ Your papers, theses, and reports live beside your notes. Not in another app.
 
 ## What you get
 
-| | |
-| --- | --- |
-| **A real editor** | Syntax highlighting, completion, hover docs, go-to-definition, symbols, folding, and formatting — answered by the Typst compiler itself, not by guesswork. |
-| **Errors as you type** | Compiler diagnostics underlined in place, with the real message. No compile-and-squint cycle. |
-| **Live preview in your workspace** | The rendered document in an ordinary Obsidian leaf. Split it, move it, pop it out. It updates as you type. |
-| **Click to navigate** | Click the rendered page to jump to the source that produced it. Move the caret to scroll the preview. Both directions. |
-| **PDFs that are just files** | Export writes a normal PDF into your vault. Obsidian's own viewer opens it, exactly like any other PDF. |
-| **Real Typst projects** | A folder with a `typst.toml`, a template, a bibliography, and figures works the way Typst expects. |
-| **Offline** | No account, no cloud, no telemetry, and no network requests. |
+|                                    |                                                                                                                                                            |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A real editor**                  | Syntax highlighting, completion, hover docs, go-to-definition, symbols, folding, and formatting — answered by the Typst compiler itself, not by guesswork. |
+| **Errors as you type**             | Compiler diagnostics underlined in place, with the real message. No compile-and-squint cycle.                                                              |
+| **Live preview in your workspace** | The rendered document in an ordinary Obsidian leaf. Split it, move it, pop it out. It updates as you type.                                                 |
+| **Click to navigate**              | Click the rendered page to jump to the source that produced it. Move the caret to scroll the preview. Both directions.                                     |
+| **PDFs that are just files**       | Export writes a normal PDF into your vault. Obsidian's own viewer opens it, exactly like any other PDF.                                                    |
+| **Real Typst projects**            | A folder with a `typst.toml`, a template, a bibliography, and figures works the way Typst expects.                                                         |
+| **Offline**                        | No account, no cloud, no telemetry, and no network requests.                                                                                               |
 
 ## Install
 
@@ -53,12 +53,12 @@ Your papers, theses, and reports live beside your notes. Not in another app.
 you install separately — Obsidian's developer policies do not allow a plugin to
 install or update its own dependencies.
 
-| Platform | Command |
-| --- | --- |
-| macOS / Linux | `brew install tinymist` |
-| Any | `cargo install tinymist-cli` |
-| Windows | `scoop install tinymist` · `winget install Myriad-Dreamin.tinymist` |
-| Manual | [GitHub releases](https://github.com/Myriad-Dreamin/tinymist/releases) |
+| Platform      | Command                                                                |
+| ------------- | ---------------------------------------------------------------------- |
+| macOS / Linux | `brew install tinymist`                                                |
+| Any           | `cargo install tinymist-cli`                                           |
+| Windows       | `scoop install tinymist` · `winget install Myriad-Dreamin.tinymist`    |
+| Manual        | [GitHub releases](https://github.com/Myriad-Dreamin/tinymist/releases) |
 
 Check it worked:
 
@@ -84,15 +84,15 @@ what it is doing.
 Press the **book** button in the editor's tab bar to open the preview beside
 your source. Everything else lives in the command palette:
 
-| Command | |
-| --- | --- |
-| **Typst: Open preview** | Show the rendered document |
-| **Typst: Toggle preview** | Show or hide it |
-| **Typst: Export PDF** | Compile and write a PDF into the vault |
-| **Typst: Format document** | Reformat the source |
-| **Typst: Create new Typst file** | Add a `.typ` file where new notes go |
-| **Typst: Show project root** | Which folder this document compiles against |
-| **Typst: Restart language server** | Restart Tinymist |
+| Command                            |                                             |
+| ---------------------------------- | ------------------------------------------- |
+| **Typst: Open preview**            | Show the rendered document                  |
+| **Typst: Toggle preview**          | Show or hide it                             |
+| **Typst: Export PDF**              | Compile and write a PDF into the vault      |
+| **Typst: Format document**         | Reformat the source                         |
+| **Typst: Create new Typst file**   | Add a `.typ` file where new notes go        |
+| **Typst: Show project root**       | Which folder this document compiles against |
+| **Typst: Restart language server** | Restart Tinymist                            |
 
 No default hotkeys are set, so nothing collides with yours. Bind your own under
 **Settings → Hotkeys**.
@@ -107,13 +107,13 @@ files get their own entry right beside it.
 
 ### The status bar
 
-| | |
-| --- | --- |
-| **Typst: ready** | Running; the document compiles |
-| **Typst: compiling** | Working |
-| **Typst: 2 errors** | Problems, underlined in the editor |
-| **Typst: disconnected** | Tinymist stopped — select to restart |
-| **Typst: unavailable** | It could not start — select for the reason |
+|                         |                                            |
+| ----------------------- | ------------------------------------------ |
+| **Typst: ready**        | Running; the document compiles             |
+| **Typst: compiling**    | Working                                    |
+| **Typst: 2 errors**     | Problems, underlined in the editor         |
+| **Typst: disconnected** | Tinymist stopped — select to restart       |
+| **Typst: unavailable**  | It could not start — select for the reason |
 
 ## Not only papers
 
@@ -128,7 +128,7 @@ this previews.
 
 ## Projects
 
-Typst resolves imports and absolute paths against a *project root*, which is
+Typst resolves imports and absolute paths against a _project root_, which is
 not necessarily your vault root. By default the root is the nearest folder
 containing a `typst.toml`, and otherwise the document's own folder:
 
@@ -164,19 +164,19 @@ a PDF renderer — opening any PDF uses Obsidian's own viewer.
 
 ## Settings
 
-| Setting | Default | |
-| --- | --- | --- |
-| Tinymist executable | empty | Empty means "find it automatically" |
-| Project root | Automatic | See [Projects](#projects) |
-| Preview refresh | As you type | Or on save |
-| Preview theme | Follow the app | Light, dark, or follow Obsidian |
-| Sync with the editor | on | Click the preview to move the caret, and back |
-| Show diagnostics | on | Underline compiler errors |
-| Enable the formatter | on | |
-| PDF folder | empty | Empty means "beside the document" |
-| Replace existing PDFs | off | |
-| Use system fonts | on | |
-| Logging | Off | Raise to `debug` when reporting a problem |
+| Setting               | Default        |                                               |
+| --------------------- | -------------- | --------------------------------------------- |
+| Tinymist executable   | empty          | Empty means "find it automatically"           |
+| Project root          | Automatic      | See [Projects](#projects)                     |
+| Preview refresh       | As you type    | Or on save                                    |
+| Preview theme         | Follow the app | Light, dark, or follow Obsidian               |
+| Sync with the editor  | on             | Click the preview to move the caret, and back |
+| Show diagnostics      | on             | Underline compiler errors                     |
+| Enable the formatter  | on             |                                               |
+| PDF folder            | empty          | Empty means "beside the document"             |
+| Replace existing PDFs | off            |                                               |
+| Use system fonts      | on             |                                               |
+| Logging               | Off            | Raise to `debug` when reporting a problem     |
 
 ## Privacy and network use
 
@@ -216,12 +216,12 @@ a document you are previewing.
 Obsidian's review counts network calls by pattern-matching the built `main.js`.
 None of the matches is a request to a remote server:
 
-| What the scanner sees | What it is |
-| --- | --- |
-| `http://127.0.0.1:<port>/` | The loopback preview server on your own machine |
-| `https://github.com/...` | A URL in the build banner comment. Not fetched |
-| `"http://"`, `"https://"` | String literals in the bundled Typst grammar, used to recognize links while highlighting |
-| `.open(` | `DocumentSession.open()`, the plugin's own method. The pattern also matches `XMLHttpRequest.open`, which is not used |
+| What the scanner sees      | What it is                                                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `http://127.0.0.1:<port>/` | The loopback preview server on your own machine                                                                      |
+| `https://github.com/...`   | A URL in the build banner comment. Not fetched                                                                       |
+| `"http://"`, `"https://"`  | String literals in the bundled Typst grammar, used to recognize links while highlighting                             |
+| `.open(`                   | `DocumentSession.open()`, the plugin's own method. The pattern also matches `XMLHttpRequest.open`, which is not used |
 
 Confirm it yourself:
 
@@ -286,14 +286,14 @@ Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md)
 for the development setup, and [SECURITY.md](SECURITY.md) to report a
 vulnerability privately.
 
-| | |
-| --- | --- |
-| [Roadmap](ROADMAP.md) | What is planned, what is not, and why |
-| [Architecture](docs/architecture/overview.md) | How the pieces fit, and why |
-| [Research](docs/architecture/research.md) | Evidence behind the design decisions |
-| [Testing](docs/testing.md) | The automated suite and the manual pass |
-| [Compliance](docs/community-plugin-compliance.md) | Against Obsidian's developer policies |
-| [Risks](docs/risks.md) | Known weak points, honestly |
+|                                                   |                                         |
+| ------------------------------------------------- | --------------------------------------- |
+| [Roadmap](ROADMAP.md)                             | What is planned, what is not, and why   |
+| [Architecture](docs/architecture/overview.md)     | How the pieces fit, and why             |
+| [Research](docs/architecture/research.md)         | Evidence behind the design decisions    |
+| [Testing](docs/testing.md)                        | The automated suite and the manual pass |
+| [Compliance](docs/community-plugin-compliance.md) | Against Obsidian's developer policies   |
+| [Risks](docs/risks.md)                            | Known weak points, honestly             |
 
 ## Credits
 
