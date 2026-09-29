@@ -1,6 +1,19 @@
-allowBuilds:
-  esbuild: true
-# pnpm 10 blocks dependency install scripts unless they are listed here.
+# pnpm blocks dependency install scripts unless they are allowed here.
 # esbuild needs its postinstall to place the platform-specific binary, so the
 # build cannot run without it. Declaring it keeps CI reproducible instead of
 # depending on an interactive `pnpm approve-builds`.
+allowBuilds:
+  esbuild: true
+
+# Obsidian supplies CodeMirror at runtime and every `@codemirror/*` import is
+# external to the bundle, so the plugin always runs against the app's copies:
+# the `@codemirror/state` and `@codemirror/view` pinned by `obsidian`'s peer
+# dependencies. `codemirror-lang-typst` asks for newer ones, which would install
+# a second copy for tests and the typechecker only. Two copies of
+# `@codemirror/state` break everything keyed on its identity (facets, undo
+# history, annotations), so force the tree onto Obsidian's. `@codemirror/lint`
+# 6.9.6 and later need a newer `@codemirror/view`, hence its pin.
+overrides:
+  '@codemirror/state': 6.5.0
+  '@codemirror/view': 6.38.6
+  '@codemirror/lint': 6.9.5
