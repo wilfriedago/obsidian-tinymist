@@ -95,6 +95,7 @@ pnpm lint              # oxlint, including the Obsidian review rules
 pnpm test              # everything
 pnpm test:unit         # no Tinymist needed
 pnpm test:integration  # drives a real Tinymist
+pnpm test:watch        # vitest in watch mode
 pnpm validate:manifest
 ```
 
@@ -107,8 +108,10 @@ oxlint is the only linter. It runs its own rules plus the
 `scripts/oxlint-obsidianmd.mjs`. Six of those rules need the TypeScript
 checker, which oxlint's JS plugin host does not provide, so that module builds
 a TypeScript program from `tsconfig.json` and gives those rules the parser
-services they expect. When upgrading `eslint-plugin-obsidianmd`, check its
-rule list against the one in that module.
+services they expect. That module imports files from inside the plugin's
+`dist/`, which is not a public API, so `eslint-plugin-obsidianmd` is pinned to
+an exact version. When upgrading it, check its rule list against the one in
+that module.
 
 ## Picking something up
 
