@@ -91,8 +91,7 @@ pnpm dev:hot-reload    # install the live-reload plugin into test-vault/
 pnpm dev:check         # typecheck in watch mode; esbuild does not typecheck
 pnpm build             # typecheck, then production build into dist/
 pnpm typecheck
-pnpm lint              # oxlint, including 23 Obsidian review rules
-pnpm lint:obsidian     # the 6 Obsidian rules that need type information
+pnpm lint              # oxlint, including the Obsidian review rules
 pnpm test              # everything
 pnpm test:unit         # no Tinymist needed
 pnpm test:integration  # drives a real Tinymist
@@ -101,14 +100,15 @@ pnpm validate:manifest
 
 All of these run in CI on Node 20, 22 and 24.
 
-### Why two linters
+### How the Obsidian rules run
 
-oxlint is the linter. It runs its own rules plus most of
-`eslint-plugin-obsidianmd` through its `jsPlugins` support. Six of those rules
-need the TypeScript checker, which oxlint's plugin host does not provide, so a
-minimal ESLint config exists for exactly those six and nothing else. If oxlint
-gains type-aware plugins, `eslint.config.mts` and the `eslint` dependency can
-be deleted outright.
+oxlint is the only linter. It runs its own rules plus the
+`eslint-plugin-obsidianmd` review rules, loaded through
+`scripts/oxlint-obsidianmd.mjs`. Six of those rules need the TypeScript
+checker, which oxlint's JS plugin host does not provide, so that module builds
+a TypeScript program from `tsconfig.json` and gives those rules the parser
+services they expect. When upgrading `eslint-plugin-obsidianmd`, check its
+rule list against the one in that module.
 
 ## Picking something up
 
@@ -191,7 +191,7 @@ does not.
 
 - Branch from `main`.
 - Keep the change focused; unrelated cleanups are much easier to review apart.
-- `pnpm lint && pnpm lint:obsidian && pnpm typecheck && pnpm test` before
+- `pnpm lint && pnpm typecheck && pnpm test` before
   pushing. CI runs all of it anyway.
 - Write the commit message for someone reading it in a year: what changed, and
   why it was the right call. If you rejected an alternative, say which and why.

@@ -130,9 +130,6 @@ jobs:
       - name: Lint
         run: pnpm run lint
 
-      - name: Lint against the Obsidian review rules
-        run: pnpm run lint:obsidian
-
       - name: Typecheck
         run: pnpm run typecheck
 

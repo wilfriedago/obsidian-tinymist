@@ -217,17 +217,20 @@ triggers, such as restarting Tinymist.
   directory _is_ the installable plugin folder and can be symlinked straight
   into a vault. The CodeMirror, Lezer, `obsidian`, `electron` and Node builtin
   modules are externals.
-- **Linting:** oxlint (`pnpm lint`) is the linter. It runs its own correctness
-  and suspicious rule sets _and_ 23 of the `eslint-plugin-obsidianmd` review
-  rules, loaded through oxlint's `jsPlugins` support (which is ESLint v9
-  compatible).
+- **Linting:** oxlint (`pnpm lint`) is the only linter. It runs its own
+  correctness and suspicious rule sets _and_ the `eslint-plugin-obsidianmd`
+  review rules, loaded through oxlint's `jsPlugins` support (which is ESLint v9
+  compatible) from `scripts/oxlint-obsidianmd.mjs`.
   - Six obsidianmd rules call `getParserServices()` and need the type checker,
     which oxlint's JS plugin host does not provide: `prefer-instanceof`,
     `prefer-create-el`, `no-unsupported-api`, `no-view-references-in-plugin`,
-    `no-plugin-as-component`, and `prefer-file-manager-trash-file`. A minimal
-    ESLint config (`pnpm lint:obsidian`) exists for exactly those six and
-    nothing else. Both run in CI. When oxlint gains type-aware JS plugins,
-    `eslint.config.mts` and the `eslint` dependency can be deleted.
+    `no-plugin-as-component`, and `prefer-file-manager-trash-file`. The module
+    builds a TypeScript program from `tsconfig.json` with the TypeScript 5
+    compiler the plugin itself depends on, and hands those rules the parser
+    services `@typescript-eslint/parser` would have. They run on `src/` only.
+  - The module imports the plugin's rules directly rather than its index,
+    because the index also builds ESLint presets that load `typescript-eslint`,
+    which refuses to run alongside TypeScript 7.
   - `unicorn/no-array-sort` is off: its fix is `toSorted()`, which is ES2023,
     and the build targets ES2021 to match Obsidian's runtime.
   - `no-new` is off: Obsidian's `Notice` is constructed for its side effect.

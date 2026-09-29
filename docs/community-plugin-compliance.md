@@ -5,10 +5,9 @@ directory, checked against the _Developer policies_, _Submission requirements
 for plugins_, _Plugin guidelines_, and the _Manifest_ reference as of
 2026-09-17.
 
-Most of these are enforced mechanically: 23 `eslint-plugin-obsidianmd` rules run
-under oxlint (`pnpm lint`), six type-aware ones under ESLint
-(`pnpm lint:obsidian`), and the manifest rules in
-`scripts/validate-manifest.mjs`. All three run in CI.
+Most of these are enforced mechanically: 29 `eslint-plugin-obsidianmd` rules,
+six of them type-aware, run under oxlint (`pnpm lint`), and the manifest rules
+in `scripts/validate-manifest.mjs`. Both run in CI.
 
 **Status: published.** The plugin is listed in the community directory as
 [`tinymist`](https://community.obsidian.md/plugins/tinymist). Everything below

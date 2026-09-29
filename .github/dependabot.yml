@@ -20,8 +20,6 @@ updates:
           - 'vitest'
           - 'esbuild'
           - '@types/*'
-          - 'globals'
-          - 'jiti'
     ignore:
       # Pinned deliberately: it must match the CodeMirror instance Obsidian
       # itself loads, which is decided by the app, not by this repository.

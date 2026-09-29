@@ -148,7 +148,6 @@ jobs:
           pnpm install --frozen-lockfile
           pnpm run validate:manifest
           pnpm run lint
-          pnpm run lint:obsidian
           pnpm run build
 
       - name: Check the tag matches the manifest

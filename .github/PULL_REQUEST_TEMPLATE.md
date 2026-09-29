@@ -10,7 +10,7 @@ Closes #
 
 <!-- Tick what applies. -->
 
-- [ ] `pnpm lint && pnpm lint:obsidian && pnpm typecheck && pnpm test`
+- [ ] `pnpm lint && pnpm typecheck && pnpm test`
 - [ ] Added a test that fails without this change
 - [ ] Exercised in a real Obsidian vault (say which parts — the automated
       suite cannot reach the UI, and that is where most bugs have been)

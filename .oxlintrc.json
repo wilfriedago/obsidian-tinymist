@@ -57,7 +57,12 @@
     "obsidianmd/sample-names": "error",
     "obsidianmd/settings-tab/no-manual-html-headings": "error",
     "obsidianmd/settings-tab/no-problematic-settings-headings": "error",
-    "obsidianmd/ui/sentence-case": "warn",
+    "obsidianmd/ui/sentence-case": [
+      "warn",
+      {
+        "ignoreWords": ["Typst", "Tinymist"]
+      }
+    ],
     "obsidianmd/validate-license": "error"
   },
   "overrides": [
@@ -72,7 +77,13 @@
             "name": "app",
             "message": "Use this.app from the plugin instance; the global app object is for debugging only."
           }
-        ]
+        ],
+        "obsidianmd/no-plugin-as-component": "error",
+        "obsidianmd/no-unsupported-api": "error",
+        "obsidianmd/no-view-references-in-plugin": "error",
+        "obsidianmd/prefer-create-el": "error",
+        "obsidianmd/prefer-file-manager-trash-file": "error",
+        "obsidianmd/prefer-instanceof": "error"
       }
     },
     {
@@ -126,5 +137,10 @@
       }
     }
   ],
-  "jsPlugins": ["eslint-plugin-obsidianmd"]
+  "jsPlugins": [
+    {
+      "name": "obsidianmd",
+      "specifier": "./scripts/oxlint-obsidianmd.mjs"
+    }
+  ]
 }
