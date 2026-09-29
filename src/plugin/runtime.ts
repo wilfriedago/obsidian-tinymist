@@ -295,8 +295,8 @@ export class TypstRuntime {
 
 		this.plugin.registerEvent(
 			this.app.vault.on('rename', (file, oldPath) => {
-				if (file instanceof TFile && DOCUMENT_EXTENSIONS.has(extensionOf(file.path))) {
-					this.session?.rename(oldPath, file.path)
+				if (file instanceof TFile) {
+					this.onFileRenamed(oldPath, file.path)
 				}
 			})
 		)
@@ -309,6 +309,24 @@ export class TypstRuntime {
 				}
 			})
 		)
+	}
+
+	/**
+	 * A rename can change the extension, so the old path decides. Renaming an
+	 * open `refs.bib` to `refs.txt` has to close it: otherwise Tinymist keeps
+	 * the buffer and citing documents compile against a file that is gone.
+	 */
+	private onFileRenamed(oldPath: VaultPath, newPath: VaultPath): void {
+		if (!DOCUMENT_EXTENSIONS.has(extensionOf(oldPath))) {
+			return
+		}
+		if (DOCUMENT_EXTENSIONS.has(extensionOf(newPath))) {
+			this.session?.rename(oldPath, newPath)
+		} else {
+			this.session?.close(oldPath)
+		}
+		// Tinymist does not retract diagnostics for a URI it stops seeing.
+		this.diagnostics.clear(oldPath)
 	}
 
 	private createManager(host: DesktopHost): TinymistManager {
