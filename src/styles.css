@@ -123,6 +123,255 @@
 	--tinymist-selection-alpha-blurred: 0.18;
 }
 
+/* ---- Search bar --------------------------------------------------------- */
+
+/* CodeMirror's find-and-replace panel, with its base theme's grey gradient
+   buttons and fixed light/dark backgrounds replaced. The layout below is
+   shared; each theme only sets the `--tinymist-search-*` palette, chosen by
+   the `tinymist-search-<theme>` class the editor carries (Settings → Editor →
+   Search bar theme). Themes with two variants follow Obsidian's mode.
+
+   Selectors are one class deeper than CodeMirror's `.ͼ1 .cm-…` rules so they
+   win whatever order the two stylesheets load in. */
+
+.tinymist-editor .cm-editor {
+	.cm-panels {
+		background-color: var(--tinymist-search-bg);
+		color: var(--tinymist-search-fg);
+	}
+
+	.cm-panels.cm-panels-top {
+		border-bottom: 1px solid var(--tinymist-search-border);
+	}
+
+	.cm-panels.cm-panels-bottom {
+		border-top: 1px solid var(--tinymist-search-border);
+	}
+
+	.cm-panel.cm-search {
+		/* Obsidian's checkboxes are drawn from these, so they follow the theme too. */
+		--checkbox-color: var(--tinymist-search-accent);
+		--checkbox-color-hover: var(--tinymist-search-accent);
+		--checkbox-border-color: var(--tinymist-search-muted);
+		--checkbox-border-color-hover: var(--tinymist-search-fg);
+		--checkbox-marker-color: var(--tinymist-search-bg);
+
+		padding: var(--size-4-2) calc(var(--size-4-3) + 1.5em) var(--size-4-2) var(--size-4-3);
+		font-family: var(--font-interface);
+		font-size: var(--font-ui-small);
+	}
+
+	.cm-panel.cm-search input.cm-textfield {
+		height: 26px;
+		margin: 2px var(--size-4-1) 2px 0;
+		padding: 0 var(--size-4-2);
+		border: 1px solid var(--tinymist-search-border);
+		border-radius: var(--radius-s);
+		background-color: var(--tinymist-search-input-bg);
+		color: var(--tinymist-search-fg);
+		font-size: inherit;
+		box-shadow: none;
+		vertical-align: middle;
+	}
+
+	.cm-panel.cm-search input.cm-textfield::placeholder {
+		color: var(--tinymist-search-muted);
+	}
+
+	.cm-panel.cm-search input.cm-textfield:focus {
+		border-color: var(--tinymist-search-accent);
+		box-shadow: 0 0 0 1px var(--tinymist-search-accent);
+		outline: none;
+	}
+
+	.cm-panel.cm-search .cm-button {
+		height: 26px;
+		margin: 2px var(--size-4-1) 2px 0;
+		padding: 0 var(--size-4-3);
+		border: 1px solid var(--tinymist-search-border);
+		border-radius: var(--radius-s);
+		background-color: var(--tinymist-search-button-bg);
+		background-image: none;
+		color: var(--tinymist-search-fg);
+		font-size: inherit;
+		box-shadow: none;
+		cursor: pointer;
+		vertical-align: middle;
+	}
+
+	.cm-panel.cm-search .cm-button:hover {
+		background-color: var(--tinymist-search-button-hover);
+	}
+
+	.cm-panel.cm-search .cm-button:active {
+		background-image: none;
+		border-color: var(--tinymist-search-accent);
+	}
+
+	.cm-panel.cm-search label {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--size-4-1);
+		margin-right: var(--size-4-3);
+		color: var(--tinymist-search-muted);
+		font-size: inherit;
+		vertical-align: middle;
+	}
+
+	.cm-panel.cm-search label input[type='checkbox'] {
+		margin: 0;
+	}
+
+	.cm-panel.cm-search button[name='close'] {
+		padding: 0 var(--size-4-1);
+		border: none;
+		background: transparent;
+		color: var(--tinymist-search-muted);
+		font-size: var(--font-ui-medium);
+		box-shadow: none;
+		cursor: pointer;
+	}
+
+	.cm-panel.cm-search button[name='close']:hover {
+		color: var(--tinymist-search-fg);
+	}
+
+	/* Matches in the text. Tinted rather than filled, so the source stays
+	   readable under them whatever the editor's own background is. */
+	.cm-content .cm-searchMatch {
+		background-color: color-mix(in srgb, var(--tinymist-search-match) 30%, transparent);
+		outline: 1px solid color-mix(in srgb, var(--tinymist-search-match) 70%, transparent);
+	}
+
+	.cm-content .cm-searchMatch.cm-searchMatch-selected {
+		background-color: color-mix(in srgb, var(--tinymist-search-match-selected) 50%, transparent);
+		outline-color: var(--tinymist-search-match-selected);
+	}
+}
+
+/* Obsidian: the app's own variables, so it matches whatever theme is installed. */
+.tinymist-editor.tinymist-search-obsidian {
+	--tinymist-search-bg: var(--background-secondary);
+	--tinymist-search-fg: var(--text-normal);
+	--tinymist-search-muted: var(--text-muted);
+	--tinymist-search-input-bg: var(--background-modifier-form-field);
+	--tinymist-search-border: var(--background-modifier-border);
+	--tinymist-search-accent: var(--interactive-accent);
+	--tinymist-search-button-bg: var(--interactive-normal);
+	--tinymist-search-button-hover: var(--interactive-hover);
+	--tinymist-search-match: var(--color-yellow);
+	--tinymist-search-match-selected: var(--color-orange);
+}
+
+/* Catppuccin Latte (light) and Mocha (dark). */
+.theme-light .tinymist-editor.tinymist-search-catppuccin {
+	--tinymist-search-bg: #e6e9ef;
+	--tinymist-search-fg: #4c4f69;
+	--tinymist-search-muted: #6c6f85;
+	--tinymist-search-input-bg: #eff1f5;
+	--tinymist-search-border: #bcc0cc;
+	--tinymist-search-accent: #8839ef;
+	--tinymist-search-button-bg: #ccd0da;
+	--tinymist-search-button-hover: #bcc0cc;
+	--tinymist-search-match: #df8e1d;
+	--tinymist-search-match-selected: #fe640b;
+}
+
+.theme-dark .tinymist-editor.tinymist-search-catppuccin {
+	--tinymist-search-bg: #181825;
+	--tinymist-search-fg: #cdd6f4;
+	--tinymist-search-muted: #a6adc8;
+	--tinymist-search-input-bg: #1e1e2e;
+	--tinymist-search-border: #45475a;
+	--tinymist-search-accent: #cba6f7;
+	--tinymist-search-button-bg: #313244;
+	--tinymist-search-button-hover: #45475a;
+	--tinymist-search-match: #f9e2af;
+	--tinymist-search-match-selected: #fab387;
+}
+
+/* Dracula, which has no light variant. */
+.tinymist-editor.tinymist-search-dracula {
+	--tinymist-search-bg: #21222c;
+	--tinymist-search-fg: #f8f8f2;
+	--tinymist-search-muted: #6272a4;
+	--tinymist-search-input-bg: #282a36;
+	--tinymist-search-border: #44475a;
+	--tinymist-search-accent: #bd93f9;
+	--tinymist-search-button-bg: #44475a;
+	--tinymist-search-button-hover: #6272a4;
+	--tinymist-search-match: #f1fa8c;
+	--tinymist-search-match-selected: #ffb86c;
+}
+
+/* Monokai, which has no light variant. */
+.tinymist-editor.tinymist-search-monokai {
+	--tinymist-search-bg: #1e1f1c;
+	--tinymist-search-fg: #f8f8f2;
+	--tinymist-search-muted: #75715e;
+	--tinymist-search-input-bg: #272822;
+	--tinymist-search-border: #49483e;
+	--tinymist-search-accent: #a6e22e;
+	--tinymist-search-button-bg: #3e3d32;
+	--tinymist-search-button-hover: #49483e;
+	--tinymist-search-match: #e6db74;
+	--tinymist-search-match-selected: #fd971f;
+}
+
+/* Solarized light and dark. */
+.theme-light .tinymist-editor.tinymist-search-solarized {
+	--tinymist-search-bg: #eee8d5;
+	--tinymist-search-fg: #586e75;
+	--tinymist-search-muted: #93a1a1;
+	--tinymist-search-input-bg: #fdf6e3;
+	--tinymist-search-border: #93a1a1;
+	--tinymist-search-accent: #268bd2;
+	--tinymist-search-button-bg: #fdf6e3;
+	--tinymist-search-button-hover: #e4ddc8;
+	--tinymist-search-match: #b58900;
+	--tinymist-search-match-selected: #cb4b16;
+}
+
+.theme-dark .tinymist-editor.tinymist-search-solarized {
+	--tinymist-search-bg: #073642;
+	--tinymist-search-fg: #93a1a1;
+	--tinymist-search-muted: #839496;
+	--tinymist-search-input-bg: #002b36;
+	--tinymist-search-border: #586e75;
+	--tinymist-search-accent: #268bd2;
+	--tinymist-search-button-bg: #002b36;
+	--tinymist-search-button-hover: #0b4554;
+	--tinymist-search-match: #b58900;
+	--tinymist-search-match-selected: #cb4b16;
+}
+
+/* Atom's One Light and One Dark. */
+.theme-light .tinymist-editor.tinymist-search-one {
+	--tinymist-search-bg: #eaeaeb;
+	--tinymist-search-fg: #383a42;
+	--tinymist-search-muted: #696c77;
+	--tinymist-search-input-bg: #fafafa;
+	--tinymist-search-border: #dbdbdc;
+	--tinymist-search-accent: #4078f2;
+	--tinymist-search-button-bg: #fafafa;
+	--tinymist-search-button-hover: #dbdbdc;
+	--tinymist-search-match: #c18401;
+	--tinymist-search-match-selected: #986801;
+}
+
+.theme-dark .tinymist-editor.tinymist-search-one {
+	--tinymist-search-bg: #21252b;
+	--tinymist-search-fg: #abb2bf;
+	--tinymist-search-muted: #7f848e;
+	--tinymist-search-input-bg: #1d1f23;
+	--tinymist-search-border: #3e4452;
+	--tinymist-search-accent: #61afef;
+	--tinymist-search-button-bg: #2c313a;
+	--tinymist-search-button-hover: #3e4452;
+	--tinymist-search-match: #e5c07b;
+	--tinymist-search-match-selected: #d19a66;
+}
+
 /* ---- Preview ------------------------------------------------------------ */
 
 .tinymist-preview-container {
