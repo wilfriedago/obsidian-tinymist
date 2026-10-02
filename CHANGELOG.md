@@ -31,6 +31,13 @@ release turns them into its section and its GitHub release notes.
   tab title bar is hidden. Typst and bibliography tabs can also be renamed from
   their title now; before, it was read-only.
 
+### Fixed
+
+- **Ctrl/Cmd+F opens the search bar in Typst and bibliography editors.**
+  Obsidian's own find hotkeys took the key first and only act on Markdown
+  notes, so nothing happened. **Ctrl/Cmd+Alt+F** opens the same bar with the
+  cursor in the replace field.
+
 ## [0.4.0] - 2026-09-22
 
 ### Added

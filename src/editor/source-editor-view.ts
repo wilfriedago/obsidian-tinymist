@@ -2,7 +2,7 @@ import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { bracketMatching, foldGutter, foldKeymap, indentOnInput, indentUnit } from '@codemirror/language'
 import { lintGutter, setDiagnostics } from '@codemirror/lint'
-import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search'
+import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { Compartment, EditorState, type Extension, Transaction, type TransactionSpec } from '@codemirror/state'
 import {
 	EditorView,
@@ -16,7 +16,7 @@ import {
 	rectangularSelection
 } from '@codemirror/view'
 
-import { TextFileView, type TFile, type WorkspaceLeaf } from 'obsidian'
+import { Scope, TextFileView, type TFile, type WorkspaceLeaf } from 'obsidian'
 
 import type { Logger } from '../shared/logging'
 import type { VaultPath } from '../shared/paths'
@@ -78,6 +78,23 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 		protected readonly host: Host
 	) {
 		super(leaf)
+
+		// Obsidian's own Mod+F (and Mod+Alt+F) hotkeys claim the key before
+		// CodeMirror sees it, and only act on Markdown editors. A view scope is
+		// checked first, so these open CodeMirror's search panel instead.
+		//
+		// The key is Obsidian's name for the physical key, uppercase `F`, not the
+		// character typed: on macOS, Option+F types `ƒ`, which would never match.
+		this.scope = new Scope(this.app.scope)
+		const find = (field: 'search' | 'replace'): boolean => {
+			const editor = this.editor
+			if (!editor) return true
+			openSearchPanel(editor)
+			editor.dom.querySelector<HTMLInputElement>(`.cm-search input[name="${field}"]`)?.select()
+			return false
+		}
+		this.scope.register(['Mod'], 'F', () => find('search'))
+		this.scope.register(['Mod', 'Alt'], 'F', () => find('replace'))
 	}
 
 	/** The vault path of the open file, or `null` when there is none. */
