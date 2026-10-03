@@ -194,6 +194,7 @@ a PDF renderer — opening any PDF uses Obsidian's own viewer.
 | Sync with the editor                        | on             | Click the preview to move the caret, and back |
 | Show diagnostics                            | on             | Underline compiler errors                     |
 | Enable the formatter                        | on             |                                               |
+| Search bar theme                            | Follow the app | Catppuccin, Dracula, Monokai, Solarized, One  |
 | Open YAML files as Hayagriva bibliographies | off            | Claims every `.yml`/`.yaml` in the vault      |
 | PDF folder                                  | empty          | Empty means "beside the document"             |
 | Replace existing PDFs                       | off            |                                               |

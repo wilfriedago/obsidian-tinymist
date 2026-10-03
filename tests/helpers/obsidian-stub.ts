@@ -54,7 +54,13 @@ export class Component {
 	registerDomEvent(): void {}
 }
 
+export class Scope {
+	register(): void {}
+}
+
 export class View extends Component {
+	app = { scope: new Scope() }
+	scope: Scope | null = null
 	async onOpen(): Promise<void> {}
 	setEphemeralState(_state: unknown): void {}
 }

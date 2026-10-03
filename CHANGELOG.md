@@ -23,6 +23,11 @@ release turns them into its section and its GitHub release notes.
   Hayagriva bibliographies** opens `.yml` and `.yaml` in the same editor and
   adds **New Hayagriva file**. It is off by default because it claims every
   YAML file in the vault, not only bibliographies.
+- **Search bar themes.** **Editor → Search bar theme** restyles the
+  find-and-replace bar. **Follow the app** (the default) takes its colours
+  from whichever Obsidian theme is active; Catppuccin, Dracula, Monokai,
+  Solarized, and One use their own palettes. Themes with a light and a dark
+  variant follow the app.
 
 ### Changed
 
@@ -30,6 +35,16 @@ release turns them into its section and its GitHub release notes.
   title, as it is for a new note or canvas, or asked for in a dialog when the
   tab title bar is hidden. Typst and bibliography tabs can also be renamed from
   their title now; before, it was read-only.
+- **Selecting a word highlights its other occurrences more visibly.** Matches
+  are outlined and tinted, whole words only, and ignore one-character
+  selections. Dark themes also get a stronger selection to stay above them.
+
+### Fixed
+
+- **Ctrl/Cmd+F opens the search bar in Typst and bibliography editors.**
+  Obsidian's own find hotkeys took the key first and only act on Markdown
+  notes, so nothing happened. **Ctrl/Cmd+Alt+F** opens the same bar with the
+  cursor in the replace field.
 
 ## [0.4.0] - 2026-09-22
 

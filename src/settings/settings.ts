@@ -13,6 +13,8 @@ export const SETTINGS_VERSION = 1
 
 export type PreviewRefreshMode = 'onType' | 'onSave'
 export type PreviewTheme = 'follow-obsidian' | 'light' | 'dark'
+/** Colours for the editor's find-and-replace panel. Paired themes follow Obsidian's light or dark mode. */
+export type SearchBarTheme = 'obsidian' | 'catppuccin' | 'dracula' | 'monokai' | 'solarized' | 'one'
 
 export interface TypstSettings {
 	readonly version: number
@@ -40,6 +42,7 @@ export interface TypstSettings {
 
 	showDiagnostics: boolean
 	formatterEnabled: boolean
+	searchBarTheme: SearchBarTheme
 	/** Open `.yml`/`.yaml` as Hayagriva bibliographies. Claims every YAML file. */
 	openHayagrivaFiles: boolean
 	systemFonts: boolean
@@ -63,6 +66,7 @@ export const DEFAULT_SETTINGS: TypstSettings = {
 	previewFollowsActiveDocument: true,
 	showDiagnostics: true,
 	formatterEnabled: true,
+	searchBarTheme: 'obsidian',
 	openHayagrivaFiles: false,
 	systemFonts: true,
 	exportFolder: '',
@@ -72,6 +76,7 @@ export const DEFAULT_SETTINGS: TypstSettings = {
 const PROJECT_ROOT_STRATEGIES: readonly ProjectRootStrategy[] = ['auto', 'vault', 'custom']
 const PREVIEW_REFRESH_MODES: readonly PreviewRefreshMode[] = ['onType', 'onSave']
 const PREVIEW_THEMES: readonly PreviewTheme[] = ['follow-obsidian', 'light', 'dark']
+export const SEARCH_BAR_THEMES: readonly SearchBarTheme[] = ['obsidian', 'catppuccin', 'dracula', 'monokai', 'solarized', 'one']
 
 /**
  * Turns whatever `loadData()` returned into valid settings.
@@ -96,6 +101,7 @@ export function migrateSettings(raw: unknown): TypstSettings {
 		previewFollowsActiveDocument: asBoolean(stored['previewFollowsActiveDocument'], DEFAULT_SETTINGS.previewFollowsActiveDocument),
 		showDiagnostics: asBoolean(stored['showDiagnostics'], DEFAULT_SETTINGS.showDiagnostics),
 		formatterEnabled: asBoolean(stored['formatterEnabled'], DEFAULT_SETTINGS.formatterEnabled),
+		searchBarTheme: asEnum(stored['searchBarTheme'], SEARCH_BAR_THEMES, DEFAULT_SETTINGS.searchBarTheme),
 		openHayagrivaFiles: asBoolean(stored['openHayagrivaFiles'], DEFAULT_SETTINGS.openHayagrivaFiles),
 		systemFonts: asBoolean(stored['systemFonts'], DEFAULT_SETTINGS.systemFonts),
 		exportFolder: asString(stored['exportFolder'], DEFAULT_SETTINGS.exportFolder),

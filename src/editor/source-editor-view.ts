@@ -2,7 +2,7 @@ import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { bracketMatching, foldGutter, foldKeymap, indentOnInput, indentUnit } from '@codemirror/language'
 import { lintGutter, setDiagnostics } from '@codemirror/lint'
-import { highlightSelectionMatches, search, searchKeymap } from '@codemirror/search'
+import { highlightSelectionMatches, openSearchPanel, search, searchKeymap } from '@codemirror/search'
 import { Compartment, EditorState, type Extension, Transaction, type TransactionSpec } from '@codemirror/state'
 import {
 	EditorView,
@@ -16,8 +16,9 @@ import {
 	rectangularSelection
 } from '@codemirror/view'
 
-import { TextFileView, type TFile, type WorkspaceLeaf } from 'obsidian'
+import { Scope, TextFileView, type TFile, type WorkspaceLeaf } from 'obsidian'
 
+import type { SearchBarTheme } from '../settings/settings'
 import type { Logger } from '../shared/logging'
 import type { VaultPath } from '../shared/paths'
 import type { Diagnostic } from '../typst/tinymist/protocol'
@@ -43,6 +44,8 @@ export interface SourceEditorHost {
 	onDocumentClosed(vaultPath: VaultPath): void
 	/** Diagnostics currently known for a document. */
 	getDiagnostics(vaultPath: VaultPath): readonly Diagnostic[]
+	/** Which colours the find-and-replace panel uses. */
+	getSearchBarTheme(): SearchBarTheme
 	readonly logger: Logger
 }
 
@@ -68,6 +71,9 @@ export function externalReplaceSpec(state: EditorState, next: string): Transacti
 
 export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEditorHost> extends TextFileView {
 	protected editor: EditorView | null = null
+	/** Carries the search bar theme class, which `styles.css` keys its colours on. */
+	private editorEl: HTMLElement | null = null
+	private searchBarThemeClass: string | null = null
 	private readonly diagnosticsCompartment = new Compartment()
 	private changeTimer: number | null = null
 	/** Disk reloads reach the language server, but must not request another save. */
@@ -78,6 +84,23 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 		protected readonly host: Host
 	) {
 		super(leaf)
+
+		// Obsidian's own Mod+F (and Mod+Alt+F) hotkeys claim the key before
+		// CodeMirror sees it, and only act on Markdown editors. A view scope is
+		// checked first, so these open CodeMirror's search panel instead.
+		//
+		// The key is Obsidian's name for the physical key, uppercase `F`, not the
+		// character typed: on macOS, Option+F types `ƒ`, which would never match.
+		this.scope = new Scope(this.app.scope)
+		const find = (field: 'search' | 'replace'): boolean => {
+			const editor = this.editor
+			if (!editor) return true
+			openSearchPanel(editor)
+			editor.dom.querySelector<HTMLInputElement>(`.cm-search input[name="${field}"]`)?.select()
+			return false
+		}
+		this.scope.register(['Mod'], 'F', () => find('search'))
+		this.scope.register(['Mod', 'Alt'], 'F', () => find('replace'))
 	}
 
 	/** The vault path of the open file, or `null` when there is none. */
@@ -95,6 +118,8 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 		this.contentEl.addClass('tinymist-editor-container')
 
 		const parent = this.contentEl.createDiv({ cls: 'tinymist-editor' })
+		this.editorEl = parent
+		this.setSearchBarTheme(this.host.getSearchBarTheme())
 
 		this.editor = new EditorView({
 			parent,
@@ -109,6 +134,8 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 		this.cancelTimers()
 		this.editor?.destroy()
 		this.editor = null
+		this.editorEl = null
+		this.searchBarThemeClass = null
 		this.contentEl.empty()
 	}
 
@@ -183,6 +210,19 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 		editor.dispatch(setDiagnostics(editor.state, diagnostics))
 	}
 
+	/** Swaps the find-and-replace panel's colours; the CSS does the rest. */
+	setSearchBarTheme(theme: SearchBarTheme): void {
+		const el = this.editorEl
+		if (!el) {
+			return
+		}
+		if (this.searchBarThemeClass) {
+			el.removeClass(this.searchBarThemeClass)
+		}
+		this.searchBarThemeClass = `tinymist-search-${theme}`
+		el.addClass(this.searchBarThemeClass)
+	}
+
 	focusEditor(): void {
 		this.editor?.focus()
 	}
@@ -238,7 +278,8 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 			closeBrackets(),
 			rectangularSelection(),
 			highlightActiveLine(),
-			highlightSelectionMatches(),
+			// Whole words only, so a selected `cite` does not light up inside `cited` or `cites`.
+			highlightSelectionMatches({ wholeWords: true, minSelectionLength: 2, maxMatches: 500 }),
 			search({ top: true }),
 			lintGutter(),
 			this.diagnosticsCompartment.of([]),
