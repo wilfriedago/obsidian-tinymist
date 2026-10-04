@@ -79,6 +79,19 @@ describe('BibTeX highlighting', () => {
 		expect(styleOf(parsed, 'k')).toEqual(['labelName'])
 	})
 
+	it('reads % inside an entry as a comment, outside values only', () => {
+		const parsed = tokens(
+			bibtex,
+			'@book{ % before the key\n  k,\n  title = {50% off}, % trailing = note\n  % whole line\n  year = 1\n}'
+		)
+		expect(styleOf(parsed, '% before the key')).toEqual(['comment'])
+		expect(styleOf(parsed, 'k')).toEqual(['labelName'])
+		expect(styleOf(parsed, '{50% off}')).toEqual(['string'])
+		expect(styleOf(parsed, '% trailing = note')).toEqual(['comment'])
+		expect(styleOf(parsed, '% whole line')).toEqual(['comment'])
+		expect(styleOf(parsed, 'year')).toEqual(['propertyName'])
+	})
+
 	it('gives @string a field, not a citation key', () => {
 		const parsed = tokens(bibtex, '@string{jan = "January"}')
 		expect(styleOf(parsed, 'jan')).toEqual(['propertyName'])

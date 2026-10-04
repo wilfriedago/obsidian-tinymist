@@ -46,12 +46,12 @@ automated review, and what was done about each, are in the table below.
 
 ### Copyright and licensing
 
-| Requirement                         | Status | How                                                                                                                                                                                |
-| ----------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Includes a LICENSE file             | ✅     | `LICENSE` (MIT)                                                                                                                                                                    |
-| Complies with licenses of code used | ✅     | `THIRD_PARTY_NOTICES.md`. `codemirror-lang-typst` is Apache-2.0 and bundled, with the required notice. Tinymist (Apache-2.0) is **not** bundled and no Tinymist source was copied. |
-| Respects Obsidian's trademark       | ✅     | "Obsidian" appears in neither the plugin `id` nor `name`. The README states the plugin is unofficial.                                                                              |
-| Not a disallowed fork               | ✅     | Written from scratch. Prior plugins were read to understand the design space; no code was taken.                                                                                   |
+| Requirement                         | Status | How                                                                                                                                                                                                                     |
+| ----------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Includes a LICENSE file             | ✅     | `LICENSE` (MIT)                                                                                                                                                                                                         |
+| Complies with licenses of code used | ✅     | `THIRD_PARTY_NOTICES.md`. `codemirror-lang-typst` (Apache-2.0) and `@codemirror/legacy-modes` (MIT) are bundled, with the required notices. Tinymist (Apache-2.0) is **not** bundled and no Tinymist source was copied. |
+| Respects Obsidian's trademark       | ✅     | "Obsidian" appears in neither the plugin `id` nor `name`. The README states the plugin is unofficial.                                                                                                                   |
+| Not a disallowed fork               | ✅     | Written from scratch. Prior plugins were read to understand the design space; no code was taken.                                                                                                                        |
 
 ### Forks
 

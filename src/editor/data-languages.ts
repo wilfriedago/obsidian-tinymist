@@ -145,6 +145,13 @@ export const bibtex: StreamParser<BibtexState> = {
 			return 'comment'
 		}
 
+		// Inside an entry, `%` outside a value comments out the rest of the line,
+		// as Typst reads it. Checked first so a comment before the key keeps it.
+		if (stream.peek() === '%') {
+			stream.skipToEnd()
+			return 'comment'
+		}
+
 		if (state.expectingKey) {
 			state.expectingKey = false
 			if (stream.match(/^[^\s,{}()"=#%]+/)) {
