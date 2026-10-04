@@ -1,8 +1,10 @@
+import { readFileSync } from 'node:fs'
+
 import { type StreamParser, StringStream } from '@codemirror/language'
 
 import { describe, expect, it } from 'vitest'
 
-import { bibtex, dataLanguageFor } from '../../src/editor/data-languages'
+import { bibtex, dataLanguageFor, tomlParser, yamlParser } from '../../src/editor/data-languages'
 
 /** Runs a stream parser the way CodeMirror does, one line at a time. */
 function tokens<State>(parser: StreamParser<State>, text: string): [string, string | null][] {
@@ -87,6 +89,52 @@ describe('BibTeX highlighting', () => {
 		expect(styleOf(parsed, 'k')).toEqual(['labelName'])
 		expect(styleOf(parsed, 'm')).toEqual(['labelName'])
 	})
+})
+
+describe('YAML and TOML highlighting', () => {
+	it('shows YAML mapping keys as properties', () => {
+		const parsed = tokens(yamlParser, 'knuth1984:\n  type: book\n  date: 1984')
+		expect(styleOf(parsed, 'knuth1984')).toEqual(['propertyName'])
+		expect(styleOf(parsed, '  type')).toEqual(['propertyName'])
+	})
+
+	it('gives TOML tables their own style, apart from keys and booleans', () => {
+		const parsed = tokens(tomlParser, '[package]\nname = "fixture"\nexact = true')
+		expect(styleOf(parsed, '[package]')).toEqual(['heading'])
+		expect(styleOf(parsed, 'name')).toEqual(['propertyName'])
+		expect(styleOf(parsed, 'true')).toEqual(['atom'])
+	})
+})
+
+/*
+ * In Obsidian, a token is colored only by a `cm-<name>` rule in `styles.css`,
+ * never by `dataHighlightStyle` (see `obsidianLineHighlighter`). These samples
+ * reach every branch of each parser, so a name without a rule is caught here
+ * rather than as plain text in a vault.
+ */
+describe('colors in Obsidian', () => {
+	const samples: [string, StreamParser<unknown>, string][] = [
+		[
+			'bib',
+			bibtex as StreamParser<unknown>,
+			'% note\n@string{jan = "January"}\n@article(k,\n  title = {A {B}},\n  year = 1984,\n  month = jan # "1",\n)\n@comment{x}'
+		],
+		[
+			'yaml',
+			yamlParser,
+			'%YAML 1.2\n---\n# c\nkey: "v"\nlist:\n  - &a 1\n  - *a\nflag: true\nmap: {a: 1, b: [x]}\ntext: |\n  block\n...'
+		],
+		['toml', tomlParser, '# c\n[table]\n[[array]]\nkey = "v"\nn = 1.5\nflag = false\nlist = [1, 2]\ndate = 1979-05-27']
+	]
+	const css = readFileSync(new URL('../../src/styles.css', import.meta.url), 'utf8')
+	const styled = new Set([...css.matchAll(/\.cm-([\w-]+)/g)].map((match) => match[1]))
+
+	for (const [name, parser, text] of samples) {
+		it(`has a rule for every ${name} token`, () => {
+			const emitted = new Set(tokens(parser, text).flatMap(([, style]) => style?.split(' ') ?? []))
+			expect([...emitted].filter((style) => !styled.has(style))).toEqual([])
+		})
+	}
 })
 
 describe('choosing a language', () => {

@@ -97,6 +97,58 @@
 		color: var(--text-normal);
 		box-shadow: var(--shadow-s);
 	}
+
+	/* Bibliography and data file tokens.
+
+	   Obsidian's `StreamLanguage` marks each token with a `cm-<name>` class
+	   instead of a highlight tag (see `src/editor/data-languages.ts`), so these
+	   rules color them, with the theme's code-block palette. They mirror
+	   `dataHighlightStyle`, and cover every name the parsers emit. */
+
+	.cm-comment {
+		color: var(--code-comment);
+	}
+
+	.cm-keyword {
+		color: var(--code-keyword);
+	}
+
+	.cm-string {
+		color: var(--code-string);
+	}
+
+	.cm-number,
+	.cm-atom {
+		color: var(--code-value);
+	}
+
+	.cm-propertyName {
+		color: var(--code-property);
+	}
+
+	.cm-labelName {
+		color: var(--code-function);
+	}
+
+	.cm-heading,
+	.cm-def {
+		color: var(--code-tag);
+	}
+
+	.cm-variableName,
+	.cm-variable {
+		color: var(--code-important);
+	}
+
+	.cm-operator,
+	.cm-separator,
+	.cm-meta {
+		color: var(--code-operator);
+	}
+
+	.cm-bracket {
+		color: var(--code-punctuation);
+	}
 }
 
 .tinymist-hover {

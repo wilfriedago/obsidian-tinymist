@@ -1,3 +1,4 @@
+import * as codemirrorLanguage from '@codemirror/language'
 import {
 	HighlightStyle,
 	type Language,
@@ -190,21 +191,46 @@ export const bibtex: StreamParser<BibtexState> = {
 	}
 }
 
+/*
+ * Token names are rewritten in `token` rather than through `tokenTable`, which
+ * Obsidian's `StreamLanguage` ignores (see `obsidianLineHighlighter`).
+ */
+
 /** YAML marks mapping keys as `atom`; shown as properties, like TOML's. */
-const yamlParser: StreamParser<unknown> = { ...yaml, tokenTable: { atom: tags.propertyName } }
+export const yamlParser: StreamParser<unknown> = {
+	...yaml,
+	token(stream, state) {
+		const style = yaml.token(stream, state)
+		return style === 'atom' ? 'propertyName' : style
+	}
+}
 
 /** TOML marks both `[table]` headers and booleans `atom`; headers get their own. */
-const tomlParser: StreamParser<unknown> = {
+export const tomlParser: StreamParser<unknown> = {
 	...toml,
 	token(stream, state) {
 		const style = toml.token(stream, state)
-		return style === 'atom' && stream.current().startsWith('[') ? 'heading' : style
+		if (style === 'atom' && stream.current().startsWith('[')) {
+			return 'heading'
+		}
+		return style === 'property' ? 'propertyName' : style
 	}
 }
 
 /**
+ * Obsidian's build of `@codemirror/language` replaces `StreamLanguage`: a token
+ * carries its name as a `cm-<name>` class rather than a highlight tag, and the
+ * extra export `lineHighlighter` draws those classes. Without it, a stream
+ * language parses but stays uncolored, and no `HighlightStyle` can match it.
+ * `styles.css` colors the classes. Stock CodeMirror, which the tests run, has
+ * no such export and highlights through `dataHighlightStyle` instead.
+ */
+const obsidianLineHighlighter = (codemirrorLanguage as { lineHighlighter?: Extension }).lineHighlighter
+
+/**
  * Colors from the theme's own code-block palette, so these files look like a
  * fenced block of the same language in a note, in light and dark themes alike.
+ * Mirrored by the `cm-<name>` rules in `styles.css`, for Obsidian.
  */
 const dataHighlightStyle = HighlightStyle.define([
 	{ tag: tags.comment, color: 'var(--code-comment)' },
@@ -229,5 +255,15 @@ const LANGUAGES: Record<string, Language> = {
 /** Highlighting for a file with this extension, or nothing for one it does not know. */
 export function dataLanguageFor(extension: string): Extension[] {
 	const language = LANGUAGES[extension.toLowerCase()]
-	return language ? [language, syntaxHighlighting(dataHighlightStyle)] : []
+	if (!language) {
+		return []
+	}
+
+	const highlighting = [syntaxHighlighting(dataHighlightStyle)]
+
+	if (obsidianLineHighlighter) {
+		highlighting.push(obsidianLineHighlighter)
+	}
+
+	return [language, highlighting]
 }
