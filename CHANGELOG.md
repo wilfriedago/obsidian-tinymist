@@ -14,11 +14,11 @@ release turns them into its section and its GitHub release notes.
 - **BibLaTeX bibliographies open in Obsidian.** `.bib` files were not
   registered, so Obsidian hid them and could not open them, even though Typst
   read them fine. They now open in an editor of their own, highlighted, and
-  **New BibLaTeX file** is
-  offered beside **New Typst file**. An open bibliography is kept in step with
-  Tinymist, so a citing document compiles against unsaved edits and a parse
-  error is underlined in the bibliography itself. If another plugin already
-  opens `.bib` files, it keeps them. Requested in
+  **New BibLaTeX file** is offered beside **New Typst file**. An open
+  bibliography is kept in step with Tinymist, so a citing document compiles
+  against unsaved edits and a parse error is underlined in the bibliography
+  itself. If another plugin already opens `.bib` files, it keeps them.
+  Requested in
   [#11](https://github.com/wilfriedago/obsidian-tinymist/issues/11).
 - **YAML and TOML files open in Obsidian, Hayagriva bibliographies
   included.** `.yml`, `.yaml`, and `.toml` were hidden like `.bib`. They now
@@ -37,10 +37,12 @@ release turns them into its section and its GitHub release notes.
 
 ### Fixed
 
-- **Ctrl/Cmd+F opens the search bar in Typst and bibliography editors.**
+- **Ctrl/Cmd+F opens the search bar in Typst, bibliography, and data files.**
   Obsidian's own find hotkeys took the key first and only act on Markdown
   notes, so nothing happened. **Ctrl/Cmd+Alt+F** opens the same bar with the
-  cursor in the replace field.
+  cursor in the replace field. Thanks to
+  [@pcastro93](https://github.com/pcastro93) in
+  [#22](https://github.com/wilfriedago/obsidian-tinymist/pull/22).
 
 ## [0.4.0] - 2026-09-22
 

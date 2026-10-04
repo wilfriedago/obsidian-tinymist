@@ -132,9 +132,6 @@ year. If maintenance moves to someone else, this section will name them.
 - **An error's message opens only by hovering over it with the mouse.** The
   underline and the gutter marker show where the error is, but no keyboard
   command opens the message yet.
-- **Ctrl/Cmd+F does not open the search panel in the Typst editor,** because
-  Obsidian's own find hotkey takes the key first. The fix is in
-  [#22](https://github.com/wilfriedago/obsidian-tinymist/pull/22).
 - **Obsidian's outline, backlinks, and tags do not work for `.typ` files.**
   A document outline is on the [roadmap](ROADMAP.md#document-outline).
 
