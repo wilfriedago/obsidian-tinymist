@@ -30,7 +30,7 @@ The current sample has moved on from what most third-party guides describe:
 - ESLint uses the flat config in `eslint.config.mts` with
   `eslint-plugin-obsidianmd`, which encodes the review guidelines as lint rules.
 - `main.js` is **not** committed; it is a release artifact only.
-- CI runs on Node 20/22/24.
+- CI runs on Node 22/24.
 
 ### CodeMirror is supplied by the app, not bundled
 

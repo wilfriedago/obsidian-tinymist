@@ -17,7 +17,7 @@ Security problems go through [SECURITY.md](SECURITY.md) instead, privately.
 
 ## Getting set up
 
-Node 20+ and [pnpm](https://pnpm.io) 10+.
+Node 22.12+ and [pnpm](https://pnpm.io) 10+.
 
 ```sh
 git clone https://github.com/wilfriedago/obsidian-tinymist
@@ -101,7 +101,7 @@ pnpm validate:manifest
 pnpm check:codemirror  # CodeMirror packages accept the versions Obsidian ships
 ```
 
-All of these run in CI on Node 20, 22 and 24.
+All of these run in CI on Node 22 and 24.
 
 ### How the Obsidian rules run
 
