@@ -124,9 +124,10 @@ year. If maintenance moves to someone else, this section will name them.
   trackpad, or move the caret in the editor: the preview follows it when
   **Sync with the editor** is on. This is on the
   [roadmap](ROADMAP.md#keyboard-navigation-in-the-preview).
-- **A screen reader may not be able to read the rendered preview,** and the
-  preview's frame is not yet given a name to announce. The exported PDF is the
-  same document, and it opens in Obsidian's own PDF viewer.
+- **A screen reader may not be able to read the rendered preview.** The frame
+  is named after its document, but the pages inside it are drawn by Tinymist
+  and have not been tested with a screen reader. The exported PDF is the same
+  document, and it opens in Obsidian's own PDF viewer.
 - **Pinning the preview to one document is a button in the preview, not a
   command,** so it has no hotkey and is not in the command palette.
 - **An error's message opens only by hovering over it with the mouse.** The
