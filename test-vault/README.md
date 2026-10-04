@@ -11,6 +11,7 @@ at a real vault during development.
 | `errors.typ`                         | Semantic compile errors. Diagnostics must appear in the editor.                                                                                |
 | `syntax-error.typ`                   | A parse error, which Typst reports alone.                                                                                                      |
 | `unformatted.typ`                    | Messy but valid source. Formatting it returns an edit whose range starts part way in, which is the case that used to delete the file's header. |
+| `long.typ`                           | 21 pages, each numbered large, with one landscape and one short page. For scrolling and moving page by page through the preview.               |
 | `imports.typ` + `imports/shared.typ` | Multi-file resolution without a `typst.toml`.                                                                                                  |
 | `project/`                           | A real project: `typst.toml`, template, bibliography, and an image asset. Exercises per-project root detection.                                |
 | `hayagriva/`                         | A document citing a Hayagriva `.yml` bibliography, for the YAML editor.                                                                        |
