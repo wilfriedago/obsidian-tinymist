@@ -14,6 +14,11 @@ function tokens<State>(parser: StreamParser<State>, text: string): [string, stri
 		const stream = new StringStream(line, 4, 2)
 		while (!stream.eol()) {
 			const style = parser.token(stream, state)
+			// CodeMirror throws on a token that consumes nothing; so does this,
+			// rather than looping forever.
+			if (stream.pos === stream.start) {
+				throw new Error(`No progress at column ${stream.pos} of ${JSON.stringify(line)}`)
+			}
 			const current = stream.current()
 			if (current.trim() !== '') {
 				out.push([current, style])
@@ -90,6 +95,13 @@ describe('BibTeX highlighting', () => {
 		expect(styleOf(parsed, '% trailing = note')).toEqual(['comment'])
 		expect(styleOf(parsed, '% whole line')).toEqual(['comment'])
 		expect(styleOf(parsed, 'year')).toEqual(['propertyName'])
+	})
+
+	it('reads an @ that starts no entry as text, and moves past it', () => {
+		const parsed = tokens(bibtex, '@ not an entry\ncontact@ 2024\n@1 @@\n@book{k, year = 1}')
+		expect(styleOf(parsed, 'contact')).toEqual(['comment'])
+		expect(styleOf(parsed, '@book')).toEqual(['keyword'])
+		expect(styleOf(parsed, 'k')).toEqual(['labelName'])
 	})
 
 	it('gives @string a field, not a citation key', () => {

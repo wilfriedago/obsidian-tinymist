@@ -121,6 +121,11 @@ export const bibtex: StreamParser<BibtexState> = {
 				state.expectingKey = name !== 'string' && name !== 'preamble' && name !== 'comment'
 				return 'keyword'
 			}
+			// An `@` that starts no entry, as in `contact@ 2024`, is text too.
+			// Step over it, or `skipTo` would find it again and not advance.
+			if (stream.peek() === '@') {
+				stream.next()
+			}
 			if (!stream.skipTo('@')) {
 				stream.skipToEnd()
 			}
