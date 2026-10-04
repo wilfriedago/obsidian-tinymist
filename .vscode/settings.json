@@ -5,5 +5,5 @@
   },
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "editor.formatOnSave": false,
-  "cSpell.words": ["buymeacoffee", "tinymist", "Typst", "Wilfried"]
+  "cSpell.words": ["biblatex", "bibtex", "buymeacoffee", "hayagriva", "lezer", "tinymist", "typst", "wilfried"]
 }
