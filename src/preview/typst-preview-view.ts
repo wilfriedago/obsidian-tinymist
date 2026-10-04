@@ -58,6 +58,26 @@ export function shouldRetargetPreview(state: PreviewViewState | undefined, activ
 	return (state?.vaultPath ?? null) !== activePath
 }
 
+/**
+ * What to post to a loaded preview frame so it follows a new task on its own
+ * page, rather than being reloaded.
+ *
+ * Tinymist's preview frontend listens for a `reconnect` message, which VS Code
+ * also uses: it swaps the websocket and keeps the rendered pages, and so the
+ * reader's scroll position. Each task serves its websocket from the root of the
+ * same loopback origin as the page. The message goes only to the origin the
+ * frame was loaded from, and is posted rather than injected, so the frame stays
+ * isolated.
+ */
+export function previewReconnect(frameOrigin: string, nextUrl: string): { targetOrigin: string; message: Record<string, unknown> } {
+	const socket = new URL('/', nextUrl)
+	socket.protocol = socket.protocol === 'https:' ? 'wss:' : 'ws:'
+	return {
+		targetOrigin: new URL(frameOrigin).origin,
+		message: { type: 'reconnect', url: socket.href, mode: 'Doc', isContentPreview: false }
+	}
+}
+
 export interface TypstPreviewHost {
 	/** Resolves a preview URL, starting a task if needed. */
 	resolvePreviewUrl(vaultPath: VaultPath, themeOverride: PreviewThemeOverride): Promise<string>
@@ -85,6 +105,15 @@ export class TypstPreviewView extends ItemView {
 	private pinButton: HTMLElement | null = null
 	/** URL the current frame is showing, so an identical render is a no-op. */
 	private frameUrl: string | null = null
+	/**
+	 * Where the frame's page came from. A reconnect keeps that page, so this
+	 * stays the first task's origin after `frameUrl` has moved on.
+	 */
+	private frameOrigin: string | null = null
+	/** The document the frame shows. A new task for it can reconnect in place. */
+	private framePath: VaultPath | null = null
+	/** Set once the frame has loaded, when its frontend can take a message. */
+	private frameLoaded = false
 	/** Serializes renders; two concurrent ones would build two frames. */
 	private rendering: Promise<void> = Promise.resolve()
 
@@ -296,10 +325,27 @@ export class TypstPreviewView extends ItemView {
 			return
 		}
 
+		// The same document on a new task, as after a theme change. Reloading
+		// would return the reader to the first page, so the frame is told to
+		// follow the new task instead. Until the frame has loaded, nothing in it
+		// is listening, and it is reloaded as before.
+		if (this.frame?.contentWindow && this.frameLoaded && this.framePath === path && this.frameOrigin) {
+			const { targetOrigin, message } = previewReconnect(this.frameOrigin, url)
+			this.frame.contentWindow.postMessage(message, targetOrigin)
+			this.frameUrl = url
+			this.setStatus('Live')
+			return
+		}
+
 		this.teardownFrame()
 		body.empty()
 
 		const frame = body.createEl('iframe', { cls: 'tinymist-preview-frame' })
+		this.registerDomEvent(frame, 'load', () => {
+			if (this.frame === frame) {
+				this.frameLoaded = true
+			}
+		})
 		frame.setAttribute('src', url)
 		frame.setAttribute('title', this.getDisplayText())
 		// The frame is a separate origin already; referrer and feature access
@@ -308,6 +354,8 @@ export class TypstPreviewView extends ItemView {
 		frame.setAttribute('allow', '')
 		this.frame = frame
 		this.frameUrl = url
+		this.frameOrigin = new URL(url).origin
+		this.framePath = path
 
 		this.setStatus('Live')
 	}
@@ -340,6 +388,9 @@ export class TypstPreviewView extends ItemView {
 			this.frame = null
 		}
 		this.frameUrl = null
+		this.frameOrigin = null
+		this.framePath = null
+		this.frameLoaded = false
 	}
 
 	getPreviewedPath(): VaultPath | null {
@@ -387,7 +438,8 @@ export class TypstPreviewView extends ItemView {
 	 *
 	 * Tinymist fixes colour inversion when the preview task starts, so each
 	 * step replaces the task. That costs a recompile, which is why this is a
-	 * deliberate button press rather than something tied to scrolling.
+	 * deliberate button press rather than something tied to scrolling. The
+	 * frame follows the new task in place, so the reader keeps their page.
 	 */
 	private async cycleTheme(): Promise<void> {
 		const next: PreviewThemeOverride = this.themeOverride === null ? 'light' : this.themeOverride === 'light' ? 'dark' : null

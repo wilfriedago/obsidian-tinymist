@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { hoverText, stripSnippetPlaceholders } from '../../src/editor/language-features'
 import { presentStatus } from '../../src/plugin/status-bar'
 import { PreviewController, taskIdFor } from '../../src/preview/preview-controller'
-import { shouldRetargetPreview } from '../../src/preview/typst-preview-view'
+import { previewReconnect, shouldRetargetPreview } from '../../src/preview/typst-preview-view'
 import { LogSink, Logger } from '../../src/shared/logging'
 import { TinymistClient, type ClientTransport } from '../../src/typst/tinymist/client'
 import { JSONRPC_VERSION, TINYMIST_COMMAND, type RequestMessage } from '../../src/typst/tinymist/protocol'
@@ -357,5 +357,32 @@ describe('shouldRetargetPreview', () => {
 		expect(shouldRetargetPreview({ vaultPath: 'a.typ' }, 'b.typ', true)).toBe(false)
 		expect(shouldRetargetPreview(undefined, 'b.typ', false)).toBe(true)
 		expect(shouldRetargetPreview(undefined, 'b.typ', true)).toBe(false)
+	})
+})
+
+describe('previewReconnect', () => {
+	it("points the frame at the new task's websocket, in the shape Tinymist's frontend expects", () => {
+		expect(previewReconnect('http://127.0.0.1:4100', 'http://127.0.0.1:4200/').message).toEqual({
+			type: 'reconnect',
+			url: 'ws://127.0.0.1:4200/',
+			mode: 'Doc',
+			isContentPreview: false
+		})
+	})
+
+	it('posts only to the origin the page was loaded from', () => {
+		expect(previewReconnect('http://127.0.0.1:4100', 'http://127.0.0.1:4200/').targetOrigin).toBe('http://127.0.0.1:4100')
+	})
+
+	it('keeps the first origin through repeated reconnects', () => {
+		// The page is never reloaded, so a second theme change still posts to it.
+		const first = previewReconnect('http://127.0.0.1:4100', 'http://127.0.0.1:4200/')
+		const second = previewReconnect('http://127.0.0.1:4100', 'http://127.0.0.1:4300/')
+		expect(second.targetOrigin).toBe(first.targetOrigin)
+		expect(second.message['url']).toBe('ws://127.0.0.1:4300/')
+	})
+
+	it('uses a secure websocket for a secure page', () => {
+		expect(previewReconnect('https://127.0.0.1:4100', 'https://127.0.0.1:4200/').message['url']).toBe('wss://127.0.0.1:4200/')
 	})
 })
