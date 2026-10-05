@@ -20,7 +20,6 @@ export interface TinymistProcessHandlers {
 
 export interface TinymistProcessOptions {
 	readonly executablePath: string
-	readonly cwd: string
 	/** Extra arguments appended after `lsp`. Empty in normal operation. */
 	readonly extraArgs?: readonly string[]
 }
@@ -73,8 +72,12 @@ export class TinymistProcess {
 
 		let child: SpawnedProcess
 		try {
+			// No `cwd`. On Windows a bare command name is looked up in the
+			// child's working directory before `PATH`, so running in the vault
+			// would let a `tinymist.exe` dropped at its root replace the real
+			// one. Inheriting Obsidian's directory also keeps this lookup
+			// identical to the `probe` that vetted the executable.
 			child = this.host.spawn(this.options.executablePath, args, {
-				cwd: this.options.cwd,
 				// `RUST_BACKTRACE=1` makes a panic report a location without
 				// requiring the debug build the user does not have.
 				env: { ...process.env, RUST_BACKTRACE: '1' }

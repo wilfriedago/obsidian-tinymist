@@ -84,6 +84,15 @@ describe('resolveProject, other strategies', () => {
 			})
 		).toEqual({ root: 'shared/root', origin: 'configured', manifestPath: null })
 	})
+
+	it('keeps a configured folder that climbs with .. inside the vault', () => {
+		expect(
+			resolveProject(vault(), 'papers/a/main.typ', {
+				strategy: 'custom',
+				customRoot: '../../outside'
+			})
+		).toEqual({ root: 'outside', origin: 'configured', manifestPath: null })
+	})
 })
 
 describe('describeProject', () => {

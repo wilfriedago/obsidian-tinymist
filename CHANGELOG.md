@@ -7,6 +7,22 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
+## [Unreleased]
+
+### Security
+
+- **A `tinymist.exe` in the vault can no longer stand in for Tinymist on
+  Windows.** Tinymist was started with the vault as its working directory,
+  and Windows looks there before `PATH` for a program named without a path.
+  A `tinymist.exe` or `tinymist.com` at the vault's root, put there by
+  anything that syncs files into it, would have run in place of the real one.
+  Tinymist now starts from the same directory as the check that vets it.
+- **The custom project root stays inside the vault.** A `..` in the
+  configured folder, which only a hand-edited or synced `data.json` can
+  carry, made Typst's root a folder outside the vault, so a document could
+  read files from anywhere it pointed. It is now contained like every other
+  path from settings.
+
 ## [0.5.0] - 2026-10-05
 
 ### Added

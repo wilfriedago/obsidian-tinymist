@@ -1,6 +1,6 @@
 import type { Vault } from 'obsidian'
 
-import { parentVaultPath, type VaultPath } from '../../shared/paths'
+import { containVaultPath, parentVaultPath, type VaultPath } from '../../shared/paths'
 import type { ProjectRootStrategy } from '../tinymist/config'
 
 /**
@@ -62,7 +62,8 @@ export function vaultFileSystem(vault: Vault): ProjectFileSystem {
  */
 export function resolveProject(fs: ProjectFileSystem, documentVaultPath: VaultPath, options: ProjectResolutionOptions): TypstProject {
 	if (options.strategy === 'custom') {
-		const configured = trimSlashes(options.customRoot)
+		// Contained the same way as the root sent to Tinymist, so the two agree.
+		const configured = containVaultPath(options.customRoot)
 		return { root: configured, origin: 'configured', manifestPath: null }
 	}
 
