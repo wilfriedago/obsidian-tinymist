@@ -162,6 +162,13 @@
 	line-height: var(--line-height-tight);
 }
 
+/* A path that Mod-click will open, while the modifier is held. */
+.tinymist-file-link {
+	text-decoration: underline;
+	text-underline-offset: 2px;
+	cursor: pointer;
+}
+
 .tinymist-completion-info {
 	max-width: 32em;
 	padding: var(--size-4-1);
