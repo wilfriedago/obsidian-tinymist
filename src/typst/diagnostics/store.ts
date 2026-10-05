@@ -53,6 +53,17 @@ export class DiagnosticsStore {
 		return summarizeDiagnostics(this.get(vaultPath))
 	}
 
+	/** Totals across every document `include` accepts, e.g. one project's files. */
+	summarizeWhere(include: (vaultPath: VaultPath) => boolean): DiagnosticsSnapshot {
+		const diagnostics: Diagnostic[] = []
+		for (const [vaultPath, list] of this.byDocument) {
+			if (include(vaultPath)) {
+				diagnostics.push(...list)
+			}
+		}
+		return summarizeDiagnostics(diagnostics)
+	}
+
 	onChange(listener: DiagnosticsListener): () => void {
 		this.listeners.add(listener)
 		return () => {

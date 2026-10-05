@@ -279,6 +279,22 @@
 	line-height: var(--line-height-normal);
 }
 
+/* Covers a frame that has nothing to show because the document does not
+   compile. Opaque, so a half-loaded frame cannot show through it. */
+.tinymist-preview-problem {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: var(--size-4-8);
+	background-color: var(--background-primary);
+	color: var(--text-muted);
+	font-size: var(--font-ui-small);
+	line-height: var(--line-height-normal);
+	text-align: center;
+}
+
 /* ---- Status bar --------------------------------------------------------- */
 
 .tinymist-status {

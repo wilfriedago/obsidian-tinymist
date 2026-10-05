@@ -32,40 +32,34 @@ actually hit moves faster than what looks good on a list.
 ### Multi-file projects
 
 The largest gap between what the plugin does and how people actually write long
-documents. Open `chapter-3.typ` today and Tinymist compiles _that file alone_:
-the preview shows a fragment, and diagnostics complain about every definition
-that lives in `main.typ`. A thesis is the shape of document this plugin exists
-for, and it is the shape that works least well.
+documents, and now half closed.
 
-Tinymist already solves it. `tinymist.pinMain` tells the server which file is
-the document, and everything else compiles as part of it. **Verified**: with
-`project/main.typ` pinned, editing `template.typ` — a fragment that cannot
-stand alone — produces
+**Done** ([#42](https://github.com/wilfriedago/obsidian-tinymist/issues/42)):
+when a project's `typst.toml` names an `entrypoint`, a file the entry point
+includes or imports is compiled, diagnosed, and previewed through it, using
+`tinymist.pinMain`. The preview shows the whole document and still scrolls to
+the caret in the chapter, and **Show project root** names the file being
+compiled. A file the entry point does not reach compiles on its own. That
+fallback matters: Tinymist reports nothing at all for a file outside the
+pinned document. **Verified** against 0.15.8, with `project/main.typ` pinned
+and `project/chapters/background.typ` open:
 
 ```
 compileSuccess  /main.typ  pages=1
 ```
 
-So the engine work is done and this is a user-interface problem:
+What is left is the part `typst.toml` cannot answer:
 
-- a command to set the current file as the project's main document, and to
-  clear it
-- picking it up automatically from `typst.toml`'s `entrypoint`, which is what
-  the fixture project already declares, so most users never set it by hand
-- showing which document is pinned, because an invisible mode is worse than no
-  mode
-- deciding what the preview follows: an unpinned preview follows the active
-  editor, and pinning a main document means it should follow that instead,
-  while the caret still drives source-to-preview sync from whichever file you
-  are editing. The preview's own pin
-  ([#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7)) is a
-  per-leaf choice and does not decide the project's main file; these two need
-  to end up as one idea rather than two.
-
-The open question is scope, not feasibility: whether pinning is per-vault, per
-project root, or remembered per document. Per project root is probably right,
-since that is the unit Typst itself compiles, but it is worth deciding before
-the first line rather than after.
+- a command to set the current file as the main document by hand, and to clear
+  it, for a project with no manifest. The scope question remains — per vault,
+  per project root, or per document. Per project root is probably right, since
+  that is the unit Typst itself compiles.
+- **Export PDF** from a chapter, which still exports the chapter alone.
+- the preview's own pin
+  ([#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7)). A primary
+  preview holds Tinymist's compiler on its own document, so while a preview is
+  pinned to one project, a file being edited in another is not diagnosed. Those
+  two ideas should become one rather than two.
 
 ### Word count
 

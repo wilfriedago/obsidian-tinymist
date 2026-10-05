@@ -44,6 +44,14 @@ describe('DocumentSession identity', () => {
 		expect(session.openCount).toBe(2)
 		expect(session.isOpen('a/main.typ')).toBe(true)
 	})
+
+	it('hands back the latest text, unsaved edits included', () => {
+		const { session } = setup()
+		session.open('main.typ', 'saved')
+		session.change('main.typ', 'unsaved')
+		expect(session.textOf('main.typ')).toBe('unsaved')
+		expect(session.textOf('closed.typ')).toBeNull()
+	})
 })
 
 describe('DocumentSession synchronization', () => {

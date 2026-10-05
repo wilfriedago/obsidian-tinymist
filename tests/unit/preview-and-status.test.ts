@@ -69,6 +69,7 @@ describe('taskIdFor', () => {
 
 describe('PreviewController', () => {
 	const startResult = { dataPlanePort: 51285, staticServerPort: 51285, isPrimary: true }
+	const options = { refreshOnType: true, partialRendering: true, invertColors: 'never' as const }
 
 	it('starts a task and exposes a loopback URL', async () => {
 		const { client } = scriptedClient({ [TINYMIST_COMMAND.startPreview]: startResult })
@@ -255,6 +256,52 @@ describe('PreviewController', () => {
 		expect((restartArgs ?? []).join(' ')).toContain('--invert-colors always')
 	})
 
+	it('tracks whether the task has rendered anything yet', async () => {
+		const { client } = scriptedClient({ [TINYMIST_COMMAND.startPreview]: startResult })
+		const c = controller()
+		const starting = c.start(client, 'main.typ', '/v/main.typ', options)
+		// The task's first compile can report before the start command replies.
+		expect(c.renderState('main.typ')).toBe('pending')
+		expect(c.noteCompile('main.typ', false)).toBe(true)
+		await starting
+
+		expect(c.renderState('main.typ')).toBe('failing')
+		expect(c.noteCompile('main.typ', false)).toBe(false)
+		expect(c.noteCompile('main.typ', true)).toBe(true)
+		expect(c.renderState('main.typ')).toBe('rendered')
+		// A later failure leaves the last good render on screen.
+		expect(c.noteCompile('main.typ', false)).toBe(false)
+		expect(c.renderState('main.typ')).toBe('rendered')
+
+		await c.stop(client, 'main.typ')
+		expect(c.renderState('main.typ')).toBeNull()
+		expect(c.noteCompile('main.typ', true)).toBe(false)
+	})
+
+	it("names the task that holds the language server's compiler", async () => {
+		const c = controller()
+		expect(c.primarySession()).toBeNull()
+		const { client } = scriptedClient({ [TINYMIST_COMMAND.startPreview]: startResult })
+		await c.start(client, 'a.typ', '/v/a.typ', options)
+		const other = scriptedClient({ [TINYMIST_COMMAND.startPreview]: { ...startResult, isPrimary: false } })
+		await c.start(other.client, 'b.typ', '/v/b.typ', options)
+		expect(c.primarySession()?.vaultPath).toBe('a.typ')
+		await c.stop(client, 'a.typ')
+		expect(c.primarySession()).toBeNull()
+	})
+
+	it('scrolls the previewed document to a position in the file the caret is in', async () => {
+		const { client, requests } = scriptedClient({ [TINYMIST_COMMAND.startPreview]: startResult })
+		const c = controller()
+		await c.start(client, 'thesis/main.typ', '/v/thesis/main.typ', options)
+		await c.scrollToSource(client, 'thesis/main.typ', '/v/thesis/chapters/intro.typ', 3, 1)
+		const scroll = requests.find((request) => isCommand(request, TINYMIST_COMMAND.scrollPreview))
+		expect((scroll?.params as { arguments: unknown[] } | undefined)?.arguments).toEqual([
+			taskIdFor('thesis/main.typ'),
+			{ event: 'panelScrollTo', filepath: '/v/thesis/chapters/intro.typ', line: 3, character: 1 }
+		])
+	})
+
 	it('tolerates stopping with no client, as after a crash', async () => {
 		const { client } = scriptedClient({ [TINYMIST_COMMAND.startPreview]: startResult })
 		const c = controller()
@@ -302,6 +349,18 @@ describe('presentStatus', () => {
 				hasActiveDocument: true
 			}).text
 		).toBe('Typst: 1 error, 2 warnings')
+	})
+
+	it('does not say ready when the document fails on an error in another file', () => {
+		// A chapter compiled through its main document can be clean itself.
+		expect(
+			presentStatus({
+				serverState: 'ready',
+				compilePhase: 'error',
+				diagnostics: clean,
+				hasActiveDocument: true
+			})
+		).toMatchObject({ text: 'Typst: does not compile', modifier: 'error' })
 	})
 
 	it('says ready when the document is clean', () => {

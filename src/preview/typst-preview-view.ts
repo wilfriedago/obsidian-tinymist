@@ -70,6 +70,11 @@ export interface TypstPreviewHost {
 	previewStartsPinned(): boolean
 	/** Opens the source document beside this preview. */
 	openSource(vaultPath: VaultPath): Promise<void>
+	/**
+	 * Why the frame is empty, when it is empty because the document does not
+	 * compile, or `null`. Plain text.
+	 */
+	describeCompileProblem(vaultPath: VaultPath): string | null
 	readonly logger: Logger
 }
 
@@ -81,6 +86,7 @@ export class TypstPreviewView extends ItemView {
 	private frame: HTMLIFrameElement | null = null
 	private statusEl: HTMLElement | null = null
 	private bodyEl: HTMLElement | null = null
+	private problemEl: HTMLElement | null = null
 	private themeButton: HTMLElement | null = null
 	private pinButton: HTMLElement | null = null
 	/** URL the current frame is showing, so an identical render is a no-op. */
@@ -173,6 +179,13 @@ export class TypstPreviewView extends ItemView {
 		// The body is created first so the toolbar, which floats above it, is
 		// painted on top without needing a stacking-context workaround.
 		this.bodyEl = this.contentEl.createDiv({ cls: 'tinymist-preview-body' })
+		// Above the frame rather than in place of it: the frame has to stay
+		// connected so the first compile that succeeds can render into it.
+		this.problemEl = this.contentEl.createDiv({
+			cls: 'tinymist-preview-problem',
+			attr: { role: 'status' }
+		})
+		this.problemEl.hide()
 		const toolbar = this.contentEl.createDiv({ cls: 'tinymist-preview-toolbar' })
 
 		const reload = toolbar.createEl('button', {
@@ -293,6 +306,7 @@ export class TypstPreviewView extends ItemView {
 		// away the rendered document and the reader's scroll position.
 		if (this.frame && this.frameUrl === url) {
 			this.setStatus('Live')
+			this.refreshCompileProblem()
 			return
 		}
 
@@ -310,6 +324,22 @@ export class TypstPreviewView extends ItemView {
 		this.frameUrl = url
 
 		this.setStatus('Live')
+		this.refreshCompileProblem()
+	}
+
+	/**
+	 * Explains an empty frame. A document that fails its first compile renders
+	 * nothing, and a blank pane looks the same as a broken plugin.
+	 */
+	refreshCompileProblem(): void {
+		const panel = this.problemEl
+		if (!panel) {
+			return
+		}
+		const message = this.frame && this.vaultPath ? this.host.describeCompileProblem(this.vaultPath) : null
+		// textContent only, like every other message here.
+		panel.textContent = message ?? ''
+		panel.toggle(message !== null)
 	}
 
 	/** Shows a plain-text message in place of the frame. */
@@ -340,6 +370,7 @@ export class TypstPreviewView extends ItemView {
 			this.frame = null
 		}
 		this.frameUrl = null
+		this.refreshCompileProblem()
 	}
 
 	getPreviewedPath(): VaultPath | null {

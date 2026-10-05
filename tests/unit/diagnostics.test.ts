@@ -99,6 +99,14 @@ describe('DiagnosticsStore', () => {
 		expect(store.get('b/main.typ')).toHaveLength(0)
 	})
 
+	it('totals the documents a filter accepts, such as one project', () => {
+		const store = new DiagnosticsStore()
+		store.set('thesis/chapters/intro.typ', [error, error])
+		store.set('thesis/chapters/method.typ', [error, warning])
+		store.set('other/main.typ', [error])
+		expect(store.summarizeWhere((path) => path.startsWith('thesis/'))).toEqual({ errors: 3, warnings: 1, total: 4 })
+	})
+
 	it('treats an unknown document as clean', () => {
 		// Tinymist publishes nothing at all for a document that compiles, so
 		// "no entry" has to mean "no problems".

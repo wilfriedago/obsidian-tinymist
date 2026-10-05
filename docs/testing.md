@@ -65,6 +65,7 @@ A throwaway vault. Never point the plugin at a real one during development.
 | `syntax-error.typ`                  | A parse error, which Typst reports alone                                       |
 | `imports.typ`, `imports/shared.typ` | Multi-file resolution with no `typst.toml`                                     |
 | `project/`                          | `typst.toml`, template, bibliography, image asset — per-project root detection |
+| `project/chapters/background.typ`   | A chapter that compiles only through `project/main.typ`                        |
 | `hayagriva/`                        | A document citing a Hayagriva `.yml` bibliography                              |
 | `pdf/existing.pdf`                  | A PDF predating the plugin; must open in Obsidian's own viewer                 |
 
@@ -178,6 +179,14 @@ _Following the active document_
 - [ ] With `project/main.typ` reading `toml("typst.toml")` and previewed, an unsaved edit to `typst.toml` reaches the preview.
 - [ ] With `hayagriva/main.typ` previewed, citing a key added to the unsaved `references.yml` updates the preview.
 - [ ] **Typst: Show project root** reports `project (typst.toml)`.
+- [ ] For `project/chapters/background.typ` it also reports `Compiled as part of: project/main.typ`.
+- [ ] `project/chapters/background.typ` shows no diagnostics: its citation and its reference to `main.typ` resolve.
+- [ ] Previewing it shows the whole of `project/main.typ`, titled `Preview: main.typ`, and moving the caret in the chapter scrolls the preview to it.
+- [ ] Switching between `main.typ` and the chapter leaves a following preview where it is, without reloading.
+- [ ] A new `project/scratch.typ` that nothing includes previews on its own, and an error typed into it is underlined.
+- [ ] Typing an undefined reference into the chapter while the preview is closed, then opening the preview, shows _This document doesn't compile yet: 1 error_ instead of a blank pane, and the status bar says **Typst: 1 error**. Fixing it renders the document and removes the message.
+- [ ] With the preview focused, the status bar describes the previewed document; with an error in the chapter, it says **Typst: does not compile**, not **ready**.
+- [ ] After closing a preview, an error typed into another document is underlined.
 - [ ] For `basic.typ` it reports the file's own folder.
 - [ ] Setting the strategy to "Always the vault root" changes the answer and restarts the server.
 
