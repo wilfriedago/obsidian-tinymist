@@ -17,8 +17,8 @@ accessibility evaluation. What it works toward:
 
 - **Everything works from the keyboard.** The plugin's actions are commands,
   so the command palette reaches them, and you can give any of them a hotkey:
-  open or toggle the preview, export a PDF, format, create a file, or restart
-  Tinymist. The exceptions are listed under
+  open or toggle the preview, export a PDF, format, open a linked file, create
+  a file, or restart Tinymist. The exceptions are listed under
   [Known limitations](#known-limitations).
 - **The plugin follows your Obsidian setup.** Colors, fonts, and font sizes come
   from Obsidian's theme variables, so a high-contrast theme, a larger font, or a
