@@ -74,7 +74,7 @@
   },
   "simple-git-hooks": {
     "commit-msg": "pnpm exec commitlint --edit \"$1\"",
-    "pre-push": "if grep -q ' refs/heads/develop '; then pnpm build; fi"
+    "pre-push": "if grep -q ' refs/heads/main '; then pnpm build; fi"
   },
   "commitlint": {
     "extends": [

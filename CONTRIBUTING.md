@@ -33,10 +33,10 @@ most of the plugin either way.
 `pnpm install` also installs git hooks through
 [simple-git-hooks](https://github.com/toplenboren/simple-git-hooks):
 
-| Hook         | Does                                                                                                                                                                                                          |
-| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `commit-msg` | Runs [commitlint](https://commitlint.js.org) with the Conventional Commits preset on each message as it is written (see [Pull requests](#pull-requests)). `fixup!`, `squash!` and merge subjects pass         |
-| `pre-push`   | Runs `pnpm build` when the push updates `develop`, and refuses the push if it fails. Pushes to any other branch are not checked. It builds your working tree, so commit or stash other changes before pushing |
+| Hook         | Does                                                                                                                                                                                                       |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `commit-msg` | Runs [commitlint](https://commitlint.js.org) with the Conventional Commits preset on each message as it is written (see [Pull requests](#pull-requests)). `fixup!`, `squash!` and merge subjects pass      |
+| `pre-push`   | Runs `pnpm build` when the push updates `main`, and refuses the push if it fails. Pushes to any other branch are not checked. It builds your working tree, so commit or stash other changes before pushing |
 
 Both tools are configured in `package.json`; after changing the hooks there, run
 `pnpm exec simple-git-hooks` to apply them.
