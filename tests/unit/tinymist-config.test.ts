@@ -43,6 +43,23 @@ describe('resolveWorkspaceRoot', () => {
 		).toBe('/home/me/vault/papers/thesis')
 	})
 
+	it('keeps a custom root that climbs with .. inside the vault', () => {
+		expect(
+			resolveWorkspaceRoot({
+				...baseOptions,
+				projectRootStrategy: 'custom',
+				customProjectRoot: '../../..'
+			})
+		).toBe('/home/me/vault')
+		expect(
+			resolveWorkspaceRoot({
+				...baseOptions,
+				projectRootStrategy: 'custom',
+				customProjectRoot: 'papers/../../etc'
+			})
+		).toBe('/home/me/vault/etc')
+	})
+
 	it('falls back to the vault when the custom root is blank', () => {
 		expect(
 			resolveWorkspaceRoot({

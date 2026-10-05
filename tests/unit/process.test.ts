@@ -3,7 +3,7 @@ import { PassThrough } from 'node:stream'
 
 import { describe, expect, it, vi } from 'vitest'
 
-import type { DesktopHost, SpawnedProcess } from '../../src/platform/desktop'
+import type { DesktopHost, SpawnedProcess, SpawnOptions } from '../../src/platform/desktop'
 import { LogSink, Logger } from '../../src/shared/logging'
 import { TinymistProcess } from '../../src/typst/tinymist/process'
 import { encodeMessage, JSONRPC_VERSION, type IncomingMessage } from '../../src/typst/tinymist/protocol'
@@ -53,7 +53,7 @@ function setup(options: { spawnThrows?: boolean } = {}) {
 	const process = new TinymistProcess(
 		host,
 		new Logger(sink, 'test'),
-		{ executablePath: '/usr/bin/tinymist', cwd: '/vault' },
+		{ executablePath: '/usr/bin/tinymist' },
 		{
 			onMessage: (m) => void messages.push(m),
 			onExit: (reason) => void exits.push(reason)
@@ -84,12 +84,29 @@ describe('TinymistProcess startup', () => {
 		const process = new TinymistProcess(
 			{ vaultBasePath: '/vault', spawn },
 			new Logger(sink, 'test'),
-			{ executablePath: '/usr/bin/tinymist', cwd: '/vault' },
+			{ executablePath: '/usr/bin/tinymist' },
 			{ onMessage: () => undefined, onExit: () => undefined }
 		)
 		process.start()
 
-		expect(spawn).toHaveBeenCalledWith('/usr/bin/tinymist', ['lsp'], expect.objectContaining({ cwd: '/vault' }))
+		expect(spawn).toHaveBeenCalledWith('/usr/bin/tinymist', ['lsp'], expect.anything())
+	})
+
+	it('does not run in the vault, where Windows would look for the executable first', () => {
+		const child = new FakeChild()
+		const spawn = vi.fn((_command: string, _args: readonly string[], _options?: SpawnOptions) => child)
+		const sink = new LogSink()
+		sink.setLevel('silent')
+
+		const process = new TinymistProcess(
+			{ vaultBasePath: '/vault', spawn },
+			new Logger(sink, 'test'),
+			{ executablePath: 'tinymist' },
+			{ onMessage: () => undefined, onExit: () => undefined }
+		)
+		process.start()
+
+		expect(spawn.mock.calls[0]?.[2]?.cwd).toBeUndefined()
 	})
 })
 

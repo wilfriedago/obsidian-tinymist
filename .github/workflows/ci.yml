@@ -10,6 +10,11 @@ on:
   # With no base to diff against, `changes` runs the full suite.
   workflow_dispatch:
 
+# Every job only reads the repository. Without this the token gets the
+# repository's default permissions, which can include write access.
+permissions:
+  contents: read
+
 # Path filtering is done per job rather than with `on.push.paths-ignore`.
 #
 # A workflow skipped by `paths-ignore` never reports its checks, and GitHub

@@ -1,4 +1,5 @@
 import type { LogLevel } from '../../shared/logging'
+import { containVaultPath } from '../../shared/paths'
 
 /**
  * Where the Tinymist executable comes from, and what configuration it is
@@ -80,7 +81,10 @@ export function resolveWorkspaceRoot(options: TinymistInitOptions): string | nul
 		case 'vault':
 			return options.vaultBasePath
 		case 'custom': {
-			const relative = options.customProjectRoot.trim().replace(/^\/+|\/+$/g, '')
+			// Contained, not just trimmed: the root is the boundary of what a
+			// document can `#read`, and `data.json` is not trusted to keep it
+			// inside the vault.
+			const relative = containVaultPath(options.customProjectRoot.trim())
 			if (relative.length === 0) {
 				return options.vaultBasePath
 			}

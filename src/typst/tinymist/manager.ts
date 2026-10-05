@@ -231,12 +231,7 @@ export class TinymistManager {
 		const process = new TinymistProcess(
 			this.options.host,
 			this.options.logger.child('process'),
-			{
-				executablePath: executable.path,
-				// Running in the vault keeps relative paths in Tinymist's own
-				// logs meaningful without granting access to anything new.
-				cwd: initOptions.vaultBasePath
-			},
+			{ executablePath: executable.path },
 			{
 				onMessage: (message: IncomingMessage) => this.client?.handleMessage(message),
 				onExit: (reason) => this.handleProcessExit(reason)
