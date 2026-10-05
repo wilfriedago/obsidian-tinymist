@@ -62,6 +62,20 @@ export function registerCommands(plugin: Plugin, runtime: TypstRuntime): void {
 		checkCallback: withActiveDocument((view) => runtime.formatDocument(view))
 	})
 
+	// What Mod-click and Mod-Shift-click on a path do, from the keyboard.
+	// Offered only while the cursor is in a string, where every path is.
+	plugin.addCommand({
+		id: 'open-linked-file',
+		name: 'Open linked file',
+		checkCallback: (checking) => runtime.activeEditor()?.followLinkAtCursor('here', checking) ?? false
+	})
+
+	plugin.addCommand({
+		id: 'open-linked-file-in-new-tab',
+		name: 'Open linked file in new tab',
+		checkCallback: (checking) => runtime.activeEditor()?.followLinkAtCursor('tab', checking) ?? false
+	})
+
 	plugin.addCommand({
 		id: 'show-project',
 		name: 'Show project root',

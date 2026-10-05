@@ -90,12 +90,20 @@ your source. Everything else lives in the command palette:
 | **Typst: Toggle preview**          | Show or hide it                             |
 | **Typst: Export PDF**              | Compile and write a PDF into the vault      |
 | **Typst: Format document**         | Reformat the source                         |
+| **Typst: Open linked file**        | Open the file the path at the cursor names  |
 | **Typst: Create new Typst file**   | Add a `.typ` file where new notes go        |
 | **Typst: Show project root**       | Which folder this document compiles against |
 | **Typst: Restart language server** | Restart Tinymist                            |
 
 No default hotkeys are set, so nothing collides with yours. Bind your own under
 **Settings → Hotkeys**.
+
+A path in a document is a link. **Cmd-click** it on macOS, or **Ctrl-click**
+elsewhere, to open the file in place of the document — an image, a
+bibliography, an `#include`d or `#import`ed file, data read with `yaml()` —
+and add **Shift** to open it in a new tab instead. Holding the modifier
+underlines a path that will open. **Typst: Open linked file** and **Typst:
+Open linked file in new tab** do the same for the path at the cursor.
 
 The preview's own controls float over the page: refresh, open source, and a
 theme button that steps between following the app, light, and dark.
@@ -306,6 +314,8 @@ Then [open an issue](https://github.com/wilfriedago/obsidian-tinymist/issues/new
 - Only one plugin can own the `.typ` extension. Do not enable another Typst
   editor plugin in the same vault.
 - Bibliographies and data files are highlighted, but offer no completion.
+- A path in `toml(…)` does not open with Mod-click: Tinymist does not resolve
+  it.
 - Changing the executable, project, font, or formatter settings restarts
   Tinymist.
 

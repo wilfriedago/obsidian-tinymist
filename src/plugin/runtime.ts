@@ -32,6 +32,7 @@ import {
 	type ShowDocumentParams
 } from '../typst/tinymist/protocol'
 import { BIBLATEX_EXTENSION, DATA_EXTENSIONS, HAYAGRIVA_EXTENSIONS, TYPST_EXTENSION } from './constants'
+import { openLinkedFile, type LinkedFilePlacement } from './linked-files'
 import { createFile, defaultNewFileFolder, isFolder } from './new-file'
 import { StatusBarItem, type CompilePhase } from './status-bar'
 
@@ -154,32 +155,38 @@ export class TypstRuntime {
 			}
 		}
 
-		this.plugin.registerView(
-			TYPST_EDITOR_VIEW_TYPE,
-			(leaf: WorkspaceLeaf) =>
-				new TypstEditorView(leaf, {
-					...documentSync,
-					logger: this.logger.child('editor'),
-					getClient: () => this.manager?.getClient() ?? null,
-					getDocumentUri: () => this.activeDocumentUri(),
-					onDocumentOpened: (vaultPath, text) => {
-						void this.onDocumentOpened(vaultPath, text)
-					},
-					onCursorMoved: (vaultPath, line, character) => {
-						void this.onCursorMoved(vaultPath, line, character)
-					},
-					onTogglePreviewRequested: (vaultPath) => {
-						void this.togglePreview(vaultPath).catch((error: unknown) => {
-							this.reportError(error)
-						})
-					},
-					onShowPreviewHereRequested: (vaultPath) => {
-						void this.openPreview(vaultPath, 'here').catch((error: unknown) => {
-							this.reportError(error)
-						})
-					}
-				})
-		)
+		this.plugin.registerView(TYPST_EDITOR_VIEW_TYPE, (leaf: WorkspaceLeaf) => {
+			const view: TypstEditorView = new TypstEditorView(leaf, {
+				...documentSync,
+				logger: this.logger.child('editor'),
+				getClient: () => this.manager?.getClient() ?? null,
+				// This editor's own document, not the active one: a path hovered
+				// in a split that is not focused must resolve against its own file.
+				getDocumentUri: () => (view.vaultPath && this.session ? this.session.uriFor(view.vaultPath) : null),
+				openLinkedFile: (uri, newTab) => {
+					void this.openLinkedFile(uri, newTab ? 'tab' : leaf).catch((error: unknown) => {
+						this.reportError(error)
+					})
+				},
+				onDocumentOpened: (vaultPath, text) => {
+					void this.onDocumentOpened(vaultPath, text)
+				},
+				onCursorMoved: (vaultPath, line, character) => {
+					void this.onCursorMoved(vaultPath, line, character)
+				},
+				onTogglePreviewRequested: (vaultPath) => {
+					void this.togglePreview(vaultPath).catch((error: unknown) => {
+						this.reportError(error)
+					})
+				},
+				onShowPreviewHereRequested: (vaultPath) => {
+					void this.openPreview(vaultPath, 'here').catch((error: unknown) => {
+						this.reportError(error)
+					})
+				}
+			})
+			return view
+		})
 
 		this.plugin.registerView(
 			TYPST_PREVIEW_VIEW_TYPE,
@@ -799,6 +806,15 @@ export class TypstRuntime {
 		await this.app.workspace.getLeaf(false).openFile(file)
 	}
 
+	/** Opens a file a Typst document links to, as resolved by Tinymist. */
+	async openLinkedFile(uri: string, placement: LinkedFilePlacement): Promise<void> {
+		const host = this.host
+		if (!host) {
+			return
+		}
+		await openLinkedFile(this.app, host.vaultBasePath, uri, placement)
+	}
+
 	/** Creates an empty file in a folder and opens it. */
 	async createFileIn(folder: TFolder, extension: string = TYPST_EXTENSION): Promise<void> {
 		try {
@@ -913,14 +929,6 @@ export class TypstRuntime {
 	activeEditor(): TypstEditorView | null {
 		const view = this.app.workspace.getActiveViewOfType(TypstEditorView)
 		return view ?? null
-	}
-
-	private activeDocumentUri(): string | null {
-		const vaultPath = this.activeEditor()?.vaultPath
-		if (!vaultPath || !this.session) {
-			return null
-		}
-		return this.session.uriFor(vaultPath)
 	}
 
 	private vaultPathForUri(uri: string): VaultPath | null {

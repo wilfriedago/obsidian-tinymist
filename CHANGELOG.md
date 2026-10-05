@@ -7,6 +7,28 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
+## [Unreleased]
+
+### Added
+
+- **Mod-click a path to open the file it names.** Cmd-click on macOS, or
+  Ctrl-click elsewhere, on the path in `image(…)`, `#include`, `#import`,
+  `#bibliography(…)`, `read(…)`, or `yaml(…)` opens that file in place of the
+  document; add Shift to open it in a new tab. It opens in whatever view owns
+  the file: the Typst editor, the data file editor, or Obsidian's image or PDF
+  view. Holding the modifier underlines a path that will open, and a path
+  outside the vault or to a missing file says so. **Open linked file** and
+  **Open linked file in new tab** do the same from the keyboard, at the
+  cursor. Tinymist resolves the paths, so they follow Typst's own rules.
+  Requested in
+  [#34](https://github.com/wilfriedago/obsidian-tinymist/issues/34).
+
+### Fixed
+
+- **Hover answers for the editor it is in.** With two Typst documents side by
+  side, hovering in the one without focus asked Tinymist about the focused
+  one.
+
 ## [0.5.0] - 2026-10-05
 
 ### Added

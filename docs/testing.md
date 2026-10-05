@@ -44,6 +44,8 @@ Verified against Tinymist 0.15.8 / Typst 0.15.1:
 - a clean compile reported through `compileStatus` and **not** through an empty
   diagnostics array
 - completion, hover, document symbols, formatting
+- the paths `links.typ` names, through `textDocument/documentLink`, and an
+  `#import` path through `textDocument/definition`, which the links leave out
 - PDF export returning real `%PDF-` bytes, staged outside the vault
 - a `file:` URI rejected as the export entry — pinned as an expected failure, so
   the plugin can never regress to passing one
@@ -64,6 +66,7 @@ A throwaway vault. Never point the plugin at a real one during development.
 | `errors.typ`                        | Semantic errors; diagnostics must appear                                       |
 | `syntax-error.typ`                  | A parse error, which Typst reports alone                                       |
 | `imports.typ`, `imports/shared.typ` | Multi-file resolution with no `typst.toml`                                     |
+| `links.typ`                         | A path of every kind Mod-click follows                                         |
 | `project/`                          | `typst.toml`, template, bibliography, image asset — per-project root detection |
 | `hayagriva/`                        | A document citing a Hayagriva `.yml` bibliography                              |
 | `pdf/existing.pdf`                  | A PDF predating the plugin; must open in Obsidian's own viewer                 |
@@ -127,6 +130,18 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 - [ ] Selecting text is readable in dark mode, and tinted with the theme's accent colour in both modes.
 - [ ] Edits persist: switch tabs and back, then reopen the vault.
 - [ ] Ctrl/Cmd+F opens CodeMirror's search panel (Obsidian's own find bar does not reach this view — expected).
+
+_Linked files_ — in `links.typ`
+
+- [ ] Holding Cmd (macOS) or Ctrl (elsewhere) over each path underlines it; releasing the key, or moving off the path, removes the underline.
+- [ ] Mod-click on `"project/assets/diagram.svg"` opens the image in place of `links.typ`, in Obsidian's image view; Back returns to `links.typ`.
+- [ ] Mod-Shift-click on it opens a new tab and leaves `links.typ` open.
+- [ ] `"imports/shared.typ"` in the `#import` line, and in `#include`, opens in the Typst editor.
+- [ ] `"hayagriva/references.yml"` opens in the data file editor, and `"README.md"` as a note.
+- [ ] Changing a path to `"missing.png"` and Mod-clicking it shows a notice naming the missing file; `"../../outside.png"` says it cannot be resolved.
+- [ ] Mod-click outside a string still adds a cursor, as CodeMirror does.
+- [ ] With the cursor in a path, **Typst: Open linked file** and **Typst: Open linked file in new tab** do what the clicks do; with it elsewhere, neither is offered.
+- [ ] With `links.typ` and `basic.typ` side by side, a Mod-hover in the one without focus underlines its own paths.
 
 **Preview**
 
