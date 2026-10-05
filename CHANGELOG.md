@@ -7,24 +7,7 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
-## [0.5.0](https://github.com/wilfriedago/obsidian-tinymist/compare/0.4.0...0.5.0) (2026-10-05)
-
-
-### Added
-
-* open a new file with its name ready to type over ([#14](https://github.com/wilfriedago/obsidian-tinymist/issues/14)) ([236e544](https://github.com/wilfriedago/obsidian-tinymist/commit/236e5448e769355e4742c481b9b76688de4ee09e))
-* open and create BibLaTeX bibliography files ([#12](https://github.com/wilfriedago/obsidian-tinymist/issues/12)) ([95d2d7b](https://github.com/wilfriedago/obsidian-tinymist/commit/95d2d7ba8464ceb225ea6352a492841042148a42))
-* open Hayagriva bibliographies, behind an opt-in setting ([#13](https://github.com/wilfriedago/obsidian-tinymist/issues/13)) ([7d54ecf](https://github.com/wilfriedago/obsidian-tinymist/commit/7d54ecf0a332c2b8653f17411ede27b450b33b26))
-* open YAML and TOML files, and highlight them and bibliographies ([#32](https://github.com/wilfriedago/obsidian-tinymist/issues/32)) ([2571285](https://github.com/wilfriedago/obsidian-tinymist/commit/2571285ac8ed7affffa93bac7fb4717b95007045)), closes [#25](https://github.com/wilfriedago/obsidian-tinymist/issues/25) [#11](https://github.com/wilfriedago/obsidian-tinymist/issues/11)
-
-
-### Fixed
-
-* open the search panel with Cmd/Ctrl+F in Typst editors ([#22](https://github.com/wilfriedago/obsidian-tinymist/issues/22)) ([5467a27](https://github.com/wilfriedago/obsidian-tinymist/commit/5467a27991b5328ef391c1097276df4e7b14f332))
-* stop a stray @ from breaking BibTeX highlighting ([#38](https://github.com/wilfriedago/obsidian-tinymist/issues/38)) ([0eb5939](https://github.com/wilfriedago/obsidian-tinymist/commit/0eb5939da8b31e8774cc55aee351a2369b73baf8))
-* update icon for ready status in presentStatus function ([0d5ac46](https://github.com/wilfriedago/obsidian-tinymist/commit/0d5ac4676eb469b49cf9ee64f1c68fce2bcc160e))
-
-## [Unreleased]
+## [0.5.0] - 2026-10-05
 
 ### Added
 
