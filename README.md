@@ -84,15 +84,15 @@ what it is doing.
 Press the **book** button in the editor's tab bar to open the preview beside
 your source. Everything else lives in the command palette:
 
-| Command                            |                                             |
-| ---------------------------------- | ------------------------------------------- |
-| **Typst: Open preview**            | Show the rendered document                  |
-| **Typst: Toggle preview**          | Show or hide it                             |
-| **Typst: Export PDF**              | Compile and write a PDF into the vault      |
-| **Typst: Format document**         | Reformat the source                         |
-| **Typst: Create new Typst file**   | Add a `.typ` file where new notes go        |
-| **Typst: Show project root**       | Which folder this document compiles against |
-| **Typst: Restart language server** | Restart Tinymist                            |
+| Command                            |                                                                                             |
+| ---------------------------------- | ------------------------------------------------------------------------------------------- |
+| **Typst: Open preview**            | Show the rendered document                                                                  |
+| **Typst: Toggle preview**          | Show or hide it                                                                             |
+| **Typst: Export PDF**              | Compile and write a PDF into the vault                                                      |
+| **Typst: Format document**         | Reformat the source                                                                         |
+| **Typst: Create new Typst file**   | Add a `.typ` file where new notes go                                                        |
+| **Typst: Show project root**       | Which folder this document compiles against, and which file when it is part of a larger one |
+| **Typst: Restart language server** | Restart Tinymist                                                                            |
 
 No default hotkeys are set, so nothing collides with yours. Bind your own under
 **Settings → Hotkeys**.
@@ -148,6 +148,27 @@ vault/
 
 Without a `typst.toml`, `papers/distributed-systems/main.typ` still gets its own
 folder as the root — so two papers never collide.
+
+### Chapters in separate files
+
+When the project's `typst.toml` names an entry point, a file that the entry
+point includes is compiled as part of the whole document:
+
+```toml
+[package]
+name = "thesis"
+version = "0.1.0"
+entrypoint = "main.typ"
+```
+
+With `chapters/background.typ` open, its citations resolve against the
+bibliography in `main.typ`, references to other chapters work, and the preview
+shows the whole document, scrolled to where you are typing. **Typst: Show
+project root** names the file being compiled.
+
+A file counts as included when the entry point, or a file it includes, names it
+in an `#include` or `#import` with a literal path. A file nothing includes, such
+as a scratch file in the project folder, is compiled on its own.
 
 The alternatives are **Always the vault root** (one project; `/`-absolute
 imports reach anywhere) and **A folder I choose**. Changing this restarts

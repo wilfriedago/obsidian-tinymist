@@ -68,6 +68,11 @@ export class DocumentSession {
 		return this.documents.has(vaultPath)
 	}
 
+	/** The text Tinymist has for an open document, which may be unsaved. */
+	textOf(vaultPath: VaultPath): string | null {
+		return this.documents.get(vaultPath)?.text ?? null
+	}
+
 	/** Announces a document. Opening one that is already open re-syncs its text. */
 	open(vaultPath: VaultPath, text: string): void {
 		const existing = this.documents.get(vaultPath)

@@ -7,6 +7,30 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
+## [Unreleased]
+
+### Fixed
+
+- **A chapter previews as part of its document.** In a project whose
+  `typst.toml` names an `entrypoint`, opening a file that the entry point
+  includes or imports now compiles, diagnoses and previews it through the
+  entry point. Before, the file was compiled on its own, so every citation and
+  every reference to another chapter failed with "label does not exist", and the
+  preview stayed blank. The preview shows the whole document and still scrolls
+  to the caret in the chapter. A file the entry point does not reach is still
+  compiled on its own.
+- **A preview that cannot render says why.** When a document fails to compile
+  before the preview has shown anything, the pane says so and how many errors
+  there are, instead of staying blank.
+- **The status bar no longer says _ready_ for a document that does not
+  compile.** It also describes the previewed document while the preview has
+  focus, rather than reporting no problems.
+- **Closing a preview no longer stops diagnostics for other files.** Tinymist
+  kept compiling the closed preview's document until another preview started.
+
+Reported in
+[#42](https://github.com/wilfriedago/obsidian-tinymist/issues/42).
+
 ## [0.5.0] - 2026-10-05
 
 ### Added

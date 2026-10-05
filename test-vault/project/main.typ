@@ -16,7 +16,9 @@ the case the plugin's "auto" project strategy exists to get right.
   caption: [A figure loaded from a project-relative asset path.],
 )
 
-= Bibliography check
+#include "chapters/background.typ"
+
+= Bibliography check <sec:bibliography>
 
 A cited claim @knuth1984.
 

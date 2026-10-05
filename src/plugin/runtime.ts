@@ -20,11 +20,13 @@ import { extensionOf, fileUriToAbsolutePath, absoluteToVaultPath, type VaultPath
 import { PdfExporter, announceExport } from '../typst/compiler/export'
 import { DiagnosticsStore } from '../typst/diagnostics/store'
 import { DocumentSession } from '../typst/documents/session'
-import { describeProject, resolveProject, vaultFileSystem } from '../typst/project/project'
+import { resolveMainDocument, type MainDocumentSource } from '../typst/project/main-document'
+import { describeProject, resolveProject, vaultFileSystem, type TypstProject } from '../typst/project/project'
 import type { TinymistClient } from '../typst/tinymist/client'
 import type { InvertColorsStrategy, TinymistInitOptions } from '../typst/tinymist/config'
 import { TinymistManager, type TinymistState } from '../typst/tinymist/manager'
 import {
+	TINYMIST_COMMAND,
 	TINYMIST_NOTIFICATION,
 	type CompileStatusParams,
 	type PreviewJumpInfo,
@@ -64,6 +66,18 @@ export class TypstRuntime {
 	private statusBar: StatusBarItem | null = null
 
 	private compilePhase: CompilePhase = 'idle'
+	/** Path of the document the latest compile status was for, as Tinymist reports it. */
+	private compiledPath: string | null = null
+	/** Each document's main document, as last worked out. See {@link mainDocumentFor}. */
+	private readonly mainDocuments = new Map<VaultPath, VaultPath>()
+	/**
+	 * The document last sent with `tinymist.pinMain`. `undefined` means not
+	 * known, as with a new client or once a primary preview has taken the
+	 * compiler, so the next sync pins whatever it finds.
+	 */
+	private pinnedMain: VaultPath | undefined = undefined
+	/** Serializes pins, so a slow one cannot land after a newer one. */
+	private pinning: Promise<void> = Promise.resolve()
 	private startupError: TypstError | null = null
 	/** Disposers for notification subscriptions bound to the current client. */
 	private clientSubscriptions: (() => void)[] = []
@@ -109,6 +123,7 @@ export class TypstRuntime {
 				}
 			})
 			this.updateStatusBar()
+			this.forEachPreviewView((view) => view.refreshCompileProblem())
 		})
 	}
 
@@ -191,7 +206,8 @@ export class TypstRuntime {
 						this.releasePreview(vaultPath, requester)
 					},
 					previewStartsPinned: () => !this.settings.previewFollowsActiveDocument,
-					openSource: (vaultPath) => this.openSource(vaultPath)
+					openSource: (vaultPath) => this.openSource(vaultPath),
+					describeCompileProblem: (vaultPath) => this.describeCompileProblem(vaultPath)
 				})
 		)
 
@@ -258,7 +274,8 @@ export class TypstRuntime {
 		this.plugin.registerEvent(
 			this.app.workspace.on('active-leaf-change', () => {
 				this.updateStatusBar()
-				this.syncFollowingPreviews()
+				void this.syncFollowingPreviews()
+				this.syncPinnedMain()
 			})
 		)
 
@@ -266,7 +283,8 @@ export class TypstRuntime {
 		// same tab being pointed at another file, which does not change leaf.
 		this.plugin.registerEvent(
 			this.app.workspace.on('file-open', () => {
-				this.syncFollowingPreviews()
+				void this.syncFollowingPreviews()
+				this.syncPinnedMain()
 			})
 		)
 
@@ -317,6 +335,7 @@ export class TypstRuntime {
 			this.app.vault.on('rename', (file, oldPath) => {
 				if (file instanceof TFile) {
 					this.onFileRenamed(oldPath, file.path)
+					this.mainDocuments.clear()
 				}
 			})
 		)
@@ -326,6 +345,7 @@ export class TypstRuntime {
 				if (file instanceof TFile) {
 					this.session?.close(file.path)
 					this.diagnostics.clear(file.path)
+					this.mainDocuments.clear()
 				}
 			})
 		)
@@ -369,6 +389,7 @@ export class TypstRuntime {
 				this.disposeClientSubscriptions()
 				this.session?.detach()
 				this.previews.forgetAll()
+				this.pinnedMain = undefined
 			}
 		})
 	}
@@ -408,6 +429,9 @@ export class TypstRuntime {
 		)
 
 		this.session?.attach(client)
+		this.pinnedMain = undefined
+		this.compiledPath = null
+		this.syncPinnedMain()
 		this.updateStatusBar()
 	}
 
@@ -433,6 +457,21 @@ export class TypstRuntime {
 	}
 
 	private onCompileStatus(params: CompileStatusParams): void {
+		this.compiledPath = params.path
+		if (params.status !== 'compiling') {
+			for (const previewed of this.previews.trackedPaths()) {
+				if (
+					this.compileStatusNames(previewed, params.path) &&
+					this.previews.noteCompile(previewed, params.status === 'compileSuccess')
+				) {
+					this.forEachPreviewView((view) => {
+						if (view.getPreviewedPath() === previewed) {
+							view.refreshCompileProblem()
+						}
+					})
+				}
+			}
+		}
 		switch (params.status) {
 			case 'compiling':
 				this.compilePhase = 'compiling'
@@ -518,10 +557,11 @@ export class TypstRuntime {
 		}
 		const client = this.manager?.getClient()
 		const session = this.session
-		if (!client || !session || !this.previews.getSession(vaultPath)) {
+		const previewed = this.knownMainDocumentFor(vaultPath)
+		if (!client || !session || !this.previews.getSession(previewed)) {
 			return
 		}
-		await this.previews.scrollToSource(client, vaultPath, session.absolutePathFor(vaultPath), line, character)
+		await this.previews.scrollToSource(client, previewed, session.absolutePathFor(vaultPath), line, character)
 	}
 
 	private async onDocumentOpened(vaultPath: VaultPath, text: string): Promise<void> {
@@ -538,7 +578,9 @@ export class TypstRuntime {
 			await this.ensureServer()
 		} catch (error) {
 			this.reportError(error)
+			return
 		}
+		this.syncPinnedMain()
 	}
 
 	/* ---------------------------------------------------------------------- */
@@ -568,11 +610,15 @@ export class TypstRuntime {
 	/**
 	 * Opens (or focuses) the preview for a document.
 	 *
+	 * What is previewed is the document's main document, so a chapter shows as
+	 * part of the whole and renders with its citations resolved.
+	 *
 	 * A preview that is already open wins over the requested location: one
 	 * Tinymist task serves one document, and a second frame on the same server
 	 * would show the same page twice for no gain.
 	 */
-	async openPreview(vaultPath: VaultPath, location: PreviewLocation = 'split'): Promise<void> {
+	async openPreview(documentPath: VaultPath, location: PreviewLocation = 'split'): Promise<void> {
+		const vaultPath = await this.mainDocumentFor(documentPath)
 		const existing = this.findPreviewFor(vaultPath)
 		if (existing) {
 			await this.app.workspace.revealLeaf(existing.leaf)
@@ -600,18 +646,26 @@ export class TypstRuntime {
 	}
 
 	/**
-	 * Re-points every unpinned preview at the document being edited.
+	 * Re-points every unpinned preview at the document being edited, or at its
+	 * main document. Moving between chapters of one project therefore leaves
+	 * the preview where it is, rather than restarting it.
 	 *
 	 * Reads each leaf's stored state rather than its view: Obsidian defers the
 	 * views of leaves that are not visible, so a background preview has no view
 	 * object to ask and would otherwise come back showing a document the reader
 	 * left long ago.
 	 */
-	private syncFollowingPreviews(): void {
-		const activePath = this.activeEditor()?.vaultPath
-		if (!activePath) {
+	private async syncFollowingPreviews(): Promise<void> {
+		const editingPath = this.activeEditor()?.vaultPath
+		if (!editingPath) {
 			// The focus is on a preview, a Markdown note, or nothing at all.
 			// None of those mean "stop showing what I was just editing".
+			return
+		}
+		const activePath = await this.mainDocumentFor(editingPath)
+		if (this.activeEditor()?.vaultPath !== editingPath) {
+			// The reader moved on while the project was being read; the event
+			// for where they went does this instead.
 			return
 		}
 
@@ -656,10 +710,23 @@ export class TypstRuntime {
 		if (stillShown) {
 			return
 		}
-		void this.previews.stop(this.manager?.getClient() ?? null, vaultPath)
+		void this.stopPreview(vaultPath)
 	}
 
-	async togglePreview(vaultPath: VaultPath): Promise<void> {
+	private async stopPreview(vaultPath: VaultPath): Promise<void> {
+		const wasPrimary = this.previews.getSession(vaultPath)?.isPrimary === true
+		await this.previews.stop(this.manager?.getClient() ?? null, vaultPath)
+		// The compiler stays locked on the stopped task's document until
+		// something pins it elsewhere (verified against 0.15.8), so without this
+		// an edit to any other file would go undiagnosed.
+		if (wasPrimary) {
+			this.pinnedMain = undefined
+			this.syncPinnedMain()
+		}
+	}
+
+	async togglePreview(documentPath: VaultPath): Promise<void> {
+		const vaultPath = await this.mainDocumentFor(documentPath)
 		const existing = this.findPreviewFor(vaultPath)
 		if (existing) {
 			existing.leaf.detach()
@@ -689,7 +756,108 @@ export class TypstRuntime {
 			partialRendering: this.settings.previewPartialRendering,
 			invertColors: this.resolveInvertColors(themeOverride)
 		})
+		if (preview.isPrimary) {
+			// Starting it moved the compiler onto this document, whatever was
+			// pinned before.
+			this.pinnedMain = undefined
+		}
 		return preview.url
+	}
+
+	/**
+	 * Why a preview's frame is empty, when the reason is that its document has
+	 * never compiled since the preview started.
+	 *
+	 * The count is the project's, not the previewed file's: a main document
+	 * usually fails on an error in one of the chapters it includes.
+	 */
+	private describeCompileProblem(vaultPath: VaultPath): string | null {
+		if (this.previews.renderState(vaultPath) !== 'failing') {
+			return null
+		}
+		const root = this.projectFor(vaultPath).root
+		const { errors } = this.diagnostics.summarizeWhere((path) => root.length === 0 || path.startsWith(`${root}/`))
+		const count = errors > 0 ? `: ${errors} ${errors === 1 ? 'error' : 'errors'}` : ''
+		return `This document doesn't compile yet${count}. See the editor for details.`
+	}
+
+	/**
+	 * The file Tinymist should compile for a document: its project's entry
+	 * point when that includes the document, and the document itself
+	 * otherwise. See `typst/project/main-document.ts`.
+	 */
+	private async mainDocumentFor(vaultPath: VaultPath): Promise<VaultPath> {
+		let main = vaultPath
+		try {
+			main = await resolveMainDocument(this.mainDocumentSource(), vaultPath, this.projectFor(vaultPath))
+		} catch (error) {
+			this.logger.debug('Working out the main document failed', error)
+		}
+		if (this.mainDocuments.get(vaultPath) !== main && main !== vaultPath) {
+			this.logger.debug('Compiling through the main document', `${vaultPath} -> ${main}`)
+		}
+		this.mainDocuments.set(vaultPath, main)
+		return main
+	}
+
+	/** {@link mainDocumentFor} without reading anything, for hot paths such as caret moves. */
+	private knownMainDocumentFor(vaultPath: VaultPath): VaultPath {
+		return this.mainDocuments.get(vaultPath) ?? vaultPath
+	}
+
+	private mainDocumentSource(): MainDocumentSource {
+		const vault = this.app.vault
+		return {
+			exists: (vaultPath) => vault.getAbstractFileByPath(vaultPath) !== null,
+			read: async (vaultPath) => {
+				// An open buffer first: an `#include` typed into `main.typ` a
+				// moment ago counts before it is saved, as it does for Tinymist.
+				const open = this.session?.textOf(vaultPath) ?? null
+				if (open !== null) {
+					return open
+				}
+				const file = vault.getFileByPath(vaultPath)
+				return file ? await vault.cachedRead(file) : null
+			}
+		}
+	}
+
+	/**
+	 * Points Tinymist's compiler at the active document's main document, so a
+	 * chapter is diagnosed as part of the whole document rather than alone.
+	 *
+	 * The active document is pinned even when it is its own main document.
+	 * Unpinned, Tinymist compiles whichever document was last opened or edited,
+	 * which is not necessarily the one on screen.
+	 */
+	private syncPinnedMain(): void {
+		this.pinning = this.pinning
+			.then(() => this.applyPinnedMain())
+			.catch((error: unknown) => {
+				this.logger.debug('Pinning the main document failed', error)
+			})
+	}
+
+	private async applyPinnedMain(): Promise<void> {
+		const activePath = this.activeEditor()?.vaultPath
+		// No document in focus means nothing new to compile, and a primary
+		// preview holds the compiler on its own document: pinning would make it
+		// render something else. See `PreviewController.primarySession`.
+		if (!activePath || this.previews.primarySession()) {
+			return
+		}
+		const main = await this.mainDocumentFor(activePath)
+		const client = this.manager?.getClient()
+		const session = this.session
+		if (!client || !session || !client.supportsCommand(TINYMIST_COMMAND.pinMain)) {
+			return
+		}
+		// Checked again: a preview can start while the project is being read.
+		if (main === this.pinnedMain || this.previews.primarySession()) {
+			return
+		}
+		await client.executeCommand(TINYMIST_COMMAND.pinMain, [session.absolutePathFor(main)], 10_000)
+		this.pinnedMain = main
 	}
 
 	/**
@@ -816,13 +984,32 @@ export class TypstRuntime {
 		await this.createFileIn(defaultNewFileFolder(this.app), extension)
 	}
 
-	/** Describes the project a document belongs to, for the command palette. */
-	describeProjectFor(vaultPath: VaultPath): string {
-		const project = resolveProject(vaultFileSystem(this.app.vault), vaultPath, {
+	/**
+	 * Describes the project a document belongs to, and the main document it
+	 * compiles through when that is another file, for the command palette.
+	 */
+	async describeProjectFor(vaultPath: VaultPath): Promise<string> {
+		const root = `Project root: ${describeProject(this.projectFor(vaultPath))}`
+		const main = await this.mainDocumentFor(vaultPath)
+		return main === vaultPath ? root : `${root}\nCompiled as part of: ${main}`
+	}
+
+	private projectFor(vaultPath: VaultPath): TypstProject {
+		return resolveProject(vaultFileSystem(this.app.vault), vaultPath, {
 			strategy: this.settings.projectRootStrategy,
 			customRoot: this.settings.customProjectRoot
 		})
-		return describeProject(project)
+	}
+
+	/**
+	 * Whether a `tinymist/compileStatus` path names a document. Tinymist
+	 * reports it relative to the project root, as `/main.typ` for
+	 * `papers/thesis/main.typ` (verified against 0.15.8).
+	 */
+	private compileStatusNames(vaultPath: VaultPath, reportedPath: string): boolean {
+		const root = this.projectFor(vaultPath).root
+		const relative = root.length > 0 && vaultPath.startsWith(`${root}/`) ? vaultPath.slice(root.length + 1) : vaultPath
+		return reportedPath.replace(/\\/g, '/') === `/${relative}`
 	}
 
 	/* ---------------------------------------------------------------------- */
@@ -951,6 +1138,14 @@ export class TypstRuntime {
 		return null
 	}
 
+	private forEachPreviewView(callback: (view: TypstPreviewView) => void): void {
+		for (const leaf of this.app.workspace.getLeavesOfType(TYPST_PREVIEW_VIEW_TYPE)) {
+			if (leaf.view instanceof TypstPreviewView) {
+				callback(leaf.view)
+			}
+		}
+	}
+
 	/** Every open editor Tinymist is kept in step with, data files included. */
 	private forEachSourceView(callback: (view: SourceEditorView) => void): void {
 		for (const viewType of [TYPST_EDITOR_VIEW_TYPE, DATA_FILE_EDITOR_VIEW_TYPE]) {
@@ -969,12 +1164,20 @@ export class TypstRuntime {
 	}
 
 	private updateStatusBar(): void {
-		const active = this.activeEditor()
-		const vaultPath = active?.vaultPath ?? null
+		// Opening a preview focuses it, and the status bar then has to describe
+		// the previewed document, not fall back to saying nothing is wrong.
+		const vaultPath =
+			this.activeEditor()?.vaultPath ?? this.app.workspace.getActiveViewOfType(TypstPreviewView)?.getPreviewedPath() ?? null
+		// A failed compile is about this document only when it compiled this
+		// document's main document; a preview pinned elsewhere compiles another.
+		const compiled = this.compiledPath
+		const failedHere =
+			vaultPath !== null && compiled !== null && this.compileStatusNames(this.knownMainDocumentFor(vaultPath), compiled)
+		const compilePhase = this.compilePhase === 'error' && !failedHere ? 'idle' : this.compilePhase
 
 		this.statusBar?.update({
 			serverState: this.startupError ? 'failed' : (this.manager?.getState().kind ?? 'stopped'),
-			compilePhase: this.compilePhase,
+			compilePhase,
 			diagnostics: vaultPath ? this.diagnostics.summarize(vaultPath) : { errors: 0, warnings: 0, total: 0 },
 			hasActiveDocument: vaultPath !== null
 		})

@@ -65,8 +65,8 @@ export function registerCommands(plugin: Plugin, runtime: TypstRuntime): void {
 	plugin.addCommand({
 		id: 'show-project',
 		name: 'Show project root',
-		checkCallback: withActiveDocument((_view, vaultPath) => {
-			new Notice(`Project root: ${runtime.describeProjectFor(vaultPath)}`)
+		checkCallback: withActiveDocument(async (_view, vaultPath) => {
+			new Notice(await runtime.describeProjectFor(vaultPath))
 		})
 	})
 

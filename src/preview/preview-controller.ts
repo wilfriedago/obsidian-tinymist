@@ -32,10 +32,21 @@ export interface PreviewOptions {
 	readonly invertColors: InvertColorsStrategy
 }
 
+/**
+ * What a preview task has shown since it started.
+ *
+ * A task renders only the compiles that finish after it starts, so a document
+ * that fails its first compile leaves the frame empty. `failing` is that case,
+ * and the one the view has to explain in words.
+ */
+export type PreviewRenderState = 'pending' | 'rendered' | 'failing'
+
 export class PreviewController {
 	private readonly sessions = new Map<VaultPath, PreviewSession>()
 	/** Guards against two opens of the same document racing into two tasks. */
 	private readonly starting = new Map<VaultPath, Promise<PreviewSession>>()
+	/** Keyed like {@link sessions}, but set before the task is asked for, see {@link noteCompile}. */
+	private readonly renderStates = new Map<VaultPath, PreviewRenderState>()
 
 	constructor(private readonly logger: Logger) {}
 
@@ -45,6 +56,50 @@ export class PreviewController {
 
 	get activeCount(): number {
 		return this.sessions.size
+	}
+
+	/**
+	 * The task sharing the language server's compiler, if one is running.
+	 *
+	 * Starting it locks that compiler onto the task's entry, and an explicit
+	 * `tinymist.pinMain` would take the compiler, and so the rendered page,
+	 * away from it (verified against 0.15.8).
+	 */
+	primarySession(): PreviewSession | null {
+		for (const session of this.sessions.values()) {
+			if (session.isPrimary) {
+				return session
+			}
+		}
+		return null
+	}
+
+	/** Documents with a task running or being started. */
+	trackedPaths(): VaultPath[] {
+		return [...this.renderStates.keys()]
+	}
+
+	renderState(vaultPath: VaultPath): PreviewRenderState | null {
+		return this.renderStates.get(vaultPath) ?? null
+	}
+
+	/**
+	 * Records the outcome of a compile of a previewed document, and reports
+	 * whether that changed what the preview is showing.
+	 *
+	 * Fed from `tinymist/compileStatus`, which reports the language server's
+	 * compiler only. That is the primary task's compiler; a task started with
+	 * `--not-primary` compiles on its own and reports nothing, so it stays
+	 * `pending` rather than claiming a state nobody observed.
+	 */
+	noteCompile(vaultPath: VaultPath, succeeded: boolean): boolean {
+		const current = this.renderStates.get(vaultPath)
+		if (current === undefined || current === 'rendered') {
+			return false
+		}
+		const next: PreviewRenderState = succeeded ? 'rendered' : 'failing'
+		this.renderStates.set(vaultPath, next)
+		return next !== current
 	}
 
 	/** Starts a preview task for a document, or returns the running one. */
@@ -93,6 +148,10 @@ export class PreviewController {
 		// the first task may claim primary.
 		const notPrimary = this.sessions.size > 0
 
+		// Set before the command is sent: Tinymist compiles as part of starting
+		// the task, and that first outcome can arrive before the reply does.
+		this.renderStates.set(vaultPath, 'pending')
+
 		const args = buildPreviewArgs({
 			taskId,
 			entryAbsolutePath: absolutePath,
@@ -106,11 +165,13 @@ export class PreviewController {
 		try {
 			result = await client.executeCommand<StartPreviewResult>(TINYMIST_COMMAND.startPreview, [args], 60_000)
 		} catch (error) {
+			this.renderStates.delete(vaultPath)
 			throw asTypstError(error, 'preview-unavailable', { Document: vaultPath })
 		}
 
 		const port = result.staticServerPort
 		if (typeof port !== 'number') {
+			this.renderStates.delete(vaultPath)
 			throw new TypstError('preview-unavailable', 'Tinymist started a preview but reported no server port.', {
 				context: { Document: vaultPath }
 			})
@@ -138,6 +199,7 @@ export class PreviewController {
 			return
 		}
 		this.sessions.delete(vaultPath)
+		this.renderStates.delete(vaultPath)
 
 		if (!client) {
 			return
@@ -160,11 +222,17 @@ export class PreviewController {
 	forgetAll(): void {
 		this.sessions.clear()
 		this.starting.clear()
+		this.renderStates.clear()
 	}
 
 	/**
 	 * Source to preview: asks the preview to scroll to the cursor's location.
 	 * Tinymist owns the span mapping; the plugin only reports where the caret is.
+	 *
+	 * `vaultPath` names the previewed document and `absolutePath` the file the
+	 * caret is in. They differ for a chapter previewed through its project's
+	 * main document, and Tinymist maps a chapter's position into the main
+	 * document's pages on its own (verified against 0.15.8).
 	 */
 	async scrollToSource(
 		client: TinymistClient,
@@ -207,6 +275,7 @@ export class PreviewController {
 		const vaultPath = this.vaultPathForTask(taskId)
 		if (vaultPath !== null) {
 			this.sessions.delete(vaultPath)
+			this.renderStates.delete(vaultPath)
 		}
 	}
 }

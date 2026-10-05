@@ -82,6 +82,18 @@ export function presentStatus(model: StatusModel): StatusPresentation {
 		}
 	}
 
+	// A file can be clean while the document it belongs to is not: a chapter
+	// compiled through its project's main document fails on an error in
+	// another chapter, and the preview then has nothing to show.
+	if (model.compilePhase === 'error' && model.hasActiveDocument) {
+		return {
+			text: 'Typst: does not compile',
+			icon: 'alert-circle',
+			tooltip: 'The document does not compile. The errors are in another of its files.',
+			modifier: 'error'
+		}
+	}
+
 	return {
 		text: 'Typst: ready',
 		icon: 'circle-check',
