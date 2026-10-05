@@ -9,6 +9,7 @@
 	flex-direction: column;
 	height: 100%;
 	overflow: hidden;
+	padding: 0 var(--size-4-2) !important;
 }
 
 .tinymist-editor {
@@ -41,6 +42,7 @@
 
 	.cm-line {
 		font-family: var(--font-monospace);
+		padding: 0 0 0 var(--size-4-1);
 	}
 
 	.cm-activeLine {
