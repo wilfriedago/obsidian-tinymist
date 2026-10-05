@@ -43,6 +43,11 @@ release turns them into its section and its GitHub release notes.
   cursor in the replace field. Thanks to
   [@pcastro93](https://github.com/pcastro93) in
   [#22](https://github.com/wilfriedago/obsidian-tinymist/pull/22).
+- **A stray `@` no longer breaks BibTeX highlighting.** The BibTeX tokenizer
+  now handles it correctly, so the rest of the file stays highlighted. Fixed in
+  [#38](https://github.com/wilfriedago/obsidian-tinymist/issues/38).
+- **The ready-status icon now matches the ready state.** `presentStatus` now
+  uses the correct icon for that status.
 
 ## [0.4.0] - 2026-09-22
 
