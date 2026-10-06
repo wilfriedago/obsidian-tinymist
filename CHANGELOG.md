@@ -7,6 +7,16 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
+## [Unreleased]
+
+### Added
+
+- **A Support group at the bottom of the settings.** Two buttons — **Star on
+  GitHub** and **Buy me a coffee** — that open in your browser when clicked,
+  and do nothing otherwise: no popups, no startup notices, no network
+  requests. The manifest also declares the funding link, so Obsidian shows it
+  beside the plugin.
+
 ## [0.5.0] - 2026-10-05
 
 ### Added

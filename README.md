@@ -10,6 +10,12 @@
   <a href="https://github.com/wilfriedago/obsidian-tinymist/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/wilfriedago/obsidian-tinymist?color=%237c3aed&label=release"></a>
   <a href="https://github.com/wilfriedago/obsidian-tinymist/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/wilfriedago/obsidian-tinymist/actions/workflows/ci.yml/badge.svg"></a>
   <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/wilfriedago/obsidian-tinymist?color=%237c3aed"></a>
+  <a href="https://github.com/wilfriedago/obsidian-tinymist">
+    <img src="https://img.shields.io/github/stars/wilfriedago/obsidian-tinymist?style=flat&logo=github&label=Star%20on%20GitHub" alt="Star on GitHub">
+  </a>
+  <a href="https://www.buymeacoffee.com/wilfriedago">
+    <img src="https://img.shields.io/badge/Support%20the%20project-Buy%20me%20a%20coffee-FFDD00?logo=buymeacoffee&logoColor=black" alt="Buy me a coffee">
+  </a>
 </p>
 
 ---
@@ -30,6 +36,26 @@ Your papers, theses, and reports live beside your notes. Not in another app.
 <p align="center">
   <em>Source on the left, the real rendered document on the right, updating as you type.</em>
 </p>
+
+## Why?
+
+I use Obsidian for thinking, research, and writing, but when a document needed
+serious typesetting, the workflow usually meant leaving the vault.
+
+Tinymist for Obsidian exists to close that gap.
+
+It makes Typst documents first-class citizens of an Obsidian vault:
+
+- write `.typ` documents next to your notes
+- get real Typst language intelligence
+- preview the rendered document beside the source
+- navigate between source and rendered output
+- export ordinary PDFs back into the vault
+- keep the entire workflow local and offline
+
+The goal isn't to turn Obsidian into another IDE.
+
+It's to make **Obsidian + Typst feel like one writing environment.**
 
 ## What you get
 
@@ -210,7 +236,8 @@ a PDF renderer — opening any PDF uses Obsidian's own viewer.
 
 **This plugin makes no network requests.** No telemetry, no analytics, no
 accounts, no remote code or styles. Once Tinymist is installed, everything
-works offline.
+works offline. The two links under **Settings → Tinymist → Support** open in
+your browser only when you click them.
 
 Obsidian's automated review flags two capabilities. Both are inherent to
 driving an external compiler, and here is exactly what they amount to:
@@ -244,12 +271,13 @@ a document you are previewing.
 Obsidian's review counts network calls by pattern-matching the built `main.js`.
 None of the matches is a request to a remote server:
 
-| What the scanner sees      | What it is                                                                                                           |
-| -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `http://127.0.0.1:<port>/` | The loopback preview server on your own machine                                                                      |
-| `https://github.com/...`   | A URL in the build banner comment. Not fetched                                                                       |
-| `"http://"`, `"https://"`  | String literals in the bundled Typst grammar, used to recognize links while highlighting                             |
-| `.open(`                   | `DocumentSession.open()`, the plugin's own method. The pattern also matches `XMLHttpRequest.open`, which is not used |
+| What the scanner sees      | What it is                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `http://127.0.0.1:<port>/` | The loopback preview server on your own machine                                                                                                                                                         |
+| `https://github.com/...`   | A URL in the build banner comment, and the GitHub link in **Support**. Neither is fetched                                                                                                               |
+| `https://www.buymeacoffee` | The other **Support** link. Opened in your browser only when clicked; never fetched                                                                                                                     |
+| `"http://"`, `"https://"`  | String literals in the bundled Typst grammar, used to recognize links while highlighting                                                                                                                |
+| `.open(`                   | `DocumentSession.open()`, the plugin's own method, and `window.open` for the two **Support** links, which hands them to your browser. The pattern also matches `XMLHttpRequest.open`, which is not used |
 
 Confirm it yourself:
 
@@ -333,6 +361,27 @@ and [Typst](https://typst.app). Typst syntax highlighting comes from
 
 This is an independent, unofficial integration. It is not affiliated with or
 endorsed by the Tinymist project, the Typst project, or Obsidian.
+
+## Support
+
+Tinymist for Obsidian is free and open source.
+
+If it has become part of your workflow, there are three simple ways to
+support it:
+
+- **[Star the repository](https://github.com/wilfriedago/obsidian-tinymist)** —
+  helps other people discover it.
+- **[Buy me a coffee](https://www.buymeacoffee.com/wilfriedago)** —
+  directly supports continued development.
+- **[Report bugs, suggest improvements](https://github.com/wilfriedago/obsidian-tinymist/issues), or
+  [contribute](CONTRIBUTING.md)** — or simply tell someone who writes in Typst
+  about it. Feedback is one of the most valuable ways to improve the plugin.
+
+Financial support is entirely voluntary; using and sharing the plugin already
+helps. The same links sit at the bottom of **Settings → Tinymist**, and nowhere
+else in the app.
+
+Thank you for using Tinymist for Obsidian.
 
 ## License
 
