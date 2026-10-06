@@ -127,6 +127,7 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 - [ ] Selecting text is readable in dark mode, and tinted with the theme's accent colour in both modes.
 - [ ] Edits persist: switch tabs and back, then reopen the vault.
 - [ ] Ctrl/Cmd+F opens CodeMirror's search panel (Obsidian's own find bar does not reach this view — expected).
+- [ ] Each **Search bar theme** restyles the open search panel at once, and the light/dark variants switch with the app's mode.
 
 **Preview**
 

@@ -7,6 +7,22 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
+## [Unreleased]
+
+### Added
+
+- **Search bar themes.** **Editor → Search bar theme** restyles the
+  find-and-replace bar. **Follow the app** (the default) takes its colours
+  from whichever Obsidian theme is active; Catppuccin, Dracula, Monokai,
+  Solarized, and One use their own palettes. Themes with a light and a dark
+  variant follow the app.
+
+### Changed
+
+- **Selecting a word highlights its other occurrences more visibly.** Matches
+  are outlined and tinted, whole words only, and ignore one-character
+  selections. Dark themes also get a stronger selection to stay above them.
+
 ## [0.5.1](https://github.com/wilfriedago/obsidian-tinymist/compare/0.5.0...0.5.1) (2026-10-06)
 
 ### Added
