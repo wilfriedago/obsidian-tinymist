@@ -46,11 +46,13 @@ describe('migrateSettings', () => {
 		const migrated = migrateSettings({
 			logLevel: 'verbose',
 			projectRootStrategy: 'magic',
-			previewTheme: 'neon'
+			previewTheme: 'neon',
+			searchBarTheme: 'vaporwave'
 		})
 		expect(migrated.logLevel).toBe(DEFAULT_SETTINGS.logLevel)
 		expect(migrated.projectRootStrategy).toBe(DEFAULT_SETTINGS.projectRootStrategy)
 		expect(migrated.previewTheme).toBe(DEFAULT_SETTINGS.previewTheme)
+		expect(migrated.searchBarTheme).toBe(DEFAULT_SETTINGS.searchBarTheme)
 	})
 
 	it('drops unknown keys and stamps the current schema version', () => {

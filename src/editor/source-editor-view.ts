@@ -18,6 +18,7 @@ import {
 
 import { Scope, TextFileView, type TFile, type WorkspaceLeaf } from 'obsidian'
 
+import type { SearchBarTheme } from '../settings/settings'
 import type { Logger } from '../shared/logging'
 import type { VaultPath } from '../shared/paths'
 import type { Diagnostic } from '../typst/tinymist/protocol'
@@ -43,6 +44,8 @@ export interface SourceEditorHost {
 	onDocumentClosed(vaultPath: VaultPath): void
 	/** Diagnostics currently known for a document. */
 	getDiagnostics(vaultPath: VaultPath): readonly Diagnostic[]
+	/** Which colours the find-and-replace panel uses. */
+	getSearchBarTheme(): SearchBarTheme
 	readonly logger: Logger
 }
 
@@ -68,6 +71,9 @@ export function externalReplaceSpec(state: EditorState, next: string): Transacti
 
 export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEditorHost> extends TextFileView {
 	protected editor: EditorView | null = null
+	/** Carries the search bar theme class, which `styles.css` keys its colours on. */
+	private editorEl: HTMLElement | null = null
+	private searchBarThemeClass: string | null = null
 	private readonly diagnosticsCompartment = new Compartment()
 	private changeTimer: number | null = null
 	/** Disk reloads reach the language server, but must not request another save. */
@@ -112,6 +118,8 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 		this.contentEl.addClass('tinymist-editor-container')
 
 		const parent = this.contentEl.createDiv({ cls: 'tinymist-editor' })
+		this.editorEl = parent
+		this.setSearchBarTheme(this.host.getSearchBarTheme())
 
 		this.editor = new EditorView({
 			parent,
@@ -126,6 +134,8 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 		this.cancelTimers()
 		this.editor?.destroy()
 		this.editor = null
+		this.editorEl = null
+		this.searchBarThemeClass = null
 		this.contentEl.empty()
 	}
 
@@ -198,6 +208,19 @@ export abstract class SourceEditorView<Host extends SourceEditorHost = SourceEdi
 		}
 		const diagnostics = toCodeMirrorDiagnostics(editor.state.doc, this.host.getDiagnostics(path))
 		editor.dispatch(setDiagnostics(editor.state, diagnostics))
+	}
+
+	/** Swaps the find-and-replace panel's colours; the CSS does the rest. */
+	setSearchBarTheme(theme: SearchBarTheme): void {
+		const el = this.editorEl
+		if (!el) {
+			return
+		}
+		if (this.searchBarThemeClass) {
+			el.removeClass(this.searchBarThemeClass)
+		}
+		this.searchBarThemeClass = `tinymist-search-${theme}`
+		el.addClass(this.searchBarThemeClass)
 	}
 
 	focusEditor(): void {

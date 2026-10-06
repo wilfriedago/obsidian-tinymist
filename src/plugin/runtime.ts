@@ -145,6 +145,7 @@ export class TypstRuntime {
 		// What every editor needs to keep Tinymist in step with its buffer.
 		const documentSync = {
 			getDiagnostics: (vaultPath: VaultPath) => (this.settings.showDiagnostics ? this.diagnostics.get(vaultPath) : []),
+			getSearchBarTheme: () => this.settings.searchBarTheme,
 			onDocumentChanged: (vaultPath: VaultPath, text: string) => {
 				this.session?.change(vaultPath, text)
 			},
@@ -853,6 +854,10 @@ export class TypstRuntime {
 
 		if ('showDiagnostics' in patch) {
 			this.forEachSourceView((view) => view.refreshDiagnostics())
+		}
+
+		if ('searchBarTheme' in patch) {
+			this.forEachSourceView((view) => view.setSearchBarTheme(this.settings.searchBarTheme))
 		}
 
 		// Claiming takes effect at once. Obsidian has no public way to hand an

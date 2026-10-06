@@ -218,6 +218,23 @@ export class TypstSettingTab extends PluginSettingTab {
 					control: { type: 'toggle', key: 'formatterEnabled' }
 				},
 				{
+					name: 'Search bar theme',
+					desc: 'Colours for the find-and-replace bar (Ctrl/Cmd+F). Themes with a light and a dark variant follow the app.',
+					aliases: ['find', 'replace', 'search', 'colours', 'catppuccin', 'dracula', 'monokai', 'solarized', 'one dark'],
+					control: {
+						type: 'dropdown',
+						key: 'searchBarTheme',
+						options: {
+							obsidian: 'Follow the app',
+							catppuccin: 'Catppuccin (Latte / Mocha)',
+							dracula: 'Dracula',
+							monokai: 'Monokai',
+							solarized: 'Solarized (light / dark)',
+							one: 'One (Light / Dark)'
+						}
+					}
+				},
+				{
 					name: 'Open YAML and TOML files',
 					desc: 'Show .yml, .yaml, and .toml files in the vault and open them in the plugin, for Hayagriva bibliographies, typst.toml, and data a document loads. Turn this off to leave them to another plugin; that takes effect after restarting Obsidian.',
 					aliases: ['hayagriva', 'yaml', 'yml', 'toml', 'bibliography', 'citations', 'data'],
