@@ -7,7 +7,7 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
-## [Unreleased]
+## [0.5.1](https://github.com/wilfriedago/obsidian-tinymist/compare/0.5.0...0.5.1) (2026-10-06)
 
 ### Added
 
@@ -17,7 +17,7 @@ release turns them into its section and its GitHub release notes.
   requests. The manifest also declares the funding link, so Obsidian shows it
   beside the plugin.
 
-## [0.5.0] - 2026-10-05
+## [0.5.0](https://github.com/wilfriedago/obsidian-tinymist/compare/0.4.0...0.5.0) (2026-10-05)
 
 ### Added
 
@@ -59,7 +59,7 @@ release turns them into its section and its GitHub release notes.
 - **The ready-status icon now matches the ready state.** `presentStatus` now
   uses the correct icon for that status.
 
-## [0.4.0] - 2026-09-22
+## [0.4.0](https://github.com/wilfriedago/obsidian-tinymist/compare/0.3.1...0.4.0) - 2026-09-22
 
 ### Added
 
@@ -78,7 +78,7 @@ release turns them into its section and its GitHub release notes.
   [@jas-ho](https://github.com/jas-ho) in
   [#10](https://github.com/wilfriedago/obsidian-tinymist/pull/10).
 
-## [0.3.1] - 2026-09-22
+## [0.3.1](https://github.com/wilfriedago/obsidian-tinymist/compare/0.3.0...0.3.1) - 2026-09-22
 
 ### Fixed
 
@@ -86,7 +86,7 @@ release turns them into its section and its GitHub release notes.
   promise, so awaiting it did nothing. No behaviour changes: the layout was
   already being saved on Obsidian's own schedule.
 
-## [0.3.0] - 2026-09-22
+## [0.3.0](https://github.com/wilfriedago/obsidian-tinymist/compare/0.2.1...0.3.0) - 2026-09-22
 
 ### Added
 
@@ -116,7 +116,7 @@ release turns them into its section and its GitHub release notes.
 
 Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
 
-## [0.2.1] - 2026-09-18
+## [0.2.1](https://github.com/wilfriedago/obsidian-tinymist/compare/0.2.0...0.2.1) - 2026-09-18
 
 ### Fixed
 
@@ -128,7 +128,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
 - Switching the preview theme now says **Reloading…** while it happens, instead
   of going blank without explanation.
 
-## [0.2.0] - 2026-09-18
+## [0.2.0](https://github.com/wilfriedago/obsidian-tinymist/compare/0.1.7...0.2.0) - 2026-09-18
 
 ### Added
 
@@ -138,7 +138,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
   Obsidian's own **New note** always makes Markdown and its dropdown cannot be
   extended, so until now a `.typ` file had to be created some other way.
 
-## [0.1.7] - 2026-09-18
+## [0.1.7](https://github.com/wilfriedago/obsidian-tinymist/compare/0.1.6...0.1.7) - 2026-09-18
 
 ### Fixed
 
@@ -163,7 +163,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
 
   `--tinymist-selection` is exposed for themes and snippets to override.
 
-## [0.1.6] - 2026-09-18
+## [0.1.6](https://github.com/wilfriedago/obsidian-tinymist/compare/0.1.5...0.1.6) - 2026-09-18
 
 ### Fixed
 
@@ -186,7 +186,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
   from a shared pool, so the exact byte range has to be copied out rather than
   the whole backing store handed to the vault.
 
-## [0.1.5] - 2026-09-17
+## [0.1.5](https://github.com/wilfriedago/obsidian-tinymist/compare/0.1.4...0.1.5) - 2026-09-17
 
 ### Fixed
 
@@ -204,7 +204,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
 - The "not found" message now names this cause instead of implying Tinymist is
   not installed, and reports the `PATH` that was searched.
 
-## [0.1.4] - 2026-09-17
+## [0.1.4](https://github.com/wilfriedago/obsidian-tinymist/compare/0.1.3...0.1.4) - 2026-09-17
 
 ### Removed
 
@@ -223,7 +223,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
 - A failed startup now distinguishes "no such file", "exists but could not be
   run", and "ran but failed", so the message says what to do about it.
 
-## [0.1.3] - 2026-09-17
+## [0.1.3](https://github.com/wilfriedago/obsidian-tinymist/compare/0.1.2...0.1.3) - 2026-09-17
 
 ### Changed
 
@@ -235,7 +235,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
   `loadData`, so a bad value cannot reach storage at all rather than being
   corrected on the next load.
 
-## [0.1.2] - 2026-09-17
+## [0.1.2](https://github.com/wilfriedago/obsidian-tinymist/compare/0.1.1...0.1.2) - 2026-09-17
 
 ### Changed
 
@@ -251,7 +251,7 @@ Reported in [#7](https://github.com/wilfriedago/obsidian-tinymist/issues/7).
   lint exemption that had been hiding this was removed rather than widened; the
   Node test host supplies a `window` instead.
 
-## [0.1.1] - 2026-09-17
+## [0.1.1](https://github.com/wilfriedago/obsidian-tinymist/compare/0.1.0...0.1.1) - 2026-09-17
 
 ### Fixed
 

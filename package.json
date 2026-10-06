@@ -1,6 +1,6 @@
 {
   "name": "obsidian-tinymist",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "description": "Edit, preview, and export Typst documents in Obsidian using the Tinymist language server.",
   "keywords": [
