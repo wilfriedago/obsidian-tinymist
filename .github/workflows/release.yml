@@ -56,7 +56,7 @@ jobs:
   #   update keys that already exist.
   # - release-please puts its generated section above `## [Unreleased]`
   #   instead of using the prose written there; the fold makes the prose the
-  #   release's section and restores the project's heading style.
+  #   release's section, under release-please's own heading.
   #
   # Then it starts CI on the result, which is what the required check reads.
   release-pr:
