@@ -20,7 +20,9 @@ const PREAMBLE = `# Changelog
 All notable changes to this project are documented here.
 `
 
-const GENERATED = `## [0.5.0](https://github.com/wilfriedago/obsidian-tinymist/compare/0.4.0...0.5.0) (2026-09-30)
+const HEADING = '## [0.5.0](https://github.com/wilfriedago/obsidian-tinymist/compare/0.4.0...0.5.0) (2026-09-30)'
+
+const GENERATED = `${HEADING}
 
 
 ### Added
@@ -63,16 +65,16 @@ function run(changelog: string, ...args: string[]): { changelog: string; stdout:
 }
 
 describe('fold', () => {
-	it('uses the hand-written Unreleased prose in place of the generated entries', () => {
+	it('uses the hand-written Unreleased prose in place of the generated entries, under the generated heading', () => {
 		const { changelog } = run(`${PREAMBLE}\n${GENERATED}\n${UNRELEASED}\n${HISTORY}`, 'fold')
 		expect(changelog).toBe(
-			`${PREAMBLE}\n## [0.5.0] - 2026-09-30\n\n### Added\n\n- **BibLaTeX bibliographies open in Obsidian.** Written by hand, in prose.\n\n${HISTORY}`
+			`${PREAMBLE}\n${HEADING}\n\n### Added\n\n- **BibLaTeX bibliographies open in Obsidian.** Written by hand, in prose.\n\n${HISTORY}`
 		)
 	})
 
 	it('keeps the generated entries, restyled, when nothing was written by hand', () => {
 		const { changelog } = run(`${PREAMBLE}\n${GENERATED}\n${HISTORY}`, 'fold')
-		expect(changelog).toContain('## [0.5.0] - 2026-09-30\n\n### Added\n\n- open and create')
+		expect(changelog).toContain(`${HEADING}\n\n### Added\n\n- open and create`)
 		// The pull-request link stays; the commit-hash link does not.
 		expect(changelog).toContain('files ([#12](https://github.com/wilfriedago/obsidian-tinymist/issues/12))\n')
 		expect(changelog).not.toContain('/commit/')

@@ -11,8 +11,8 @@
  *   fold [version]   Replaces the generated section's body with the
  *                    Unreleased prose, when there is any, and removes the
  *                    Unreleased heading. Without prose, the generated entries
- *                    are kept, restyled. Either way the heading becomes
- *                    `## [x.y.z] - yyyy-mm-dd`, like every earlier one.
+ *                    are kept, restyled. Either way release-please's heading
+ *                    stays: `## [x.y.z](compare link) (yyyy-mm-dd)`.
  *                    Idempotent: a folded changelog is left as it is.
  *
  *   notes <version>  Prints that version's section, which becomes the GitHub
@@ -42,17 +42,13 @@ function restyleGenerated(body) {
 
 function foldRelease(content, version) {
 	const v = escape(version)
-	const generated = new RegExp(`^## \\[${v}\\](?:\\([^)]*\\))? \\((\\d{4}-\\d{2}-\\d{2})\\)[ \\t]*$`, 'm')
-	const folded = new RegExp(`^## \\[${v}\\] - \\d{4}-\\d{2}-\\d{2}[ \\t]*$`, 'm')
+	const generated = new RegExp(`^## \\[${v}\\](?:\\([^)]*\\))? \\(\\d{4}-\\d{2}-\\d{2}\\)[ \\t]*$`, 'm')
 
 	const match = generated.exec(content)
 	if (!match) {
-		if (folded.test(content)) {
-			return content
-		}
 		throw new Error(`CHANGELOG.md has no section for ${version}.`)
 	}
-	const date = match[1]
+	const heading = match[0].trimEnd()
 
 	let unreleasedBody = ''
 	const unreleased = /^## \[?Unreleased\]?[ \t]*$/im.exec(content)
@@ -68,11 +64,7 @@ function foldRelease(content, version) {
 	const generatedBody = content.slice(start, end).replace(generated, '')
 	const body = unreleasedBody || restyleGenerated(generatedBody)
 
-	return (
-		`${content.slice(0, start)}## [${version}] - ${date}\n\n${body}\n\n${content.slice(end)}`
-			.replace(/\n{3,}(?=## )/g, '\n\n')
-			.trimEnd() + '\n'
-	)
+	return `${content.slice(0, start)}${heading}\n\n${body}\n\n${content.slice(end)}`.replace(/\n{3,}(?=## )/g, '\n\n').trimEnd() + '\n'
 }
 
 function releaseNotes(content, version) {
