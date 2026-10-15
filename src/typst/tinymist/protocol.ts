@@ -205,6 +205,21 @@ export interface Hover {
 	range?: Range
 }
 
+export interface DocumentLink {
+	range: Range
+	/** Tinymist sends an empty string for a path it recognised but could not resolve. */
+	target?: string
+	tooltip?: string
+}
+
+/** What Tinymist answers `textDocument/definition` with, `linkSupport` or not. */
+export interface LocationLink {
+	originSelectionRange?: Range
+	targetUri: string
+	targetRange: Range
+	targetSelectionRange: Range
+}
+
 export interface DocumentSymbol {
 	name: string
 	detail?: string

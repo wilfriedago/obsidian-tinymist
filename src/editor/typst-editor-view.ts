@@ -6,7 +6,8 @@ import { typst_lezer } from 'codemirror-lang-typst/lezer'
 
 import type { VaultPath } from '../shared/paths'
 import type { TextEdit } from '../typst/tinymist/protocol'
-import { createCompletionSource, createHoverExtension, type LanguageFeatureContext } from './language-features'
+import { createFileLinkExtension, followLinkAtCursor, type FileLinkContext, type LinkPlacement } from './file-links'
+import { createCompletionSource, createHoverExtension } from './language-features'
 import { offsetToPosition, positionToOffset, rangeToOffsets } from './positions'
 import { SourceEditorView, type SourceEditorHost } from './source-editor-view'
 
@@ -26,11 +27,11 @@ export const TYPST_EDITOR_VIEW_TYPE = 'typst-source'
  *
  * Syncing the buffer with Tinymist and painting diagnostics is shared with the
  * bibliography editor, in {@link SourceEditorView}. What lives here is what
- * only a Typst document has: the grammar, completion and hover, and the
- * preview it can be shown in.
+ * only a Typst document has: the grammar, completion and hover, paths that
+ * open the file they name, and the preview it can be shown in.
  */
 
-export interface TypstEditorHost extends SourceEditorHost, LanguageFeatureContext {
+export interface TypstEditorHost extends SourceEditorHost, FileLinkContext {
 	/** The cursor moved; used to drive source-to-preview scrolling. */
 	onCursorMoved(vaultPath: VaultPath, line: number, character: number): void
 	/** The user asked for the preview from the editor's own header. */
@@ -173,6 +174,14 @@ export class TypstEditorView extends SourceEditorView<TypstEditorHost> {
 		editor.focus()
 	}
 
+	/**
+	 * Opens the file named by the path under the cursor, the keyboard's way to
+	 * what Mod-click does. With `checking`, only says whether there is one.
+	 */
+	followLinkAtCursor(placement: LinkPlacement, checking: boolean): boolean {
+		return this.editor ? followLinkAtCursor(this.editor, placement, checking) : false
+	}
+
 	/** The cursor's current position, for source-to-preview sync. */
 	getCursorPosition(): { line: number; character: number } | null {
 		const editor = this.editor
@@ -197,6 +206,7 @@ export class TypstEditorView extends SourceEditorView<TypstEditorHost> {
 				closeOnBlur: true
 			}),
 			createHoverExtension(this.host),
+			createFileLinkExtension(this.host),
 			keymap.of(completionKeymap)
 		]
 	}

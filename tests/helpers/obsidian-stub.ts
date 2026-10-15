@@ -76,7 +76,7 @@ export class Setting {}
 export class Modal {}
 export class FileSystemAdapter {}
 
-export const Platform = { isDesktopApp: true, isMobile: false }
+export const Platform = { isDesktopApp: true, isMobile: false, isMacOS: false }
 
 export function requireApiVersion(): boolean {
 	return true
