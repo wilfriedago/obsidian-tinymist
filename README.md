@@ -110,16 +110,17 @@ what it is doing.
 Press the **book** button in the editor's tab bar to open the preview beside
 your source. Everything else lives in the command palette:
 
-| Command                            |                                             |
-| ---------------------------------- | ------------------------------------------- |
-| **Typst: Open preview**            | Show the rendered document                  |
-| **Typst: Toggle preview**          | Show or hide it                             |
-| **Typst: Export PDF**              | Compile and write a PDF into the vault      |
-| **Typst: Format document**         | Reformat the source                         |
-| **Typst: Open linked file**        | Open the file the path at the cursor names  |
-| **Typst: Create new Typst file**   | Add a `.typ` file where new notes go        |
-| **Typst: Show project root**       | Which folder this document compiles against |
-| **Typst: Restart language server** | Restart Tinymist                            |
+| Command                                |                                             |
+| -------------------------------------- | ------------------------------------------- |
+| **Typst: Open preview**                | Show the rendered document                  |
+| **Typst: Toggle preview**              | Show or hide it                             |
+| **Typst: Export PDF**                  | Compile and write a PDF into the vault      |
+| **Typst: Format document**             | Reformat the source                         |
+| **Typst: Open linked file**            | Open the file the path at the cursor names  |
+| **Typst: Open linked file in new tab** | The same, in a new tab                      |
+| **Typst: Create new Typst file**       | Add a `.typ` file where new notes go        |
+| **Typst: Show project root**           | Which folder this document compiles against |
+| **Typst: Restart language server**     | Restart Tinymist                            |
 
 No default hotkeys are set, so nothing collides with yours. Bind your own under
 **Settings → Hotkeys**.

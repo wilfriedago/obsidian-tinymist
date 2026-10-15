@@ -212,11 +212,6 @@ export interface DocumentLink {
 	tooltip?: string
 }
 
-export interface Location {
-	uri: string
-	range: Range
-}
-
 /** What Tinymist answers `textDocument/definition` with, `linkSupport` or not. */
 export interface LocationLink {
 	originSelectionRange?: Range
