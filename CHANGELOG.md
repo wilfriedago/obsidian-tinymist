@@ -7,6 +7,13 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
+## [0.6.0](https://github.com/wilfriedago/obsidian-tinymist/compare/0.5.1...0.6.0) (2026-10-15)
+
+
+### Added
+
+* show the word count in the status bar ([#49](https://github.com/wilfriedago/obsidian-tinymist/issues/49)) ([0e9a10a](https://github.com/wilfriedago/obsidian-tinymist/commit/0e9a10a5eed169e9a2165a11f892f35384a391ba))
+
 ## [Unreleased]
 
 ### Added
