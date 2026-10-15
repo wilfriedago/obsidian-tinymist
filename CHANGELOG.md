@@ -7,7 +7,7 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
-## [Unreleased]
+## [0.6.0](https://github.com/wilfriedago/obsidian-tinymist/compare/0.5.1...0.6.0) (2026-10-15)
 
 ### Added
 
