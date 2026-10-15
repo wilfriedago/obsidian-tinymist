@@ -67,25 +67,6 @@ project root, or remembered per document. Per project root is probably right,
 since that is the unit Typst itself compiles, but it is worth deciding before
 the first line rather than after.
 
-### Word count
-
-Already arriving on every compile, and currently discarded. Tinymist attaches
-it to the `tinymist/compileStatus` notification the status bar already
-consumes. **Verified**, for `basic.typ`:
-
-```json
-{ "chars": 407, "cjkChars": 0, "spaces": 60, "words": 61 }
-```
-
-People writing to a length care about this more than almost anything else the
-plugin does, and it is a status-bar segment rather than a feature. Note the
-separate `cjkChars`: Tinymist counts CJK characters apart from words, so the
-figure is meaningful for Chinese and Japanese rather than quietly wrong.
-
-The only real decision is what to show by default — words, or characters, or
-both — and whether it belongs in the status bar or behind a command. The status
-bar is already the place the plugin reports document state.
-
 ### Spell checking in the editor
 
 Typst's own web editor flags misspelled words inline and offers a popover with

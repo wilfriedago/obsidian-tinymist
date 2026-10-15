@@ -250,6 +250,21 @@ export interface CompileStatusParams {
 	status: 'compiling' | 'compileSuccess' | 'compileError'
 	path: string
 	pageCount?: number
+	/**
+	 * The primary document's word count. Tinymist sends it in a notification of
+	 * its own once it has counted, after the compile status, and keeps the last
+	 * count rather than clearing it, so it can trail a compile slightly.
+	 */
+	wordsCount?: WordsCount | null
+}
+
+/** Tinymist's word count. CJK characters are counted apart from words. */
+export interface WordsCount {
+	words: number
+	chars: number
+	/** Runs of consecutive spaces count as one. */
+	spaces: number
+	cjkChars: number
 }
 
 /** Payload of `tinymist/preview/scrollSource`: where to put the cursor. */

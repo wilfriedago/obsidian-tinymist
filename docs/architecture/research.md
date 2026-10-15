@@ -125,12 +125,12 @@ Commands this plugin relies on, all verified present:
 
 Notifications the plugin subscribes to:
 
-| Notification                    | Payload                     | Use                    |
-| ------------------------------- | --------------------------- | ---------------------- |
-| `tinymist/compileStatus`        | `{status, path, pageCount}` | Status bar             |
-| `tinymist/preview/scrollSource` | `{filepath, start, end}`    | Preview → source       |
-| `tinymist/preview/dispose`      | `{taskId}`                  | Tear down client state |
-| `tinymist/documentOutline`      | outline tree                | Not consumed yet       |
+| Notification                    | Payload                                 | Use                    |
+| ------------------------------- | --------------------------------------- | ---------------------- |
+| `tinymist/compileStatus`        | `{status, path, pageCount, wordsCount}` | Status bar, word count |
+| `tinymist/preview/scrollSource` | `{filepath, start, end}`                | Preview → source       |
+| `tinymist/preview/dispose`      | `{taskId}`                              | Tear down client state |
+| `tinymist/documentOutline`      | outline tree                            | Not consumed yet       |
 
 ### Diagnostics are published only for documents that have problems
 

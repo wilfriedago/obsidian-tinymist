@@ -144,6 +144,11 @@ renamed from its tab title the same way.
 | **Typst: disconnected** | Tinymist stopped — select to restart       |
 | **Typst: unavailable**  | It could not start — select for the reason |
 
+Beside it, the document's word count: words, characters, spaces, and CJK
+characters, as Tinymist counts the compiled document. Obsidian's own word count
+and backlinks are hidden while a Typst document is active, since they only
+understand Markdown.
+
 ## Not only papers
 
 Typst does full layout — columns, floats, images, colour, and the

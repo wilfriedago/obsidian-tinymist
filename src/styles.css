@@ -288,6 +288,16 @@
 	cursor: pointer;
 }
 
+/* Obsidian's own counts only understand Markdown. */
+.tinymist-typst-active .status-bar-item.plugin-word-count,
+.tinymist-typst-active .status-bar-item.plugin-backlink {
+	display: none;
+}
+
+.tinymist-status-word-count {
+	color: var(--text-muted);
+}
+
 .tinymist-status-icon {
 	display: inline-flex;
 	align-items: center;

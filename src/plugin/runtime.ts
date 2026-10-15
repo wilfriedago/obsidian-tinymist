@@ -27,6 +27,7 @@ import { TinymistManager, type TinymistState } from '../typst/tinymist/manager'
 import {
 	TINYMIST_NOTIFICATION,
 	type CompileStatusParams,
+	type WordsCount,
 	type PreviewJumpInfo,
 	type PublishDiagnosticsParams,
 	type ShowDocumentParams
@@ -64,6 +65,7 @@ export class TypstRuntime {
 	private statusBar: StatusBarItem | null = null
 
 	private compilePhase: CompilePhase = 'idle'
+	private wordCount: WordsCount | null = null
 	private startupError: TypstError | null = null
 	/** Disposers for notification subscriptions bound to the current client. */
 	private clientSubscriptions: (() => void)[] = []
@@ -126,6 +128,7 @@ export class TypstRuntime {
 		this.manager?.unload()
 		this.manager = null
 		this.session = null
+		this.statusBar?.detach()
 		this.statusBar = null
 	}
 
@@ -388,6 +391,8 @@ export class TypstRuntime {
 
 	private bindClient(client: TinymistClient): void {
 		this.disposeClientSubscriptions()
+		// A new server has counted nothing yet.
+		this.wordCount = null
 
 		this.clientSubscriptions.push(
 			client.onNotification('textDocument/publishDiagnostics', (params) => {
@@ -443,6 +448,9 @@ export class TypstRuntime {
 			case 'compileError':
 				this.compilePhase = 'error'
 				break
+		}
+		if (params.wordsCount) {
+			this.wordCount = params.wordsCount
 		}
 		this.updateStatusBar()
 	}
@@ -976,7 +984,8 @@ export class TypstRuntime {
 			serverState: this.startupError ? 'failed' : (this.manager?.getState().kind ?? 'stopped'),
 			compilePhase: this.compilePhase,
 			diagnostics: vaultPath ? this.diagnostics.summarize(vaultPath) : { errors: 0, warnings: 0, total: 0 },
-			hasActiveDocument: vaultPath !== null
+			hasActiveDocument: vaultPath !== null,
+			wordCount: this.wordCount
 		})
 	}
 

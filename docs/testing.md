@@ -117,6 +117,8 @@ Each line is pass/fail, with the acceptance criterion it comes from.
 - [ ] Typst syntax is highlighted.
 - [ ] The status bar reaches **Typst: ready**.
 - [ ] Opening `errors.typ` underlines the error and the status bar shows the count.
+- [ ] The status bar shows the word count of `basic.typ`, and it changes as you add words.
+- [ ] Obsidian's own word count and backlinks are hidden while `basic.typ` is active, and come back on a Markdown note.
 - [ ] Hovering the underline shows the compiler message.
 - [ ] Fixing the error clears the underline.
 - [ ] Typing `#fig` offers completions from Tinymist.

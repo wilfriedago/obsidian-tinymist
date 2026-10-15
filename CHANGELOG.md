@@ -7,6 +7,20 @@ and the project uses [semantic versioning](https://semver.org/) in the `x.y.z`
 form Obsidian requires. Entries are written by hand under _Unreleased_; each
 release turns them into its section and its GitHub release notes.
 
+## [Unreleased]
+
+### Added
+
+- **A word count in the status bar.** While a Typst document is open, the
+  status bar shows its words, characters, spaces, and CJK characters, counted
+  by Tinymist from the compiled document, so markup and code are left out. CJK
+  characters are counted apart from words, so the figure means something for
+  Chinese and Japanese. The count follows each compile, and the last one stays
+  while a compile is running or has errors. Obsidian's own word count and
+  backlinks, which only understand Markdown, are hidden while a Typst document
+  is active. Requested in
+  [#27](https://github.com/wilfriedago/obsidian-tinymist/issues/27).
+
 ## [0.5.1](https://github.com/wilfriedago/obsidian-tinymist/compare/0.5.0...0.5.1) (2026-10-06)
 
 ### Added

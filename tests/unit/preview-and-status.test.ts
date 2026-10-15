@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { hoverText, stripSnippetPlaceholders } from '../../src/editor/language-features'
-import { presentStatus } from '../../src/plugin/status-bar'
+import { describeWordCount, presentStatus } from '../../src/plugin/status-bar'
 import { PreviewController, taskIdFor } from '../../src/preview/preview-controller'
 import { shouldRetargetPreview } from '../../src/preview/typst-preview-view'
 import { LogSink, Logger } from '../../src/shared/logging'
@@ -270,6 +270,7 @@ describe('PreviewController', () => {
 
 describe('presentStatus', () => {
 	const clean = { errors: 0, warnings: 0, total: 0 }
+	const count = { words: 61, chars: 407, spaces: 60, cjkChars: 0 }
 
 	it('shows the server state before anything else', () => {
 		expect(
@@ -277,7 +278,8 @@ describe('presentStatus', () => {
 				serverState: 'crashed',
 				compilePhase: 'success',
 				diagnostics: clean,
-				hasActiveDocument: true
+				hasActiveDocument: true,
+				wordCount: null
 			})
 		).toMatchObject({ text: 'Typst: disconnected', modifier: 'error' })
 	})
@@ -288,7 +290,8 @@ describe('presentStatus', () => {
 				serverState: 'ready',
 				compilePhase: 'compiling',
 				diagnostics: clean,
-				hasActiveDocument: true
+				hasActiveDocument: true,
+				wordCount: null
 			})
 		).toMatchObject({ text: 'Typst: compiling', modifier: 'busy' })
 	})
@@ -299,7 +302,8 @@ describe('presentStatus', () => {
 				serverState: 'ready',
 				compilePhase: 'error',
 				diagnostics: { errors: 1, warnings: 2, total: 3 },
-				hasActiveDocument: true
+				hasActiveDocument: true,
+				wordCount: null
 			}).text
 		).toBe('Typst: 1 error, 2 warnings')
 	})
@@ -310,9 +314,55 @@ describe('presentStatus', () => {
 				serverState: 'ready',
 				compilePhase: 'success',
 				diagnostics: clean,
-				hasActiveDocument: true
+				hasActiveDocument: true,
+				wordCount: null
 			})
 		).toMatchObject({ text: 'Typst: ready', modifier: 'ok' })
+	})
+
+	it('shows the word count of the active document', () => {
+		expect(
+			presentStatus({
+				serverState: 'ready',
+				compilePhase: 'success',
+				diagnostics: clean,
+				hasActiveDocument: true,
+				wordCount: count
+			}).wordCount
+		).toBe('61 words · 407 chars · 60 spaces · 0 CJK chars')
+	})
+
+	it('keeps the last word count while compiling or failing', () => {
+		for (const compilePhase of ['compiling', 'error'] as const) {
+			expect(
+				presentStatus({
+					serverState: 'ready',
+					compilePhase,
+					diagnostics: { errors: 1, warnings: 0, total: 1 },
+					hasActiveDocument: true,
+					wordCount: count
+				}).wordCount
+			).toBe('61 words · 407 chars · 60 spaces · 0 CJK chars')
+		}
+	})
+
+	it('shows no word count without an active document, a count, or a running server', () => {
+		const base = { compilePhase: 'success', diagnostics: clean } as const
+		expect(presentStatus({ ...base, serverState: 'ready', hasActiveDocument: false, wordCount: count }).wordCount).toBe('')
+		expect(presentStatus({ ...base, serverState: 'ready', hasActiveDocument: true, wordCount: null }).wordCount).toBe('')
+		expect(presentStatus({ ...base, serverState: 'crashed', hasActiveDocument: true, wordCount: count }).wordCount).toBe('')
+	})
+})
+
+describe('describeWordCount', () => {
+	it('uses the singular for one', () => {
+		expect(describeWordCount({ words: 1, chars: 1, spaces: 1, cjkChars: 1 })).toBe('1 word · 1 char · 1 space · 1 CJK char')
+	})
+
+	it('groups thousands', () => {
+		expect(describeWordCount({ words: 12345, chars: 67890, spaces: 1000, cjkChars: 0 })).toBe(
+			'12,345 words · 67,890 chars · 1,000 spaces · 0 CJK chars'
+		)
 	})
 })
 
