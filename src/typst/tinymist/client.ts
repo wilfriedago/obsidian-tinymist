@@ -51,6 +51,7 @@ export interface ServerCapabilities {
 	completionProvider?: unknown
 	hoverProvider?: unknown
 	definitionProvider?: unknown
+	documentLinkProvider?: unknown
 	referencesProvider?: unknown
 	documentSymbolProvider?: unknown
 	documentFormattingProvider?: unknown
@@ -374,6 +375,7 @@ const CLIENT_CAPABILITIES = {
 		},
 		hover: { dynamicRegistration: false, contentFormat: ['markdown', 'plaintext'] },
 		definition: { dynamicRegistration: false, linkSupport: false },
+		documentLink: { dynamicRegistration: false, tooltipSupport: false },
 		references: { dynamicRegistration: false },
 		documentSymbol: { dynamicRegistration: false, hierarchicalDocumentSymbolSupport: true },
 		formatting: { dynamicRegistration: false },

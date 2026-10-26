@@ -1,11 +1,14 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorState, Text } from '@codemirror/state'
 
+import { typst_lezer } from 'codemirror-lang-typst/lezer'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 
-import { rangeToOffsets } from '../../src/editor/positions'
+import { definitionLink, linkAt, stringLiteralAt, toFileLinks } from '../../src/editor/file-links'
+import { offsetToPosition, rangeToOffsets } from '../../src/editor/positions'
 import { LogSink, Logger } from '../../src/shared/logging'
 import { absolutePathToFileUri } from '../../src/shared/paths'
 import { TinymistClient } from '../../src/typst/tinymist/client'
@@ -15,6 +18,9 @@ import {
 	TINYMIST_COMMAND,
 	TINYMIST_NOTIFICATION,
 	type CompileStatusParams,
+	type DocumentLink,
+	type Location,
+	type LocationLink,
 	type ExportResult,
 	type PreviewJumpInfo,
 	type PublishDiagnosticsParams,
@@ -225,6 +231,46 @@ describe.runIf(process.env['SKIP_TINYMIST_TESTS'] !== '1')('Tinymist, live', () 
 		// A hover may legitimately be null at a given offset; the point is that
 		// the request completes rather than erroring.
 		expect(hover === null || typeof hover === 'object').toBe(true)
+	})
+
+	it('resolves the paths a document links to, which Mod-click follows', async () => {
+		if (!available) return
+		expect(client.supportsCapability('documentLinkProvider')).toBe(true)
+		expect(client.supportsCapability('definitionProvider')).toBe(true)
+
+		const relative = 'links.typ'
+		const uri = openDocument(relative)
+		const source = readFileSync(resolve(VAULT, relative), 'utf8')
+		const state = EditorState.create({ doc: source, extensions: [typst_lezer()] })
+		ensureSyntaxTree(state, source.length, 5_000)
+		const fileUri = (path: string) => absolutePathToFileUri(resolve(VAULT, path))
+
+		const response = await client.request<DocumentLink[] | null>('textDocument/documentLink', { textDocument: { uri } })
+		const linked = toFileLinks(state.doc, response).map((link) => ({ path: source.slice(link.from, link.to), target: link.target }))
+		expect(linked).toEqual(
+			expect.arrayContaining([
+				{ path: 'README.md', target: fileUri('README.md') },
+				{ path: 'hayagriva/references.yml', target: fileUri('hayagriva/references.yml') },
+				{ path: 'project/assets/diagram.svg', target: fileUri('project/assets/diagram.svg') },
+				{ path: 'imports/shared.typ', target: fileUri('imports/shared.typ') }
+			])
+		)
+
+		// `#import` is not among the links, at Tinymist 0.15.8; `definition` on
+		// its path is what resolves it.
+		const importOffset = source.indexOf('"imports/shared.typ": accent') + 3
+		const literal = stringLiteralAt(state, importOffset)
+		expect(literal).not.toBeNull()
+		expect(linkAt(toFileLinks(state.doc, response), importOffset)).toBeNull()
+		const definition = await client.request<Location | LocationLink[] | null>('textDocument/definition', {
+			textDocument: { uri },
+			position: offsetToPosition(state.doc, importOffset)
+		})
+		const link = literal && definitionLink(literal, definition)
+		expect(link && { path: source.slice(link.from, link.to), target: link.target }).toEqual({
+			path: 'imports/shared.typ',
+			target: fileUri('imports/shared.typ')
+		})
 	})
 
 	it('formats a document', async () => {
