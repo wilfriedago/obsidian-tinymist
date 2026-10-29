@@ -48,13 +48,13 @@
     "version": "node version-bump.mjs && git add manifest.json versions.json"
   },
   "dependencies": {
-    "@codemirror/legacy-modes": "6.5.4",
+    "@codemirror/legacy-modes": "6.5.5",
     "codemirror-lang-typst": "0.6.0"
   },
   "devDependencies": {
-    "@codemirror/autocomplete": "6.20.3",
+    "@codemirror/autocomplete": "6.20.4",
     "@codemirror/commands": "6.10.2",
-    "@codemirror/language": "6.12.4",
+    "@codemirror/language": "6.13.1",
     "@codemirror/lint": "6.9.5",
     "@codemirror/search": "6.7.2",
     "@codemirror/state": "6.5.0",
